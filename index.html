@@ -495,6 +495,8 @@
 <button class="fab" onclick="goPage('add')">+</button>
 <button class="fab-desktop" onclick="goPage('add')">+</button>
 
+<div id="toast" style="display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:80; background:var(--green); color:#fff; font-size:13.5px; font-weight:700; padding:12px 20px; border-radius:10px; box-shadow:0 10px 24px rgba(0,0,0,.2); max-width:90vw; text-align:center;"></div>
+
 <!-- Budget line modal -->
 <div class="modal-backdrop" id="budgetModalBackdrop">
   <div class="modal-sheet desktop-center">
@@ -1556,8 +1558,42 @@ function renderAll() {
   if (document.getElementById('page-settings').classList.contains('on')) renderSettingsPage();
 }
 
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--red)' : 'var(--green)';
+  t.style.display = 'block';
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+// Entry point for Shortcuts (or any browser/Home Screen link) via plain URL
+// parameters - e.g. https://.../?amount=50&category=Food&description=lunch
+// No script injection needed: the app reads these itself on load, adds the
+// expense immediately, then cleans the URL so a refresh can't re-add it.
+function handleQuickAddFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const amount = params.get('amount');
+  const category = params.get('category');
+  if (!amount || !category) return;
+  const result = window.quickAddExpense(
+    amount,
+    category,
+    params.get('subcategory') || '',
+    params.get('description') || '',
+    params.get('method') || '',
+    params.get('date') || ''
+  );
+  const isError = result.startsWith('Error');
+  showToast(result, isError);
+  // Strip the query string so refreshing/reopening this exact link doesn't add it again
+  window.history.replaceState(null, '', window.location.pathname);
+  goPage('dashboard');
+}
+
 loadState();
 renderAll();
+handleQuickAddFromURL();
 </script>
 </body>
 </html>
