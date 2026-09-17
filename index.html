@@ -1089,10 +1089,24 @@ async function hashPin(pin) {
 }
 // Accepts either a bare {...} object or a pasted "const firebaseConfig = {...};" snippet.
 function parseFirebaseConfigInput(raw) {
-  const match = (raw||'').match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Paste your Firebase config — it should include a { ... } block.');
+  raw = raw || '';
+  // Pasted snippets usually include import{...} lines too — anchor on "apiKey"
+  // and scan for its SPECIFIC enclosing {...} block (brace-depth matching),
+  // rather than grabbing from the very first { to the very last } in the
+  // whole paste, which would swallow unrelated braces in between.
+  const apiKeyIdx = raw.indexOf('apiKey');
+  if (apiKeyIdx === -1) throw new Error('Paste your Firebase config — it should include an apiKey.');
+  const braceStart = raw.lastIndexOf('{', apiKeyIdx);
+  if (braceStart === -1) throw new Error('Paste your Firebase config — it should include a { ... } block.');
+  let depth = 0, braceEnd = -1;
+  for (let i = braceStart; i < raw.length; i++) {
+    if (raw[i] === '{') depth++;
+    else if (raw[i] === '}') { depth--; if (depth === 0) { braceEnd = i; break; } }
+  }
+  if (braceEnd === -1) throw new Error('Paste your Firebase config — the { ... } block looks incomplete.');
+  const objText = raw.slice(braceStart, braceEnd + 1);
   let obj;
-  try { obj = Function('"use strict"; return (' + match[0] + ');')(); }
+  try { obj = Function('"use strict"; return (' + objText + ');')(); }
   catch(e) { throw new Error('Could not read that as a Firebase config.'); }
   if (!obj || !obj.apiKey || !obj.projectId) throw new Error('That config is missing apiKey/projectId — copy the whole snippet from your Firebase project settings.');
   return obj;
@@ -1146,6 +1160,7 @@ async function connectSync(firebaseConfigObj, pin) {
   saveSyncConfig({ firebaseConfig: firebaseConfigObj, pin });
   fbState.lastSyncedAt = new Date();
   setSyncStatus('connected');
+  showToast('Connected — this device is now syncing.');
 }
 function subscribeToCloud() {
   if (fbState.unsubscribe) fbState.unsubscribe();
