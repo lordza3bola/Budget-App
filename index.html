@@ -39,13 +39,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-  html, body {
-    /* Only allow vertical scroll gestures — this blocks pinch-zoom and
-       horizontal rubber-band panning at the browser level (stronger than the
-       viewport meta tag alone, which some iOS versions partially ignore). */
-    touch-action: pan-y;
-    overscroll-behavior-x: none;
-  }
+  html { touch-action: manipulation; }
   body {
     font-family: 'Manrope', sans-serif;
     background: var(--bg);
@@ -326,6 +320,11 @@
     .form-panel { padding: 0 18px; }
     .profile-strip { padding-left: 18px; padding-right: 18px; }
     .settings-block, .budget-filter, .table-wrap { padding: 0 18px; }
+    /* #settingsTabs can hold up to 6 buttons (Income/Card/Categories/Excel
+       sync/Cloud Sync/Data) — tighten them on narrow screens so they sit
+       neatly rather than wrapping awkwardly or crowding the edges. */
+    #settingsTabs { row-gap: 8px; }
+    #settingsTabs button { padding: 7px 11px; font-size: 12px; }
     .tabbar {
       display:flex; justify-content:space-around; align-items:center;
       position: fixed; bottom:0; left:0; right:0;
@@ -1257,7 +1256,7 @@ function renderCloudSyncPanel() {
         </ol>
       </details>
       <div class="field"><label>Firebase config (paste the whole snippet)</label>
-        <textarea id="syncConfigInput" rows="5" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, ... };" style="width:100%;max-width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:12px;padding:10px 12px;font-size:12px;font-family:var(--font-mono, monospace);color:var(--txt);resize:vertical;overflow-wrap:break-word;word-break:break-word;box-sizing:border-box;"></textarea>
+        <textarea id="syncConfigInput" rows="5" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, ... };" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:12px;padding:10px 12px;font-size:12px;font-family:var(--font-mono, monospace);color:var(--txt);resize:vertical;"></textarea>
       </div>
       <div class="field"><label>Sync PIN — remember this, you'll enter it on your other device</label>
         <input type="text" id="syncPinInput" placeholder="e.g. a phrase or 6+ characters">
