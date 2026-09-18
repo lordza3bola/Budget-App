@@ -656,6 +656,11 @@
         <div class="kpi"><div class="l">Paid</div><div class="v pos" id="instKpiPaid">0</div></div>
         <div class="kpi"><div class="l">Remaining</div><div class="v warn" id="instKpiRemaining">0</div></div>
       </div>
+      <div class="budget-filter" id="installmentStatusFilter">
+        <button data-f="all" onclick="filterInstallments('all', this)">All</button>
+        <button data-f="closed" onclick="filterInstallments('closed', this)">Closed</button>
+        <button class="on" data-f="ongoing" onclick="filterInstallments('ongoing', this)">Ongoing</button>
+      </div>
       <div id="installmentPlansList" style="margin-bottom:20px;"></div>
       <div class="card">
         <h3>Total due per month</h3>
@@ -3295,12 +3300,22 @@ function installmentSourceRows(p) {
   return p.budget.filter(b => ids.has(b.id));
 }
 let currentInstallmentPlans = [];
+let installmentFilterMode = 'ongoing';
+function filterInstallments(mode, btn) {
+  installmentFilterMode = mode;
+  document.querySelectorAll('#installmentStatusFilter button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderInstallmentsPage();
+}
 function renderInstallmentsPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('inst');
   const p = activeProfile();
   currentInstallmentPlans = installmentPlans(p);
 
+  // The month picker only ever drives these three numbers and the monthly
+  // breakdown table below — it never hides plan cards, that's what the
+  // All/Closed/Ongoing filter is for.
   const selRows = installmentSourceRows(p).filter(b => selectedMonths.includes(b.month));
   const selTotal = selRows.reduce((s,b) => s + Number(b.plannedValue || 0), 0);
   const selPaid = selRows.filter(b => b.status === 'Done').reduce((s,b) => s + Number(b.plannedValue || 0), 0);
@@ -3308,8 +3323,15 @@ function renderInstallmentsPage() {
   document.getElementById('instKpiPaid').textContent = fmt(selPaid);
   document.getElementById('instKpiRemaining').textContent = fmt(selTotal - selPaid);
 
+  // Filter which cards show by status, but keep referencing each plan's real
+  // index in currentInstallmentPlans (not its position in this filtered
+  // list) so edit/delete calls still hit the right plan.
+  const visible = currentInstallmentPlans
+    .map((plan, idx) => ({ plan, idx }))
+    .filter(({plan}) => installmentFilterMode === 'all' ? true : installmentFilterMode === 'closed' ? plan.remaining <= 0 : plan.remaining > 0);
+
   const listEl = document.getElementById('installmentPlansList');
-  listEl.innerHTML = currentInstallmentPlans.length ? currentInstallmentPlans.map((plan, idx) => `
+  listEl.innerHTML = visible.length ? visible.map(({plan, idx}) => `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div>
@@ -3320,7 +3342,11 @@ function renderInstallmentsPage() {
         <button class="del-btn" onclick="deleteInstallmentPlan(${idx})" title="Delete plan">✕</button>
       </div>
     </div>
-  `).join('') : `<div class="card empty-note" style="text-align:center;">No installment plans yet. Add one to track a payment spread over several months.</div>`;
+  `).join('') : `<div class="card empty-note" style="text-align:center;">${
+    installmentFilterMode === 'ongoing' ? 'No ongoing installment plans.' :
+    installmentFilterMode === 'closed' ? 'No closed installment plans yet.' :
+    'No installment plans yet. Add one to track a payment spread over several months.'
+  }</div>`;
 
   const monthly = {};
   selRows.forEach(b => {
