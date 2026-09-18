@@ -633,6 +633,11 @@
         <h1>Installments</h1>
         <button class="btn btn-primary" onclick="openInstallmentModal()">+ Add installment</button>
       </div>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Installments this month</div><div class="v" id="instKpiTotal">0</div></div>
+        <div class="kpi"><div class="l">Paid</div><div class="v pos" id="instKpiPaid">0</div></div>
+        <div class="kpi"><div class="l">Remaining</div><div class="v warn" id="instKpiRemaining">0</div></div>
+      </div>
       <div id="installmentPlansList" style="margin-bottom:20px;"></div>
       <div class="card">
         <h3>Total due per month</h3>
@@ -3208,6 +3213,14 @@ let currentInstallmentPlans = [];
 function renderInstallmentsPage() {
   const p = activeProfile();
   currentInstallmentPlans = installmentPlans(p);
+
+  const thisMonthRows = installmentSourceRows(p).filter(b => b.month === currentMonth);
+  const thisMonthTotal = thisMonthRows.reduce((s,b) => s + Number(b.plannedValue || 0), 0);
+  const thisMonthPaid = thisMonthRows.filter(b => b.status === 'Done').reduce((s,b) => s + Number(b.plannedValue || 0), 0);
+  document.getElementById('instKpiTotal').textContent = fmt(thisMonthTotal);
+  document.getElementById('instKpiPaid').textContent = fmt(thisMonthPaid);
+  document.getElementById('instKpiRemaining').textContent = fmt(thisMonthTotal - thisMonthPaid);
+
   const listEl = document.getElementById('installmentPlansList');
   listEl.innerHTML = currentInstallmentPlans.length ? currentInstallmentPlans.map((plan, idx) => `
     <div class="card" style="margin-bottom:12px;">
