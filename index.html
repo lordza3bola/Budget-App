@@ -2950,7 +2950,11 @@ function renderBudgetPage() {
   if (budgetFilterMode === 'notpaid') rows = rows.filter(b=>b.status==='Not Paid Yet');
   if (catFilter) rows = rows.filter(b => b.category === catFilter);
   if (subFilter) rows = rows.filter(b => b.subcategory === subFilter);
-  if (search) rows = rows.filter(b => (b.description||'').toLowerCase().includes(search));
+  if (search) rows = rows.filter(b =>
+    (b.description||'').toLowerCase().includes(search) ||
+    (b.category||'').toLowerCase().includes(search) ||
+    (b.subcategory||'').toLowerCase().includes(search)
+  );
   rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
   const body = document.getElementById('budgetTableBody');
   const p = activeProfile();
