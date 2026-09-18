@@ -3228,7 +3228,7 @@ function renderInstallmentsPage() {
         <div>
           <div style="font-weight:600;font-size:14.5px;">${getCategoryIcon(p, plan.category, plan.subcategory)} ${escapeHtml(plan.category)} <span style="font-weight:400;color:var(--txt-dim);">— ${escapeHtml(plan.subcategory)}</span></div>
           ${plan.description ? `<div style="font-size:12.5px;color:var(--txt-dim);margin-top:2px;">${escapeHtml(plan.description)}</div>` : ''}
-          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; ${monthLabel(plan.startDate.slice(0,7))} → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; ${plan.paidCount} of ${plan.total} paid</div>
+          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; <input type="date" value="${plan.startDate}" onchange="setInstallmentStartDate(${idx}, this.value)" style="background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 5px;font-size:12px;color:var(--txt);"> → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; <input type="number" min="0" max="${plan.total}" value="${plan.paidCount}" onchange="setInstallmentPaidCount(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> of ${plan.total} paid</div>
         </div>
         <button class="del-btn" onclick="deleteInstallmentPlan(${idx})" title="Delete plan">✕</button>
       </div>
@@ -3251,6 +3251,57 @@ function renderInstallmentsPage() {
     </tr>
   `).join('') : `<tr><td colspan="3" class="empty-note">No installment plans yet.</td></tr>`;
 }
+function installmentSchedule(startDate, total, p) {
+  const slots = [];
+  for (let i = 0; i < total; i++) {
+    const date = i === 0 ? startDate : addMonthsToDateStr(startDate, i);
+    slots.push({ index: i, date, month: monthForDate(date, p) });
+  }
+  return slots;
+}
+// Rebuilds a plan's budget rows to exactly match its schedule (start date +
+// total months), reusing any existing row for a month that already has one
+// (keeping its own amount/id) and creating a row for months that were never
+// in the data (e.g. archived/missing Excel rows) so they show up on the
+// Budget tab, Dashboard "Coming up", and this tab's monthly total going
+// forward. Status is then set purely from paidCount: the first paidCount
+// months in date order are Done, everything after is Not Paid Yet — so
+// editing paidCount is what pushes the next unpaid one into "upcoming".
+function rebuildInstallmentPlan(idx, { startDate, paidCount } = {}) {
+  const plan = currentInstallmentPlans[idx];
+  if (!plan) return;
+  const p = activeProfile();
+  const newStart = startDate || plan.startDate;
+  const newPaidCount = Math.max(0, Math.min(plan.total, Math.round(Number(paidCount != null ? paidCount : plan.paidCount))));
+  const slots = installmentSchedule(newStart, plan.total, p);
+  const existingByMonth = {};
+  plan.rows.forEach(r => { existingByMonth[r.month] = r; });
+  const groupId = plan.rows[0].installmentGroupId || ('inst' + Date.now());
+  const oldIds = new Set(plan.rows.map(r => r.id));
+  const newRows = slots.map(slot => {
+    const existing = existingByMonth[slot.month];
+    return {
+      id: existing ? existing.id : ('b_inst_' + Date.now() + '_' + slot.index),
+      month: slot.month,
+      category: plan.category, subcategory: plan.subcategory, description: plan.description,
+      startDate: slot.date,
+      durationMonths: 1,
+      plannedValue: existing ? existing.plannedValue : plan.monthly,
+      status: slot.index < newPaidCount ? 'Done' : 'Not Paid Yet',
+      installmentGroupId: groupId,
+      installmentIndex: slot.index + 1,
+      installmentTotal: plan.total,
+      installmentFinish: slots[slots.length - 1].date
+    };
+  });
+  p.budget = p.budget.filter(b => !oldIds.has(b.id)).concat(newRows);
+  saveState();
+  renderInstallmentsPage();
+  renderBudgetPage();
+  renderDashboard();
+}
+function setInstallmentPaidCount(idx, val) { rebuildInstallmentPlan(idx, { paidCount: val }); }
+function setInstallmentStartDate(idx, val) { if (!val) return; rebuildInstallmentPlan(idx, { startDate: val }); }
 function deleteInstallmentPlan(idx) {
   const plan = currentInstallmentPlans[idx];
   if (!plan) return;
