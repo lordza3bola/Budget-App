@@ -364,6 +364,7 @@
       <a data-page="dashboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
       <a data-page="expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="navExpensesLabel">Expenses</span></a>
       <a data-page="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</a>
+      <a data-page="installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</a>
       <a data-page="yearly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 2v6M16 2v6"/></svg>Yearly</a>
       <a data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</a>
     </div>
@@ -626,6 +627,24 @@
       </div>
     </div>
 
+    <!-- INSTALLMENTS -->
+    <div class="page" id="page-installments">
+      <div class="top">
+        <h1>Installments</h1>
+        <button class="btn btn-primary" onclick="openInstallmentModal()">+ Add installment</button>
+      </div>
+      <div id="installmentPlansList" style="margin-bottom:20px;"></div>
+      <div class="card">
+        <h3>Total due per month</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Month</th><th style="text-align:right;">Total installments</th><th style="text-align:right;">Plans</th></tr></thead>
+            <tbody id="installmentMonthlyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- YEARLY -->
     <div class="page" id="page-yearly">
       <div class="top">
@@ -763,6 +782,7 @@
   <button class="tab on" data-page="dashboard" onclick="goPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
   <button class="tab" data-page="expenses" onclick="goPage('expenses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="tabExpensesLabel">Expenses</span></button>
   <button class="tab" data-page="budget" onclick="goPage('budget')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</button>
+  <button class="tab" data-page="installments" onclick="goPage('installments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</button>
   <button class="tab" data-page="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</button>
 </div>
 <button class="fab" onclick="goPage('add')">+</button>
@@ -796,6 +816,25 @@
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveBudgetLine()">Save</button>
       <button class="btn btn-ghost" onclick="closeBudgetModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="installmentModalBackdrop">
+  <div class="modal-sheet desktop-center">
+    <div class="modal-head"><h2>Add installment</h2><button onclick="closeInstallmentModal()">✕</button></div>
+    <div class="field"><label>Category</label><input type="text" id="iCategory" list="catList"></div>
+    <div class="field"><label>Sub category</label><input type="text" id="iSubCategory"></div>
+    <div class="field"><label>Description</label><input type="text" id="iDescription"></div>
+    <div class="field"><label>Monthly payment (EGP)</label><input type="number" id="iMonthly"></div>
+    <div class="field"><label>Start date</label><input type="date" id="iStartDate"></div>
+    <div class="field"><label>Finish date</label><input type="date" id="iFinishDate"></div>
+    <div class="field"><label>Status (first month)</label>
+      <select id="iStatus"><option value="Not Paid Yet">Ongoing</option><option value="Done">Closed</option></select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveInstallmentPlan()">Save</button>
+      <button class="btn btn-ghost" onclick="closeInstallmentModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -1614,7 +1653,7 @@ function fmt(n) {
 function updateNavVisibility() {
   const p = activeProfile();
   const ledger = hasLedgerMode(p);
-  document.querySelectorAll('.nav a[data-page="budget"], .tab[data-page="budget"]').forEach(el => {
+  document.querySelectorAll('.nav a[data-page="budget"], .tab[data-page="budget"], .nav a[data-page="installments"], .tab[data-page="installments"]').forEach(el => {
     el.style.display = ledger ? 'none' : '';
   });
   const label = ledger ? 'Transactions' : 'Expenses';
@@ -1649,14 +1688,15 @@ function dashboardPageId() {
 function syncPageForProfileChange() {
   updateNavVisibility();
   const onBudget = document.getElementById('page-budget').classList.contains('on');
+  const onInstallments = document.getElementById('page-installments').classList.contains('on');
   const onDash = document.getElementById('page-dashboard').classList.contains('on');
   const onDashCredit = document.getElementById('page-dashboard-credit').classList.contains('on');
   const onDashSavings = document.getElementById('page-dashboard-savings').classList.contains('on');
-  if ((onBudget && hasLedgerMode()) || onDash || onDashCredit || onDashSavings) { goPage('dashboard'); return true; }
+  if (((onBudget || onInstallments) && hasLedgerMode()) || onDash || onDashCredit || onDashSavings) { goPage('dashboard'); return true; }
   return false;
 }
 function goPage(name) {
-  if (name === 'budget' && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget tab
+  if ((name === 'budget' || name === 'installments') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments tab
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
   const pageId = name === 'dashboard' ? dashboardPageId() : 'page-' + name;
   document.getElementById(pageId).classList.add('on');
@@ -1665,6 +1705,7 @@ function goPage(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'expenses') renderExpensesPage();
   if (name === 'budget') renderBudgetPage();
+  if (name === 'installments') renderInstallmentsPage();
   if (name === 'yearly') renderYearlyPage();
   if (name === 'settings') renderSettingsPage();
   if (name === 'add') renderAddExpensePage();
@@ -2856,7 +2897,7 @@ function renderBudgetPage() {
   let rows = selectedMonths.flatMap(m => budgetForMonth(m));
   if (budgetFilterMode === 'done') rows = rows.filter(b=>b.status==='Done');
   if (budgetFilterMode === 'notpaid') rows = rows.filter(b=>b.status==='Not Paid Yet');
-  rows = rows.slice().sort((a,b) => (a.startDate||'').localeCompare(b.startDate||''));
+  rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
   const body = document.getElementById('budgetTableBody');
   const p = activeProfile();
   body.innerHTML = rows.length ? rows.map(b => {
@@ -2873,7 +2914,7 @@ function renderBudgetPage() {
     if (b.id === editingBudgetId) {
       const subs = p.categories[b.category] || [];
       return `<tr>
-        <td><input type="date" id="editBDate_${b.id}" value="${b.startDate||''}"></td>
+        <td><input type="date" id="editBDate_${b.id}" value="${b.month ? b.month+'-05' : ''}"></td>
         <td><input type="text" id="editBCat_${b.id}" value="${escapeHtml(b.category)}" list="catList" oninput="onEditBudgetCategoryInput('${b.id}')"></td>
         <td><input type="text" id="editBSub_${b.id}" value="${escapeHtml(b.subcategory)}" list="editBSubList_${b.id}"><datalist id="editBSubList_${b.id}">${subs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></td>
         <td><input type="text" id="editBDesc_${b.id}" value="${escapeHtml(b.description)}"></td>
@@ -2897,7 +2938,7 @@ function renderBudgetPage() {
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(monthLabel(b.month))}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="cat-tag">${getCategoryIcon(p, b.category, b.subcategory)} ${escapeHtml(b.category)}</span></td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
-      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
+      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${b.installmentGroupId ? `<span title="Installment ${b.installmentIndex} of ${b.installmentTotal}" style="margin-right:4px;">📆</span>` : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable" onclick="startBudgetEdit('${b.id}')">${fmt(planned)}</td>
       <td class="amt-cell">${fmt(actual)}</td>
       <td class="amt-cell">${fmt(remaining)}</td>
@@ -2933,7 +2974,6 @@ function saveBudgetEdit(id) {
   if (!startVal) { alert('Pick a date.'); return; }
   if (!catVal) { alert('Enter a category.'); return; }
   if (!plannedNum || plannedNum <= 0) { alert('Enter a valid planned amount.'); return; }
-  b.startDate = startVal;
   b.month = monthForDate(startVal, p);
   b.category = catVal;
   b.subcategory = subVal || catVal;
@@ -2963,6 +3003,17 @@ function deleteBudgetLine(id) {
     if (seriesCount > 1 && confirm(`This is part of a recurring series (${seriesCount} months). Delete the whole series instead of just this one month? Cancel to delete just this month.`)) {
       p.budget = p.budget.filter(b => b.recurringGroupId !== line.recurringGroupId);
       saveState();
+      renderBudgetPage();
+      renderDashboard();
+      return;
+    }
+  }
+  if (line.installmentGroupId) {
+    const seriesCount = p.budget.filter(b => b.installmentGroupId === line.installmentGroupId).length;
+    if (seriesCount > 1 && confirm(`This is part of an installment plan (${seriesCount} months). Delete the whole plan instead of just this one month? Cancel to delete just this month.`)) {
+      p.budget = p.budget.filter(b => b.installmentGroupId !== line.installmentGroupId);
+      saveState();
+      renderInstallmentsPage();
       renderBudgetPage();
       renderDashboard();
       return;
@@ -3045,6 +3096,140 @@ function saveBudgetLine() {
   }
   saveState();
   closeBudgetModal();
+  renderBudgetPage();
+  renderDashboard();
+}
+
+/* ============================================================
+   INSTALLMENTS
+   An installment plan is stored as one regular budget line per month
+   (so it counts toward Budget/Dashboard totals like any other budget
+   line), all sharing an installmentGroupId. This tab is a grouped view
+   over those rows: one card per plan, plus a month-by-month total.
+   ============================================================ */
+function openInstallmentModal() {
+  document.getElementById('iCategory').value = '';
+  document.getElementById('iSubCategory').value = '';
+  document.getElementById('iDescription').value = '';
+  document.getElementById('iMonthly').value = '';
+  document.getElementById('iStartDate').value = currentMonth + '-01';
+  document.getElementById('iFinishDate').value = '';
+  document.getElementById('iStatus').value = 'Not Paid Yet';
+  const catList = document.getElementById('catList');
+  catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  document.getElementById('installmentModalBackdrop').classList.add('on');
+}
+function closeInstallmentModal() { document.getElementById('installmentModalBackdrop').classList.remove('on'); }
+// Inclusive count of calendar months between two 'YYYY-MM-DD' dates' own months
+// (e.g. Jan 2026 -> Apr 2026 = 4). Negative/zero means finish is before start.
+function monthsBetweenInclusive(startDate, finishDate) {
+  const [ys, ms] = startDate.split('-').map(Number);
+  const [yf, mf] = finishDate.split('-').map(Number);
+  return (yf - ys) * 12 + (mf - ms) + 1;
+}
+function saveInstallmentPlan() {
+  const category = document.getElementById('iCategory').value.trim();
+  const monthly = Number(document.getElementById('iMonthly').value);
+  const startDate = document.getElementById('iStartDate').value;
+  const finishDate = document.getElementById('iFinishDate').value;
+  if (!category) { alert('Enter a category.'); return; }
+  if (!monthly || monthly <= 0) { alert('Enter a valid monthly payment.'); return; }
+  if (!startDate) { alert('Pick a start date.'); return; }
+  if (!finishDate) { alert('Pick a finish date.'); return; }
+  const totalMonths = monthsBetweenInclusive(startDate, finishDate);
+  if (totalMonths < 1) { alert('Finish date must be on or after the start date.'); return; }
+  if (totalMonths > 240) { alert("That's more than 20 years apart — check your dates."); return; }
+  const subcategory = document.getElementById('iSubCategory').value.trim() || category;
+  const description = document.getElementById('iDescription').value.trim();
+  const status = document.getElementById('iStatus').value;
+  const p = activeProfile();
+  const groupId = 'inst' + Date.now();
+  for (let i = 0; i < totalMonths; i++) {
+    const thisDate = i === 0 ? startDate : addMonthsToDateStr(startDate, i);
+    p.budget.push({
+      id: 'b_inst_' + Date.now() + '_' + i,
+      month: monthForDate(thisDate, p),
+      category, subcategory, description,
+      startDate: thisDate,
+      durationMonths: 1,
+      plannedValue: monthly,
+      status: i === 0 ? status : 'Not Paid Yet',
+      installmentGroupId: groupId,
+      installmentIndex: i + 1,
+      installmentTotal: totalMonths,
+      installmentFinish: finishDate
+    });
+  }
+  if (!p.categories[category]) p.categories[category] = [];
+  if (subcategory && !p.categories[category].includes(subcategory)) p.categories[category].push(subcategory);
+  saveState();
+  closeInstallmentModal();
+  renderInstallmentsPage();
+  renderBudgetPage();
+  renderDashboard();
+}
+function installmentPlans(p) {
+  const groups = {};
+  p.budget.forEach(b => {
+    if (!b.installmentGroupId) return;
+    if (!groups[b.installmentGroupId]) groups[b.installmentGroupId] = [];
+    groups[b.installmentGroupId].push(b);
+  });
+  return Object.keys(groups).map(gid => {
+    const rows = groups[gid].slice().sort((a,b) => (a.installmentIndex||0) - (b.installmentIndex||0));
+    const first = rows[0];
+    const paidCount = rows.filter(r => r.status === 'Done').length;
+    return {
+      groupId: gid, rows, first,
+      category: first.category, subcategory: first.subcategory, description: first.description,
+      monthly: first.plannedValue,
+      startDate: rows[0].startDate,
+      finishDate: first.installmentFinish || rows[rows.length-1].startDate,
+      total: first.installmentTotal || rows.length,
+      paidCount
+    };
+  }).sort((a,b) => (a.startDate||'').localeCompare(b.startDate||''));
+}
+function renderInstallmentsPage() {
+  const p = activeProfile();
+  const plans = installmentPlans(p);
+  const listEl = document.getElementById('installmentPlansList');
+  listEl.innerHTML = plans.length ? plans.map(plan => `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div style="font-weight:600;font-size:14.5px;">${getCategoryIcon(p, plan.category, plan.subcategory)} ${escapeHtml(plan.category)} <span style="font-weight:400;color:var(--txt-dim);">— ${escapeHtml(plan.subcategory)}</span></div>
+          ${plan.description ? `<div style="font-size:12.5px;color:var(--txt-dim);margin-top:2px;">${escapeHtml(plan.description)}</div>` : ''}
+          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; ${monthLabel(plan.startDate.slice(0,7))} → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; ${plan.paidCount} of ${plan.total} paid</div>
+        </div>
+        <button class="del-btn" onclick="deleteInstallmentPlan('${plan.groupId}')" title="Delete plan">✕</button>
+      </div>
+    </div>
+  `).join('') : `<div class="card empty-note" style="text-align:center;">No installment plans yet. Add one to track a payment spread over several months.</div>`;
+
+  const monthly = {};
+  p.budget.forEach(b => {
+    if (!b.installmentGroupId) return;
+    if (!monthly[b.month]) monthly[b.month] = { total: 0, count: 0 };
+    monthly[b.month].total += Number(b.plannedValue || 0);
+    monthly[b.month].count += 1;
+  });
+  const months = Object.keys(monthly).sort();
+  const body = document.getElementById('installmentMonthlyBody');
+  body.innerHTML = months.length ? months.map(m => `
+    <tr>
+      <td>${escapeHtml(monthLabel(m))}</td>
+      <td class="amt-cell">${fmt(monthly[m].total)}</td>
+      <td class="amt-cell">${monthly[m].count}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="3" class="empty-note">No installment plans yet.</td></tr>`;
+}
+function deleteInstallmentPlan(groupId) {
+  if (!confirm('Delete this whole installment plan (all its remaining months)?')) return;
+  const p = activeProfile();
+  p.budget = p.budget.filter(b => b.installmentGroupId !== groupId);
+  saveState();
+  renderInstallmentsPage();
   renderBudgetPage();
   renderDashboard();
 }
