@@ -348,7 +348,7 @@
       box-shadow: 6px 6px 14px #b7bdea, -6px -6px 14px #ffffff; border:none; }
   }
   /* Dropdown/filter panels rendered by JS (month pickers) get the same soft treatment */
-  #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel {
+  #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel, #instMonthFilterPanel {
     box-shadow: var(--shadow-out) !important;
     border-radius: 16px !important;
   }
@@ -619,6 +619,16 @@
         <button data-f="done" onclick="filterBudget('done', this)">Closed</button>
         <button data-f="notpaid" onclick="filterBudget('notpaid', this)">Ongoing</button>
       </div>
+      <div class="budget-filter" style="flex-wrap:wrap;">
+        <input type="text" id="budgetSearch" placeholder="Search description…" oninput="renderBudgetPage()"
+          style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
+        <select id="budgetCatFilter" onchange="onBudgetCatFilterChange()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
+          <option value="">All categories</option>
+        </select>
+        <select id="budgetSubFilter" onchange="renderBudgetPage()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
+          <option value="">All sub categories</option>
+        </select>
+      </div>
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th>Date</th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
@@ -631,10 +641,17 @@
     <div class="page" id="page-installments">
       <div class="top">
         <h1>Installments</h1>
-        <button class="btn btn-primary" onclick="openInstallmentModal()">+ Add installment</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <div style="position:relative;">
+            <button id="instMonthFilterBtn" class="btn btn-ghost" onclick="toggleMonthPanel('inst')" style="font-size:13px;">Select months</button>
+            <div id="instMonthFilterPanel" style="display:none; position:absolute; right:0; top:44px; z-index:30; background:var(--card); border:1px solid var(--card-b); border-radius:12px; padding:10px; width:210px; max-height:280px; overflow-y:auto; box-shadow:0 12px 30px rgba(0,0,0,.12);">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="openInstallmentModal()">+ Add installment</button>
+        </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="l">Installments this month</div><div class="v" id="instKpiTotal">0</div></div>
+        <div class="kpi"><div class="l">Installments due</div><div class="v" id="instKpiTotal">0</div></div>
         <div class="kpi"><div class="l">Paid</div><div class="v pos" id="instKpiPaid">0</div></div>
         <div class="kpi"><div class="l">Remaining</div><div class="v warn" id="instKpiRemaining">0</div></div>
       </div>
@@ -1793,7 +1810,7 @@ function toggleMonthPanel(prefix) {
   panel.style.display = opening ? 'block' : 'none';
 }
 document.addEventListener('click', (e) => {
-  ['dash','exp','budget'].forEach(prefix => {
+  ['dash','exp','budget','inst'].forEach(prefix => {
     const panel = document.getElementById(prefix + 'MonthFilterPanel');
     const btn = document.getElementById(prefix + 'MonthFilterBtn');
     if (!panel || panel.style.display === 'none') return;
@@ -1831,7 +1848,7 @@ function onMonthCheck(m, checked) {
   renderMonthDependentPages();
 }
 function syncMonthPickers() {
-  ['dash','exp','budget'].forEach(prefix => {
+  ['dash','exp','budget','inst'].forEach(prefix => {
     updateMonthBtnLabel(prefix);
     const panel = document.getElementById(prefix + 'MonthFilterPanel');
     if (panel && panel.style.display === 'block') populateMonthPanel(prefix);
@@ -1850,6 +1867,7 @@ function renderMonthDependentPages() {
   renderDashboard();
   if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
   if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
+  if (document.getElementById('page-installments').classList.contains('on')) renderInstallmentsPage();
 }
 
 function populateDashFilters(buds) {
@@ -2824,7 +2842,7 @@ function saveExpenseEdit(id) {
   const valNum = Number(document.getElementById('editVal_' + id).value);
   if (!dateVal) { alert('Pick a date.'); return; }
   if (!catVal) { alert('Enter a category.'); return; }
-  if (!valNum || valNum <= 0) { alert('Enter a valid amount.'); return; }
+  if (isNaN(valNum) || valNum === 0) { alert('Enter a valid amount.'); return; }
   e.date = dateVal;
   e.month = monthForDate(dateVal, p);
   e.category = catVal;
@@ -2895,16 +2913,48 @@ function filterBudget(mode, btn) {
   btn.classList.add('on');
   renderBudgetPage();
 }
+function populateBudgetFilters() {
+  const catSel = document.getElementById('budgetCatFilter');
+  const prevCat = catSel.value;
+  const p = activeProfile();
+  const catList = Array.from(new Set(p.budget.map(b => b.category))).sort();
+  catSel.innerHTML = '<option value="">All categories</option>' +
+    catList.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  catSel.value = catList.includes(prevCat) ? prevCat : '';
+  populateBudgetSubFilter();
+}
+function populateBudgetSubFilter() {
+  const cat = document.getElementById('budgetCatFilter').value;
+  const p = activeProfile();
+  const subSel = document.getElementById('budgetSubFilter');
+  const prevSub = subSel.value;
+  const subs = Array.from(new Set(p.budget.filter(b => !cat || b.category === cat).map(b => b.subcategory))).sort();
+  subSel.innerHTML = '<option value="">All sub categories</option>' +
+    subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  subSel.value = subs.includes(prevSub) ? prevSub : '';
+}
+function onBudgetCatFilterChange() {
+  populateBudgetSubFilter();
+  renderBudgetPage();
+}
 function renderBudgetPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('budget');
   populateCatListDatalist();
+  populateBudgetFilters();
+  const catFilter = document.getElementById('budgetCatFilter').value;
+  const subFilter = document.getElementById('budgetSubFilter').value;
+  const search = document.getElementById('budgetSearch').value.trim().toLowerCase();
   let rows = selectedMonths.flatMap(m => budgetForMonth(m));
   if (budgetFilterMode === 'done') rows = rows.filter(b=>b.status==='Done');
   if (budgetFilterMode === 'notpaid') rows = rows.filter(b=>b.status==='Not Paid Yet');
+  if (catFilter) rows = rows.filter(b => b.category === catFilter);
+  if (subFilter) rows = rows.filter(b => b.subcategory === subFilter);
+  if (search) rows = rows.filter(b => (b.description||'').toLowerCase().includes(search));
   rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
   const body = document.getElementById('budgetTableBody');
   const p = activeProfile();
+  const instIds = new Set(installmentSourceRows(p).map(b => b.id));
   body.innerHTML = rows.length ? rows.map(b => {
     const actual = actualForBudgetLine(b);
     const planned = effectivePlanned(b);
@@ -2943,7 +2993,7 @@ function renderBudgetPage() {
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(monthLabel(b.month))}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="cat-tag">${getCategoryIcon(p, b.category, b.subcategory)} ${escapeHtml(b.category)}</span></td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
-      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${(b.startDate && !b.recurringGroupId) ? '<span title="Installment (has a start date)" style="margin-right:4px;">📆</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
+      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${instIds.has(b.id) ? '<span title="Installment" style="margin-right:4px;">📆</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable" onclick="startBudgetEdit('${b.id}')">${fmt(planned)}</td>
       <td class="amt-cell">${fmt(actual)}</td>
       <td class="amt-cell">${fmt(remaining)}</td>
@@ -3177,49 +3227,79 @@ function saveInstallmentPlan() {
 // workbook: Start Date/Duration are only ever filled in for installment
 // lines). Plain recurring bills also carry a startDate but are excluded via
 // recurringGroupId — those are indefinite bills, not a fixed payment plan.
-// Rows created by "+ Add installment" share an installmentGroupId; older
-// rows (Excel import, or added before this tab existed) are grouped by a
-// matching category/description/start date/duration signature instead.
-function installmentSourceRows(p) {
-  return p.budget.filter(b => b.startDate && !b.recurringGroupId);
+// Rows created by "+ Add installment" share an installmentGroupId. Older
+// rows (Excel import, or added before this tab existed) are grouped by
+// category/sub-category/description instead — and once any row in that
+// group has a Start Date (anchoring the combo as an installment), every
+// row sharing that category/sub/description is pulled in, even months
+// whose own row never got a Start Date (common when only the first month
+// of a series in the spreadsheet carried one, e.g. a paid-off month whose
+// row was archived and re-added without it).
+function installmentPlanGroups(p) {
+  const groups = {};
+  const taggedIds = new Set();
+  p.budget.forEach(b => {
+    if (!b.installmentGroupId) return;
+    if (!groups[b.installmentGroupId]) groups[b.installmentGroupId] = { rows: [], legacy: false };
+    groups[b.installmentGroupId].rows.push(b);
+    taggedIds.add(b.id);
+  });
+  const candidates = {};
+  p.budget.forEach(b => {
+    if (taggedIds.has(b.id) || b.recurringGroupId) return;
+    const key = 'legacy|' + b.category + '|' + b.subcategory + '|' + (b.description||'');
+    if (!candidates[key]) candidates[key] = [];
+    candidates[key].push(b);
+  });
+  Object.keys(candidates).forEach(key => {
+    const rows = candidates[key];
+    if (!rows.some(r => r.startDate)) return; // nothing anchors this combo as an installment
+    groups[key] = { rows, legacy: true };
+  });
+  return groups;
 }
 function installmentPlans(p) {
-  const groups = {};
-  installmentSourceRows(p).forEach(b => {
-    const key = b.installmentGroupId ||
-      ('legacy|' + b.category + '|' + b.subcategory + '|' + (b.description||'') + '|' + b.startDate + '|' + (b.durationMonths||1));
-    if (!groups[key]) groups[key] = { rows: [], legacy: !b.installmentGroupId };
-    groups[key].rows.push(b);
-  });
+  const groups = installmentPlanGroups(p);
   return Object.keys(groups).map(key => {
     const g = groups[key];
     const rows = g.rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
-    const first = rows[0];
+    const anchor = rows.find(r => r.startDate) || rows[0];
+    const anchorStart = anchor.startDate || (anchor.month + '-05');
     const paidCount = rows.filter(r => r.status === 'Done').length;
-    const total = g.legacy ? Math.max(first.durationMonths || 1, rows.length) : (first.installmentTotal || rows.length);
+    const total = g.legacy ? Math.max(anchor.durationMonths || 1, rows.length) : (anchor.installmentTotal || rows.length);
     const finishDate = g.legacy
-      ? (first.durationMonths && first.durationMonths > 1 ? addMonthsToDateStr(first.startDate, first.durationMonths - 1) : first.startDate)
-      : (first.installmentFinish || rows[rows.length-1].startDate);
+      ? (anchor.durationMonths && anchor.durationMonths > 1 ? addMonthsToDateStr(anchorStart, anchor.durationMonths - 1) : anchorStart)
+      : (anchor.installmentFinish || rows[rows.length-1].startDate || (rows[rows.length-1].month + '-05'));
     return {
       key, rows, legacy: g.legacy,
-      category: first.category, subcategory: first.subcategory, description: first.description,
-      monthly: first.plannedValue,
-      startDate: first.startDate,
-      finishDate, total, paidCount
+      category: anchor.category, subcategory: anchor.subcategory, description: anchor.description,
+      monthly: anchor.plannedValue,
+      startDate: anchorStart,
+      finishDate, total, paidCount,
+      remaining: total - paidCount
     };
-  }).sort((a,b) => (a.startDate||'').localeCompare(b.startDate||''));
+  // Fewest months left to pay first; plans already finished (remaining 0)
+  // settle at the very top of that too, ties broken by whichever finishes soonest.
+  }).sort((a,b) => (a.remaining - b.remaining) || (a.finishDate||'').localeCompare(b.finishDate||''));
+}
+function installmentSourceRows(p) {
+  const ids = new Set();
+  installmentPlans(p).forEach(plan => plan.rows.forEach(r => ids.add(r.id)));
+  return p.budget.filter(b => ids.has(b.id));
 }
 let currentInstallmentPlans = [];
 function renderInstallmentsPage() {
+  ensureSelectedMonths();
+  updateMonthBtnLabel('inst');
   const p = activeProfile();
   currentInstallmentPlans = installmentPlans(p);
 
-  const thisMonthRows = installmentSourceRows(p).filter(b => b.month === currentMonth);
-  const thisMonthTotal = thisMonthRows.reduce((s,b) => s + Number(b.plannedValue || 0), 0);
-  const thisMonthPaid = thisMonthRows.filter(b => b.status === 'Done').reduce((s,b) => s + Number(b.plannedValue || 0), 0);
-  document.getElementById('instKpiTotal').textContent = fmt(thisMonthTotal);
-  document.getElementById('instKpiPaid').textContent = fmt(thisMonthPaid);
-  document.getElementById('instKpiRemaining').textContent = fmt(thisMonthTotal - thisMonthPaid);
+  const selRows = installmentSourceRows(p).filter(b => selectedMonths.includes(b.month));
+  const selTotal = selRows.reduce((s,b) => s + Number(b.plannedValue || 0), 0);
+  const selPaid = selRows.filter(b => b.status === 'Done').reduce((s,b) => s + Number(b.plannedValue || 0), 0);
+  document.getElementById('instKpiTotal').textContent = fmt(selTotal);
+  document.getElementById('instKpiPaid').textContent = fmt(selPaid);
+  document.getElementById('instKpiRemaining').textContent = fmt(selTotal - selPaid);
 
   const listEl = document.getElementById('installmentPlansList');
   listEl.innerHTML = currentInstallmentPlans.length ? currentInstallmentPlans.map((plan, idx) => `
@@ -3236,7 +3316,7 @@ function renderInstallmentsPage() {
   `).join('') : `<div class="card empty-note" style="text-align:center;">No installment plans yet. Add one to track a payment spread over several months.</div>`;
 
   const monthly = {};
-  installmentSourceRows(p).forEach(b => {
+  selRows.forEach(b => {
     if (!monthly[b.month]) monthly[b.month] = { total: 0, count: 0 };
     monthly[b.month].total += Number(b.plannedValue || 0);
     monthly[b.month].count += 1;
@@ -3249,7 +3329,7 @@ function renderInstallmentsPage() {
       <td class="amt-cell">${fmt(monthly[m].total)}</td>
       <td class="amt-cell">${monthly[m].count}</td>
     </tr>
-  `).join('') : `<tr><td colspan="3" class="empty-note">No installment plans yet.</td></tr>`;
+  `).join('') : `<tr><td colspan="3" class="empty-note">${selectedMonths.length ? 'No installments in the selected months.' : 'Select at least one month above.'}</td></tr>`;
 }
 function installmentSchedule(startDate, total, p) {
   const slots = [];
