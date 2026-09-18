@@ -2938,7 +2938,7 @@ function renderBudgetPage() {
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(monthLabel(b.month))}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="cat-tag">${getCategoryIcon(p, b.category, b.subcategory)} ${escapeHtml(b.category)}</span></td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
-      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${b.installmentGroupId ? `<span title="Installment ${b.installmentIndex} of ${b.installmentTotal}" style="margin-right:4px;">📆</span>` : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
+      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${(b.startDate && !b.recurringGroupId) ? '<span title="Installment (has a start date)" style="margin-right:4px;">📆</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable" onclick="startBudgetEdit('${b.id}')">${fmt(planned)}</td>
       <td class="amt-cell">${fmt(actual)}</td>
       <td class="amt-cell">${fmt(remaining)}</td>
@@ -3168,33 +3168,48 @@ function saveInstallmentPlan() {
   renderBudgetPage();
   renderDashboard();
 }
+// Any budget line with a Start Date is an installment (matches the source
+// workbook: Start Date/Duration are only ever filled in for installment
+// lines). Plain recurring bills also carry a startDate but are excluded via
+// recurringGroupId — those are indefinite bills, not a fixed payment plan.
+// Rows created by "+ Add installment" share an installmentGroupId; older
+// rows (Excel import, or added before this tab existed) are grouped by a
+// matching category/description/start date/duration signature instead.
+function installmentSourceRows(p) {
+  return p.budget.filter(b => b.startDate && !b.recurringGroupId);
+}
 function installmentPlans(p) {
   const groups = {};
-  p.budget.forEach(b => {
-    if (!b.installmentGroupId) return;
-    if (!groups[b.installmentGroupId]) groups[b.installmentGroupId] = [];
-    groups[b.installmentGroupId].push(b);
+  installmentSourceRows(p).forEach(b => {
+    const key = b.installmentGroupId ||
+      ('legacy|' + b.category + '|' + b.subcategory + '|' + (b.description||'') + '|' + b.startDate + '|' + (b.durationMonths||1));
+    if (!groups[key]) groups[key] = { rows: [], legacy: !b.installmentGroupId };
+    groups[key].rows.push(b);
   });
-  return Object.keys(groups).map(gid => {
-    const rows = groups[gid].slice().sort((a,b) => (a.installmentIndex||0) - (b.installmentIndex||0));
+  return Object.keys(groups).map(key => {
+    const g = groups[key];
+    const rows = g.rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
     const first = rows[0];
     const paidCount = rows.filter(r => r.status === 'Done').length;
+    const total = g.legacy ? Math.max(first.durationMonths || 1, rows.length) : (first.installmentTotal || rows.length);
+    const finishDate = g.legacy
+      ? (first.durationMonths && first.durationMonths > 1 ? addMonthsToDateStr(first.startDate, first.durationMonths - 1) : first.startDate)
+      : (first.installmentFinish || rows[rows.length-1].startDate);
     return {
-      groupId: gid, rows, first,
+      key, rows, legacy: g.legacy,
       category: first.category, subcategory: first.subcategory, description: first.description,
       monthly: first.plannedValue,
-      startDate: rows[0].startDate,
-      finishDate: first.installmentFinish || rows[rows.length-1].startDate,
-      total: first.installmentTotal || rows.length,
-      paidCount
+      startDate: first.startDate,
+      finishDate, total, paidCount
     };
   }).sort((a,b) => (a.startDate||'').localeCompare(b.startDate||''));
 }
+let currentInstallmentPlans = [];
 function renderInstallmentsPage() {
   const p = activeProfile();
-  const plans = installmentPlans(p);
+  currentInstallmentPlans = installmentPlans(p);
   const listEl = document.getElementById('installmentPlansList');
-  listEl.innerHTML = plans.length ? plans.map(plan => `
+  listEl.innerHTML = currentInstallmentPlans.length ? currentInstallmentPlans.map((plan, idx) => `
     <div class="card" style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div>
@@ -3202,14 +3217,13 @@ function renderInstallmentsPage() {
           ${plan.description ? `<div style="font-size:12.5px;color:var(--txt-dim);margin-top:2px;">${escapeHtml(plan.description)}</div>` : ''}
           <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; ${monthLabel(plan.startDate.slice(0,7))} → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; ${plan.paidCount} of ${plan.total} paid</div>
         </div>
-        <button class="del-btn" onclick="deleteInstallmentPlan('${plan.groupId}')" title="Delete plan">✕</button>
+        <button class="del-btn" onclick="deleteInstallmentPlan(${idx})" title="Delete plan">✕</button>
       </div>
     </div>
   `).join('') : `<div class="card empty-note" style="text-align:center;">No installment plans yet. Add one to track a payment spread over several months.</div>`;
 
   const monthly = {};
-  p.budget.forEach(b => {
-    if (!b.installmentGroupId) return;
+  installmentSourceRows(p).forEach(b => {
     if (!monthly[b.month]) monthly[b.month] = { total: 0, count: 0 };
     monthly[b.month].total += Number(b.plannedValue || 0);
     monthly[b.month].count += 1;
@@ -3224,10 +3238,13 @@ function renderInstallmentsPage() {
     </tr>
   `).join('') : `<tr><td colspan="3" class="empty-note">No installment plans yet.</td></tr>`;
 }
-function deleteInstallmentPlan(groupId) {
-  if (!confirm('Delete this whole installment plan (all its remaining months)?')) return;
+function deleteInstallmentPlan(idx) {
+  const plan = currentInstallmentPlans[idx];
+  if (!plan) return;
+  if (!confirm('Delete this whole installment plan (all its months)?')) return;
+  const ids = new Set(plan.rows.map(r => r.id));
   const p = activeProfile();
-  p.budget = p.budget.filter(b => b.installmentGroupId !== groupId);
+  p.budget = p.budget.filter(b => !ids.has(b.id));
   saveState();
   renderInstallmentsPage();
   renderBudgetPage();
