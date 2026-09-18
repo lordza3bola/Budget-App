@@ -3308,7 +3308,7 @@ function renderInstallmentsPage() {
         <div>
           <div style="font-weight:600;font-size:14.5px;">${getCategoryIcon(p, plan.category, plan.subcategory)} ${escapeHtml(plan.category)} <span style="font-weight:400;color:var(--txt-dim);">— ${escapeHtml(plan.subcategory)}</span></div>
           ${plan.description ? `<div style="font-size:12.5px;color:var(--txt-dim);margin-top:2px;">${escapeHtml(plan.description)}</div>` : ''}
-          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; <input type="date" value="${plan.startDate}" onchange="setInstallmentStartDate(${idx}, this.value)" style="background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 5px;font-size:12px;color:var(--txt);"> → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; <input type="number" min="0" max="${plan.total}" value="${plan.paidCount}" onchange="setInstallmentPaidCount(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> of ${plan.total} paid</div>
+          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; <input type="date" value="${plan.startDate}" onchange="setInstallmentStartDate(${idx}, this.value)" style="background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 5px;font-size:12px;color:var(--txt);"> → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; <input type="number" min="0" max="${plan.total}" value="${plan.paidCount}" onchange="setInstallmentPaidCount(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> of <input type="number" min="1" max="240" value="${plan.total}" onchange="setInstallmentTotal(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> paid</div>
         </div>
         <button class="del-btn" onclick="deleteInstallmentPlan(${idx})" title="Delete plan">✕</button>
       </div>
@@ -3347,13 +3347,14 @@ function installmentSchedule(startDate, total, p) {
 // forward. Status is then set purely from paidCount: the first paidCount
 // months in date order are Done, everything after is Not Paid Yet — so
 // editing paidCount is what pushes the next unpaid one into "upcoming".
-function rebuildInstallmentPlan(idx, { startDate, paidCount } = {}) {
+function rebuildInstallmentPlan(idx, { startDate, paidCount, total } = {}) {
   const plan = currentInstallmentPlans[idx];
   if (!plan) return;
   const p = activeProfile();
   const newStart = startDate || plan.startDate;
-  const newPaidCount = Math.max(0, Math.min(plan.total, Math.round(Number(paidCount != null ? paidCount : plan.paidCount))));
-  const slots = installmentSchedule(newStart, plan.total, p);
+  const newTotal = Math.max(1, Math.min(240, Math.round(Number(total != null ? total : plan.total)) || plan.total));
+  const newPaidCount = Math.max(0, Math.min(newTotal, Math.round(Number(paidCount != null ? paidCount : plan.paidCount))));
+  const slots = installmentSchedule(newStart, newTotal, p);
   const existingByMonth = {};
   plan.rows.forEach(r => { existingByMonth[r.month] = r; });
   const groupId = plan.rows[0].installmentGroupId || ('inst' + Date.now());
@@ -3365,12 +3366,12 @@ function rebuildInstallmentPlan(idx, { startDate, paidCount } = {}) {
       month: slot.month,
       category: plan.category, subcategory: plan.subcategory, description: plan.description,
       startDate: slot.date,
-      durationMonths: 1,
+      durationMonths: newTotal,
       plannedValue: existing ? existing.plannedValue : plan.monthly,
       status: slot.index < newPaidCount ? 'Done' : 'Not Paid Yet',
       installmentGroupId: groupId,
       installmentIndex: slot.index + 1,
-      installmentTotal: plan.total,
+      installmentTotal: newTotal,
       installmentFinish: slots[slots.length - 1].date
     };
   });
@@ -3382,6 +3383,7 @@ function rebuildInstallmentPlan(idx, { startDate, paidCount } = {}) {
 }
 function setInstallmentPaidCount(idx, val) { rebuildInstallmentPlan(idx, { paidCount: val }); }
 function setInstallmentStartDate(idx, val) { if (!val) return; rebuildInstallmentPlan(idx, { startDate: val }); }
+function setInstallmentTotal(idx, val) { rebuildInstallmentPlan(idx, { total: val }); }
 function deleteInstallmentPlan(idx) {
   const plan = currentInstallmentPlans[idx];
   if (!plan) return;
