@@ -619,6 +619,7 @@
         <button data-f="done" onclick="filterBudget('done', this)">Closed</button>
         <button data-f="notpaid" onclick="filterBudget('notpaid', this)">Ongoing</button>
       </div>
+      <div id="budgetTotalLine" style="font-size:13px; color:var(--txt-dim); margin-bottom:10px;"></div>
       <div class="budget-filter" style="flex-wrap:wrap;">
         <input type="text" id="budgetSearch" placeholder="Search description…" oninput="renderBudgetPage()"
           style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
@@ -2956,6 +2957,8 @@ function renderBudgetPage() {
     (b.subcategory||'').toLowerCase().includes(search)
   );
   rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
+  const plannedSum = rows.reduce((s,b) => s + Number(b.plannedValue||0), 0);
+  document.getElementById('budgetTotalLine').textContent = `${rows.length} budget line${rows.length===1?'':'s'} · Total planned ${fmt(plannedSum)} EGP`;
   const body = document.getElementById('budgetTableBody');
   const p = activeProfile();
   const instIds = new Set(installmentSourceRows(p).map(b => b.id));
