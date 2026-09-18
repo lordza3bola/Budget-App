@@ -2031,6 +2031,7 @@ function renderDashboard() {
   if (isSavings()) { renderSavingsDashboard(); return; }
   ensureSelectedMonths();
   updateMonthBtnLabel('dash');
+  syncInstallmentPaidStatus(activeProfile());
   const selMonths = selectedMonths;
   const latestSelected = selMonths.length ? selMonths[selMonths.length - 1] : currentMonth;
 
@@ -2946,6 +2947,7 @@ function onBudgetCatFilterChange() {
 function renderBudgetPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('budget');
+  syncInstallmentPaidStatus(activeProfile());
   populateCatListDatalist();
   populateBudgetFilters();
   const catFilter = document.getElementById('budgetCatFilter').value;
@@ -3299,6 +3301,22 @@ function installmentSourceRows(p) {
   installmentPlans(p).forEach(plan => plan.rows.forEach(r => ids.add(r.id)));
   return p.budget.filter(b => ids.has(b.id));
 }
+// If an installment row has actually been paid in full (real expenses entered
+// for that month/category add up to at least its planned value), treat it as
+// Done automatically — recording the real payment is what marks it paid,
+// without a separate manual status flip. Only ever upgrades Not Paid Yet ->
+// Done; never reopens a line someone closed manually with less spent than
+// planned, and never touches an underpaid line.
+function syncInstallmentPaidStatus(p) {
+  let changed = false;
+  installmentSourceRows(p).forEach(r => {
+    if (r.status !== 'Done' && actualForBudgetLine(r) >= Number(r.plannedValue||0) - 0.01) {
+      r.status = 'Done';
+      changed = true;
+    }
+  });
+  if (changed) saveState();
+}
 let currentInstallmentPlans = [];
 let installmentFilterMode = 'ongoing';
 function filterInstallments(mode, btn) {
@@ -3311,6 +3329,7 @@ function renderInstallmentsPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('inst');
   const p = activeProfile();
+  syncInstallmentPaidStatus(p);
   currentInstallmentPlans = installmentPlans(p);
 
   // The month picker only ever drives these three numbers and the monthly
