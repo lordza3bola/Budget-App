@@ -153,6 +153,20 @@
   .chip.sync-off { background: var(--card-b); color: var(--txt-dim); }
   .chip.sync-err { background: var(--red-soft); color: var(--red); }
   .empty-note { font-size: 12.5px; color: var(--txt-dim2); padding: 8px 0; }
+  /* ===== Calendar ===== */
+  .cal-dow-row { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px; }
+  .cal-dow { font-size:10.5px; font-weight:700; color:var(--txt-dim2); text-align:center; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .cal-cell { background:var(--card); border-radius:12px; min-height:74px; padding:6px 5px; box-shadow:var(--shadow-out-sm); cursor:pointer; display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+  .cal-cell.off { opacity:.32; box-shadow:none; cursor:default; }
+  .cal-cell.today .cal-daynum { color:#fff; background:var(--blue); border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+  .cal-cell.sel { box-shadow: var(--shadow-out-sm), 0 0 0 2px var(--blue) inset; }
+  .cal-daynum { font-size:11.5px; font-weight:700; color:var(--txt-dim); width:18px; }
+  .cal-evt { font-size:9px; font-weight:700; padding:1.5px 5px; border-radius:7px; background:var(--blue-soft); color:var(--blue); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cal-evt.paid { background:var(--card-b); color:var(--txt-dim2); }
+  .cal-evt.due { background:var(--red-soft); color:var(--red); }
+  .cal-evt.info { background:var(--amber-soft); color:var(--amber); }
+  .cal-more { font-size:9px; color:var(--txt-dim2); font-weight:700; }
 
   /* Recent expenses table */
   .table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -338,6 +352,10 @@
        neatly rather than wrapping awkwardly or crowding the edges. */
     #settingsTabs { row-gap: 8px; }
     #settingsTabs button { padding: 7px 11px; font-size: 12px; }
+    /* Calendar grid gets tighter cells on narrow screens so 7 columns keep breathing room */
+    .cal-cell { min-height: 54px; padding: 5px 4px; }
+    .cal-evt { font-size: 8px; padding: 1px 4px; }
+    .cal-daynum { font-size: 10.5px; }
     .tabbar {
       display:flex; justify-content:space-around; align-items:center;
       position: fixed; bottom:0; left:0; right:0;
@@ -345,7 +363,8 @@
       box-shadow: 0 -4px 14px #cdd2de;
       padding: 10px 0 20px; z-index: 40;
     }
-    .tab { display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; font-size:10px; font-weight:700; color:var(--txt-dim2); background:none; border:none; }
+    /* 6 buttons now sit in the bar (Calendar added) — trim gap/font slightly so it stays uncrowded */
+    .tab { display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; font-size:9.5px; font-weight:700; color:var(--txt-dim2); background:none; border:none; padding:0 2px; }
     .tab.on { color: var(--blue); }
     .tab svg { width:20px; height:20px; }
     .fab {
@@ -378,6 +397,7 @@
       <a data-page="expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="navExpensesLabel">Expenses</span></a>
       <a data-page="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</a>
       <a data-page="installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</a>
+      <a data-page="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>Calendar</a>
       <a data-page="yearly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 2v6M16 2v6"/></svg>Yearly</a>
       <a data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</a>
     </div>
@@ -686,6 +706,34 @@
       </div>
     </div>
 
+    <!-- CALENDAR -->
+    <div class="page" id="page-calendar">
+      <div class="top">
+        <h1>Calendar</h1>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn btn-ghost" style="padding:6px 11px;" onclick="shiftCalMonth(-1)">‹</button>
+          <div class="sub" id="calMonthLabel">—</div>
+          <button class="btn btn-ghost" style="padding:6px 11px;" onclick="shiftCalMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="cal-dow-row">
+          <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <h3 id="calDayDetailTitle">Tap a day to see what's due</h3>
+          <div id="calDayDetail"><div class="empty-note">Nothing selected.</div></div>
+        </div>
+        <div class="card">
+          <h3>Upcoming</h3>
+          <div id="calUpcomingList"><div class="empty-note">Nothing coming up.</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- YEARLY -->
     <div class="page" id="page-yearly">
       <div class="top">
@@ -824,6 +872,7 @@
   <button class="tab" data-page="expenses" onclick="goPage('expenses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="tabExpensesLabel">Expenses</span></button>
   <button class="tab" data-page="budget" onclick="goPage('budget')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</button>
   <button class="tab" data-page="installments" onclick="goPage('installments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</button>
+  <button class="tab" data-page="calendar" onclick="goPage('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>Calendar</button>
   <button class="tab" data-page="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</button>
 </div>
 <button class="fab" onclick="goPage('add')">+</button>
@@ -1747,6 +1796,7 @@ function goPage(name) {
   if (name === 'expenses') renderExpensesPage();
   if (name === 'budget') renderBudgetPage();
   if (name === 'installments') renderInstallmentsPage();
+  if (name === 'calendar') renderCalendarPage();
   if (name === 'yearly') renderYearlyPage();
   if (name === 'settings') renderSettingsPage();
   if (name === 'add') renderAddExpensePage();
@@ -3484,6 +3534,125 @@ function renderYearlyPage() {
 }
 
 /* ============================================================
+   CALENDAR
+   A month grid of actual due dates. Every budget line already carries
+   a real startDate (set when it's created — see saveBudgetLine /
+   installment plans / recurring series / Excel import), so this reads
+   straight off that instead of re-deriving dates from scratch. Credit
+   card profiles have no budget lines, so they get two synthetic
+   recurring events instead (statement close, payment due). Savings
+   profiles have neither — the grid just renders empty for them.
+   Uses its own month pointer (calMonth), independent of the shared
+   Dashboard/Expenses/Budget/Installments month filter, so switching
+   tabs never fights over which month is showing.
+   ============================================================ */
+let calMonth = null;
+let calSelectedDate = null;
+function ensureCalMonth() { if (!calMonth) calMonth = currentMonth; }
+function shiftCalMonth(delta) {
+  ensureCalMonth();
+  calMonth = delta > 0 ? nextMonthOf(calMonth) : prevMonthOf(calMonth);
+  calSelectedDate = null;
+  renderCalendarPage();
+}
+// Events for month m ('YYYY-MM'), grouped by day-of-month ('01'..'31').
+function calendarEventsForMonth(m) {
+  const p = activeProfile();
+  const byDay = {};
+  const push = (dateStr, evt) => {
+    if (!dateStr || dateStr.slice(0,7) !== m) return;
+    const day = dateStr.slice(8,10);
+    (byDay[day] = byDay[day] || []).push(evt);
+  };
+  if (isCredit(p)) {
+    const [y, mo] = m.split('-').map(Number);
+    const statementDate = new Date(y, mo-1, clampDay(p.statementDay));
+    push(isoDate(statementDate), { label: 'Statement closes', type: 'info', icon: '📄' });
+    push(isoDate(statementDueDate(p, statementDate)), { label: 'Card payment due', type: 'due', icon: '💳' });
+  } else if (!isSavings(p)) {
+    p.budget.forEach(b => {
+      push(b.startDate, {
+        label: b.description || b.subcategory || b.category,
+        amount: Number(b.plannedValue||0),
+        type: b.status === 'Done' ? 'paid' : 'due',
+        icon: getCategoryIcon(p, b.category, b.subcategory),
+        id: b.id
+      });
+    });
+  }
+  return byDay;
+}
+function renderCalendarPage() {
+  ensureCalMonth();
+  document.getElementById('calMonthLabel').textContent = monthLabel(calMonth);
+  const [y, mo] = calMonth.split('-').map(Number);
+  const firstDow = new Date(y, mo-1, 1).getDay();
+  const daysInMonth = new Date(y, mo, 0).getDate();
+  const daysInPrevMonth = new Date(y, mo-1, 0).getDate();
+  const byDay = calendarEventsForMonth(calMonth);
+  const todayStr = isoDate(new Date());
+  let cells = '';
+  for (let i = firstDow - 1; i >= 0; i--) {
+    cells += `<div class="cal-cell off"><div class="cal-daynum">${daysInPrevMonth - i}</div></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = y + '-' + String(mo).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const evts = byDay[String(d).padStart(2,'0')] || [];
+    const shown = evts.slice(0,2);
+    const evtHtml = shown.map(e => `<div class="cal-evt ${e.type}">${e.icon||''} ${escapeHtml(e.label)}</div>`).join('');
+    const more = evts.length > 2 ? `<div class="cal-more">+${evts.length-2} more</div>` : '';
+    cells += `<div class="cal-cell${dateStr===todayStr?' today':''}${dateStr===calSelectedDate?' sel':''}" onclick="selectCalDay('${dateStr}')">
+      <div class="cal-daynum">${d}</div>${evtHtml}${more}
+    </div>`;
+  }
+  const trailing = (7 - ((firstDow + daysInMonth) % 7)) % 7;
+  for (let d = 1; d <= trailing; d++) {
+    cells += `<div class="cal-cell off"><div class="cal-daynum">${d}</div></div>`;
+  }
+  document.getElementById('calGrid').innerHTML = cells;
+  renderCalDayDetail();
+  renderCalUpcoming();
+}
+function selectCalDay(dateStr) {
+  calSelectedDate = (calSelectedDate === dateStr) ? null : dateStr;
+  renderCalendarPage();
+}
+function renderCalDayDetail() {
+  const el = document.getElementById('calDayDetail');
+  const titleEl = document.getElementById('calDayDetailTitle');
+  if (!calSelectedDate) {
+    titleEl.textContent = "Tap a day to see what's due";
+    el.innerHTML = '<div class="empty-note">Nothing selected.</div>';
+    return;
+  }
+  const evts = calendarEventsForMonth(calMonth)[calSelectedDate.slice(8,10)] || [];
+  titleEl.textContent = new Date(calSelectedDate + 'T00:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+  el.innerHTML = evts.length ? evts.map(e => `
+    <div class="stat-row">
+      <span class="l">${e.icon||''} ${escapeHtml(e.label)}</span>
+      <span class="v" style="font-size:13px;">${e.amount!==undefined ? fmt(e.amount) : ''}</span>
+    </div>`).join('') : '<div class="empty-note">Nothing due this day.</div>';
+}
+function renderCalUpcoming() {
+  const el = document.getElementById('calUpcomingList');
+  const p = activeProfile();
+  const todayStr = isoDate(new Date());
+  let items = [];
+  if (!isSavings(p)) {
+    [calMonth, nextMonthOf(calMonth)].forEach(m => {
+      const byDay = calendarEventsForMonth(m);
+      Object.keys(byDay).forEach(day => byDay[day].forEach(e => items.push({ date: m + '-' + day, ...e })));
+    });
+  }
+  items = items.filter(e => e.date >= todayStr && e.type !== 'paid').sort((a,b) => a.date.localeCompare(b.date)).slice(0,6);
+  el.innerHTML = items.length ? items.map(e => `
+    <div class="stat-row">
+      <span class="l">${e.icon||''} ${escapeHtml(e.label)} <span style="color:var(--txt-dim2);">· ${new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></span>
+      <span class="v" style="font-size:13px;">${e.amount!==undefined ? fmt(e.amount) : ''}</span>
+    </div>`).join('') : '<div class="empty-note">Nothing coming up.</div>';
+}
+
+/* ============================================================
    SETTINGS PAGE
    ============================================================ */
 let settingsTab = 'income';
@@ -4130,6 +4299,7 @@ function renderAll() {
   renderDashboard();
   if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
   if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
+  if (document.getElementById('page-calendar').classList.contains('on')) renderCalendarPage();
   if (document.getElementById('page-yearly').classList.contains('on')) renderYearlyPage();
   if (document.getElementById('page-settings').classList.contains('on')) renderSettingsPage();
 }
