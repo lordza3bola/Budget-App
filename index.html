@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Ledger — Personal Budget</title>
+<!-- PWA: installable app shell, standalone launch, offline-capable via sw.js -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="theme-color" content="#6c7bf5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Budget">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
@@ -157,7 +165,7 @@
   .cal-dow-row { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px; }
   .cal-dow { font-size:10.5px; font-weight:700; color:var(--txt-dim2); text-align:center; }
   .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
-  .cal-cell { background:var(--card); border-radius:12px; min-height:74px; padding:6px 5px; box-shadow:var(--shadow-out-sm); cursor:pointer; display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+  .cal-cell { background:var(--card); border-radius:12px; min-height:74px; padding:6px 5px; box-shadow:var(--shadow-out-sm); cursor:pointer; display:flex; flex-direction:column; gap:3px; overflow:hidden; min-width:0; }
   .cal-cell.off { opacity:.32; box-shadow:none; cursor:default; }
   .cal-cell.today .cal-daynum { color:#fff; background:var(--blue); border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
   .cal-cell.sel { box-shadow: var(--shadow-out-sm), 0 0 0 2px var(--blue) inset; }
@@ -230,6 +238,7 @@
   /* Mobile tabbar */
   .tabbar { display:none; }
   .fab { display:none; }
+  .fab-desktop { display:none; } /* was unset on mobile — showed as a plain unstyled "+" button in the page flow on iPhone; the desktop media query below re-enables it as a proper floating button */
 
   /* Settings */
   .settings-block { margin-bottom: 26px; }
@@ -326,7 +335,7 @@
        stops that auto-zoom, which is the accidental-zoom-while-navigating issue. */
     input, select, textarea { font-size: 16px !important; }
     .sidebar { display: none; }
-    .main { padding: 0 0 90px; }
+    .main { padding: 0 0 calc(90px + env(safe-area-inset-bottom, 0px)); }
     .top { padding: 18px 18px 0; }
     /* These panels are positioned inline (right:0/top:44px, anchored to their
        toggle button) for desktop. On a narrow screen that anchor math easily
@@ -337,7 +346,7 @@
       left: 16px !important;
       right: 16px !important;
       top: auto !important;
-      bottom: 96px !important;
+      bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
       width: auto !important;
       max-height: 50vh !important;
     }
@@ -361,14 +370,14 @@
       position: fixed; bottom:0; left:0; right:0;
       background: var(--side); border-top: none;
       box-shadow: 0 -4px 14px #cdd2de;
-      padding: 10px 0 20px; z-index: 40;
+      padding: 10px 0 calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 40;
     }
     /* 6 buttons now sit in the bar (Calendar added) — trim gap/font slightly so it stays uncrowded */
     .tab { display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; font-size:9.5px; font-weight:700; color:var(--txt-dim2); background:none; border:none; padding:0 2px; }
     .tab.on { color: var(--blue); }
     .tab svg { width:20px; height:20px; }
     .fab {
-      display:flex; position: fixed; right: 18px; bottom: 84px;
+      display:flex; position: fixed; right: 18px; bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       width: 56px; height:56px; border-radius:50%; background: var(--blue);
       align-items:center; justify-content:center; color:#fff; font-size:27px;
       box-shadow: 6px 6px 14px #b7bdea, -6px -6px 14px #ffffff; z-index: 41; border:none;
@@ -3591,6 +3600,7 @@ function renderCalendarPage() {
   const daysInPrevMonth = new Date(y, mo-1, 0).getDate();
   const byDay = calendarEventsForMonth(calMonth);
   const todayStr = isoDate(new Date());
+  const maxShown = window.innerWidth < 420 ? 1 : 2; // narrow phones: keep cells uncluttered, rely on the day-detail panel below
   let cells = '';
   for (let i = firstDow - 1; i >= 0; i--) {
     cells += `<div class="cal-cell off"><div class="cal-daynum">${daysInPrevMonth - i}</div></div>`;
@@ -3598,9 +3608,9 @@ function renderCalendarPage() {
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = y + '-' + String(mo).padStart(2,'0') + '-' + String(d).padStart(2,'0');
     const evts = byDay[String(d).padStart(2,'0')] || [];
-    const shown = evts.slice(0,2);
+    const shown = evts.slice(0,maxShown);
     const evtHtml = shown.map(e => `<div class="cal-evt ${e.type}">${e.icon||''} ${escapeHtml(e.label)}</div>`).join('');
-    const more = evts.length > 2 ? `<div class="cal-more">+${evts.length-2} more</div>` : '';
+    const more = evts.length > maxShown ? `<div class="cal-more">+${evts.length-maxShown} more</div>` : '';
     cells += `<div class="cal-cell${dateStr===todayStr?' today':''}${dateStr===calSelectedDate?' sel':''}" onclick="selectCalDay('${dateStr}')">
       <div class="cal-daynum">${d}</div>${evtHtml}${more}
     </div>`;
@@ -4342,6 +4352,19 @@ renderProfileTabs();
 renderAll();
 handleQuickAddFromURL();
 autoConnectSyncIfConfigured();
+
+// Register the service worker so the app shell caches itself for offline/
+// instant loading. Registered relative to this page's own folder, so it
+// works whether the site sits at the domain root or a sub-path (GitHub
+// Pages project sites, e.g. /Budget-App/, serve from a sub-path).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // Offline on first-ever visit, or sw.js not deployed alongside this
+      // file yet — the app still works fully online either way.
+    });
+  });
+}
 </script>
 </body>
 </html>
