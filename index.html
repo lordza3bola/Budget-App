@@ -314,6 +314,19 @@
     .sidebar { display: none; }
     .main { padding: 0 0 90px; }
     .top { padding: 18px 18px 0; }
+    /* These panels are positioned inline (right:0/top:44px, anchored to their
+       toggle button) for desktop. On a narrow screen that anchor math easily
+       pushes the panel partly off-screen, clipping it. Fixed + inset instead
+       so it's always fully visible regardless of where its button landed. */
+    #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel, #instMonthFilterPanel {
+      position: fixed !important;
+      left: 16px !important;
+      right: 16px !important;
+      top: auto !important;
+      bottom: 96px !important;
+      width: auto !important;
+      max-height: 50vh !important;
+    }
     .kpis { grid-template-columns: repeat(2,1fr); padding: 0 18px; }
     .grid3 { grid-template-columns: 1fr; padding: 0 18px; }
     .grid2 { grid-template-columns: 1fr; padding: 0 18px; margin-top: 14px; }
@@ -1761,11 +1774,14 @@ function actualForBudgetLine(line) {
 // actually spent 1000, marked Done -> the unspent 1000 drops out of planned
 // totals and available balance, instead of hanging around as "remaining").
 // A line still "Not Paid Yet" keeps its full planned value until it's closed.
+// Either way, overspending a line always counts in full immediately — closed
+// or not — so a line that ran over its planned amount pulls the extra out of
+// available balance right away instead of waiting for it to be marked Done.
 function effectivePlanned(line) {
   const planned = Number(line.plannedValue||0);
-  if (line.status === 'Done') {
-    return Math.min(planned, actualForBudgetLine(line));
-  }
+  const actual = actualForBudgetLine(line);
+  if (actual > planned) return actual;
+  if (line.status === 'Done') return actual;
   return planned;
 }
 
