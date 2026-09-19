@@ -1,13 +1,13 @@
-// Budget app service worker.
-// Goal: the app shell (app.html + the pinned library versions it loads)
+// Kashu app service worker.
+// Goal: the app shell (index.html + the pinned library versions it loads)
 // opens instantly and works with no connection. Firebase's own traffic
 // (auth + Firestore sync) is left completely alone — never cached, never
 // intercepted — so your data always reflects the network, not a stale copy.
-const CACHE_NAME = 'budget-app-shell-v1';
+const CACHE_NAME = 'kashu-app-shell-v2';
 
 // Same-origin app shell — always cached on install.
 const CORE_ASSETS = [
-  './app.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -16,8 +16,8 @@ const CORE_ASSETS = [
 ];
 
 // Third-party assets the app itself loads with a <script>/<link> tag.
-// These are pinned to exact versions in app.html, so caching them
-// indefinitely is safe — a version bump in app.html is a new URL anyway.
+// These are pinned to exact versions in index.html, so caching them
+// indefinitely is safe — a version bump is a new URL anyway.
 const LIB_HOSTS = [
   'cdnjs.cloudflare.com',
   'www.gstatic.com',
@@ -63,11 +63,11 @@ self.addEventListener('fetch', (event) => {
   const isNavigation = req.mode === 'navigate';
 
   event.respondWith(
-    caches.match(isNavigation ? './app.html' : req).then((cached) => {
+    caches.match(isNavigation ? './index.html' : req).then((cached) => {
       const network = fetch(req).then((res) => {
         if (res && res.ok) {
           const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(isNavigation ? './app.html' : req, copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(isNavigation ? './index.html' : req, copy));
         }
         return res;
       }).catch(() => cached); // offline — fall back to whatever's cached

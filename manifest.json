@@ -2,7 +2,7 @@
   "name": "Kashu",
   "short_name": "Kashu",
   "description": "Personal budget, expenses, credit card and savings tracker",
-  "start_url": "./app.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f0ebe1",
