@@ -2072,7 +2072,7 @@ function renderDashboard() {
   filteredBuds.forEach(b => {
     const key = b.category + '|' + b.subcategory;
     if (!byCat[key]) byCat[key] = {category: b.category, subcategory: b.subcategory, planned:0, actual:0, ids:[], statuses:new Set()};
-    byCat[key].planned += effectivePlanned(b);
+    byCat[key].planned += Number(b.plannedValue||0); // raw planned, not effectivePlanned — this table shows what was actually planned, same as the Budget tab's Planned column
     byCat[key].actual += actualForBudgetLine(b);
     byCat[key].ids.push(b.id);
     byCat[key].statuses.add(b.status === 'Done' ? 'Done' : 'Not Paid Yet');
@@ -2985,7 +2985,7 @@ function renderBudgetPage() {
   const instIds = new Set(installmentSourceRows(p).map(b => b.id));
   body.innerHTML = rows.length ? rows.map(b => {
     const actual = actualForBudgetLine(b);
-    const planned = effectivePlanned(b);
+    const planned = Number(b.plannedValue||0); // the raw planned amount as entered — always shown as-is here; effectivePlanned() (used in totals/available balance elsewhere) is the one that folds in overspend or a closed-out unspent remainder
     const remaining = planned - actual;
     const statusCell = `<td>
         <select onchange="setBudgetStatus('${b.id}', this.value)"
