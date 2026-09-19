@@ -94,6 +94,14 @@
   .page { display: none; }
   .page.on { display: block; animation: fadein .2s ease; }
   @keyframes fadein { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform: translateY(0);} }
+  @keyframes slideInRight { from { opacity:0; transform: translateX(26px);} to {opacity:1; transform: translateX(0);} }
+  @keyframes slideInLeft { from { opacity:0; transform: translateX(-26px);} to {opacity:1; transform: translateX(0);} }
+  .page.on.dir-right { animation: slideInRight .26s cubic-bezier(.22,.61,.36,1); }
+  .page.on.dir-left { animation: slideInLeft .26s cubic-bezier(.22,.61,.36,1); }
+  /* Tactile press feedback — a quick scale-down on tap, the way native controls respond */
+  .btn, .fab, .fab-desktop, .cal-cell, .profile-tab { transition: transform .12s ease; }
+  .btn:active, .fab:active, .fab-desktop:active, .cal-cell:active { transform: scale(.95); }
+  .profile-tab:active { transform: scale(.97); }
 
   .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 22px; flex-wrap: wrap; gap: 8px; }
   .top h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
@@ -373,9 +381,11 @@
       padding: 10px 0 calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 40;
     }
     /* 6 buttons now sit in the bar (Calendar added) — trim gap/font slightly so it stays uncrowded */
-    .tab { display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; font-size:9.5px; font-weight:700; color:var(--txt-dim2); background:none; border:none; padding:0 2px; }
+    .tab { display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; font-size:9.5px; font-weight:700; color:var(--txt-dim2); background:none; border:none; padding:0 2px; transition: color .16s ease, transform .1s ease; }
     .tab.on { color: var(--blue); }
-    .tab svg { width:20px; height:20px; }
+    .tab svg { width:20px; height:20px; transition: transform .24s cubic-bezier(.34,1.56,.64,1); }
+    .tab.on svg { transform: scale(1.16); }
+    .tab:active { transform: scale(.92); }
     .fab {
       display:flex; position: fixed; right: 18px; bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       width: 56px; height:56px; border-radius:50%; background: var(--blue);
@@ -1794,11 +1804,22 @@ function syncPageForProfileChange() {
   if (((onBudget || onInstallments) && hasLedgerMode()) || onDash || onDashCredit || onDashSavings) { goPage('dashboard'); return true; }
   return false;
 }
+// Left-to-right order the tab bar and sidebar actually present pages in —
+// used only to pick a swipe direction for the page-change animation, so a
+// page this doesn't know about (e.g. 'add') just gets the plain fade below.
+const NAV_ORDER = ['dashboard','expenses','budget','installments','calendar','yearly','settings'];
 function goPage(name) {
   if ((name === 'budget' || name === 'installments') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments tab
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  const prevPageEl = document.querySelector('.page.on');
+  const prevName = prevPageEl ? (prevPageEl.id.startsWith('page-dashboard') ? 'dashboard' : prevPageEl.id.replace('page-','')) : null;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on','dir-left','dir-right'));
   const pageId = name === 'dashboard' ? dashboardPageId() : 'page-' + name;
-  document.getElementById(pageId).classList.add('on');
+  const target = document.getElementById(pageId);
+  const fromIdx = NAV_ORDER.indexOf(prevName), toIdx = NAV_ORDER.indexOf(name);
+  if (prevName && prevName !== name && fromIdx !== -1 && toIdx !== -1) {
+    target.classList.add(toIdx > fromIdx ? 'dir-right' : 'dir-left');
+  }
+  target.classList.add('on');
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   if (name === 'dashboard') renderDashboard();
@@ -1815,6 +1836,37 @@ document.getElementById('nav').addEventListener('click', (e) => {
   const a = e.target.closest('a[data-page]');
   if (a) goPage(a.dataset.page);
 });
+// Swipe left/right on the main content to move between adjacent tabs, like a
+// native app's tab bar. Mobile-only (matches the tab bar's own breakpoint);
+// bails out of anything that's already horizontally scrollable (tables, the
+// profile card strip, the calendar grid) so it never fights a real scroll,
+// and stays silent while a modal is open.
+(function initSwipeNav() {
+  let sx = 0, sy = 0, tracking = false;
+  document.addEventListener('touchstart', (e) => {
+    tracking = false;
+    if (window.innerWidth > 860) return;
+    if (document.querySelector('.modal-backdrop.on')) return;
+    if (e.target.closest('.table-wrap, .profile-strip, input, select, textarea, .cal-grid, .icon-picker-grid')) return;
+    const t = e.touches[0];
+    sx = t.clientX; sy = t.clientY; tracking = true;
+  }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6) return; // require a confident horizontal swipe
+    const order = Array.from(document.querySelectorAll('#tabbar .tab'))
+      .filter(el => getComputedStyle(el).display !== 'none')
+      .map(el => el.dataset.page);
+    const onTab = document.querySelector('#tabbar .tab.on');
+    const idx = onTab ? order.indexOf(onTab.dataset.page) : -1;
+    if (idx === -1) return;
+    if (dx < 0 && idx < order.length - 1) goPage(order[idx+1]);
+    else if (dx > 0 && idx > 0) goPage(order[idx-1]);
+  }, { passive: true });
+})();
 
 /* ============================================================
    CALCULATIONS (mirrors the Excel Expenses / Budget / Summary logic)
