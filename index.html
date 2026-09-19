@@ -403,9 +403,71 @@
     box-shadow: var(--shadow-out) !important;
     border-radius: 16px !important;
   }
+
+  /* ---- Welcome screen: logo pieces fly in and bounce together, then the
+     tagline fades up. Cold-start only — see the boot sequence at the
+     bottom of the script, which hides this once the page's own JS has
+     rendered; a tab just coming back to the foreground never re-runs
+     that script, so this never reappears from a plain app-switch. ---- */
+  #welcomeScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity .5s ease, visibility .5s ease;
+  }
+  #welcomeScreen.ws-hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  #welcomeScreen .ws-mark { width: 42vw; max-width: 190px; min-width: 120px; overflow: visible; }
+  #welcomeScreen .ws-badge {
+    opacity: 0; transform-origin: 256px 256px;
+    animation: wsBadgeIn 0.8s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes wsBadgeIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+  #welcomeScreen .ws-piece {
+    opacity: 0;
+    animation-timing-function: cubic-bezier(.34, 1.56, .64, 1);
+    animation-fill-mode: forwards;
+    animation-duration: 1.36s;
+  }
+  #welcomeScreen .ws-p-sail { transform-origin: 202px 225px; animation-name: wsFlySail; animation-delay: .20s; }
+  #welcomeScreen .ws-p-kite { transform-origin: 273px 198px; animation-name: wsFlyKite; animation-delay: .38s; }
+  #welcomeScreen .ws-p-wing { transform-origin: 289px 307px; animation-name: wsFlyWing; animation-delay: .56s; }
+  @keyframes wsFlySail {
+    0%   { opacity: 0; transform: translate(-150px,-100px) rotate(-55deg) scale(.35); }
+    100% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
+  }
+  @keyframes wsFlyKite {
+    0%   { opacity: 0; transform: translate(160px,-120px) rotate(65deg) scale(.35); }
+    100% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
+  }
+  @keyframes wsFlyWing {
+    0%   { opacity: 0; transform: translate(130px,120px) rotate(-75deg) scale(.3); }
+    100% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
+  }
+  #welcomeScreen .ws-tagline {
+    margin-top: 22px; font-family: 'Manrope', sans-serif; font-size: 14.5px; color: var(--txt-dim);
+    text-align: center; opacity: 0; transform: translateY(8px);
+    animation: wsTaglineIn 1.0s ease 2.0s forwards;
+  }
+  @keyframes wsTaglineIn { to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
+
+<div id="welcomeScreen">
+  <svg class="ws-mark" viewBox="0 0 512 512">
+    <defs>
+      <linearGradient id="wsBadgeGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#94b295"/>
+        <stop offset="100%" stop-color="#6f8d78"/>
+      </linearGradient>
+    </defs>
+    <rect class="ws-badge" x="0" y="0" width="512" height="512" rx="50" fill="url(#wsBadgeGrad)"/>
+    <polygon class="ws-piece ws-p-sail" points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/>
+    <polygon class="ws-piece ws-p-kite" points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/>
+    <polygon class="ws-piece ws-p-wing" points="262,270 369,317 289,305 235,336" fill="#b9ac96"/>
+  </svg>
+  <div class="ws-tagline">Clarity for your money.</div>
+</div>
 
 <div id="app">
   <!-- Sidebar -->
@@ -995,6 +1057,9 @@
 </div>
 
 <script>
+// Used only by hideWelcomeScreen() below, to guarantee the welcome
+// animation gets its full runway even on a fast/cached load.
+const __appBootStart = Date.now();
 /* ============================================================
    DATA MODEL
    expenses: {id, month:'YYYY-MM', date:'YYYY-MM-DD', category, subcategory, method, description, value}
@@ -4404,6 +4469,22 @@ renderProfileTabs();
 renderAll();
 handleQuickAddFromURL();
 autoConnectSyncIfConfigured();
+hideWelcomeScreen();
+
+// Cold start only: local state is already rendered by this point (cloud
+// sync above runs in the background and re-renders when it lands, same
+// as it always has). The welcome animation itself runs ~3s (pieces
+// bounce together, then the tagline fades in); this holds it open for
+// that full run plus a short beat to actually see it land, even on a
+// fast/cached load. Never called again on a plain tab/app switch back
+// into view, since that doesn't re-run this script.
+function hideWelcomeScreen() {
+  const el = document.getElementById('welcomeScreen');
+  if (!el) return;
+  const minMs = 3400;
+  const elapsed = Date.now() - __appBootStart;
+  setTimeout(() => el.classList.add('ws-hide'), Math.max(0, minMs - elapsed));
+}
 
 // Register the service worker so the app shell caches itself for offline/
 // instant loading. Registered relative to this page's own folder, so it
