@@ -1653,6 +1653,35 @@ function disconnectSync() {
   fbState.lastName = '';
   setSyncStatus('not_configured');
 }
+function toggleEditName(show) {
+  const dispRow = document.getElementById('nameDisplayRow');
+  const editRow = document.getElementById('nameEditRow');
+  if (!dispRow || !editRow) return;
+  dispRow.style.display = show ? 'none' : '';
+  editRow.style.display = show ? '' : 'none';
+  if (show) document.getElementById('editNameStatus').innerHTML = '';
+}
+async function submitEditName() {
+  const statusEl = document.getElementById('editNameStatus');
+  statusEl.innerHTML = '';
+  const firstName = document.getElementById('editFirstNameInput').value.trim();
+  const lastName = document.getElementById('editLastNameInput').value.trim();
+  if (!firstName || !lastName) { statusEl.innerHTML = `<div class="status-msg err">Enter both first and last name.</div>`; return; }
+  try {
+    fbState.firstName = firstName;
+    fbState.lastName = lastName;
+    const authUser = fbState.auth && fbState.auth.currentUser;
+    if (authUser) { try { await authUser.updateProfile({ displayName: `${firstName} ${lastName}` }); } catch(e) { console.error('updateProfile failed', e); } }
+    await pushStateToCloud();
+    renderUserGreeting();
+    toggleEditName(false);
+    renderCloudSyncPanel();
+    showToast('Name updated.');
+  } catch(e) {
+    console.error(e);
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(e.message)}</div>`;
+  }
+}
 function saveFirebaseConfigFromSettings() {
   const statusEl = document.getElementById('cloudSyncFormStatus');
   statusEl.innerHTML = '';
@@ -1742,7 +1771,22 @@ function renderCloudSyncPanel() {
   if (fbState.status === 'connected' || fbState.status === 'syncing') {
     el.innerHTML = `
       <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.</p>
-      <div class="field"><label>Name</label><input type="text" value="${escapeHtml(`${fbState.firstName||''} ${fbState.lastName||''}`.trim())}" readonly></div>
+      <div class="field" id="nameDisplayRow">
+        <label>Name</label>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <input type="text" value="${escapeHtml(`${fbState.firstName||''} ${fbState.lastName||''}`.trim()) || '—'}" readonly style="flex:1;">
+          <button class="link-btn" style="white-space:nowrap;" onclick="toggleEditName(true)">Edit</button>
+        </div>
+      </div>
+      <div class="field" id="nameEditRow" style="display:none;">
+        <label>First name</label><input type="text" id="editFirstNameInput" value="${escapeHtml(fbState.firstName||'')}">
+        <label style="margin-top:8px;">Last name</label><input type="text" id="editLastNameInput" value="${escapeHtml(fbState.lastName||'')}">
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-primary" onclick="submitEditName()">Save</button>
+          <button class="btn btn-ghost" onclick="toggleEditName(false)">Cancel</button>
+        </div>
+        <div id="editNameStatus"></div>
+      </div>
       <div class="field"><label>Signed in as</label><input type="text" value="${escapeHtml(fbState.email || '')}" readonly></div>
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
       <div class="btn-row" style="margin-top:10px;">
