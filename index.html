@@ -1558,6 +1558,51 @@ async function pushStateToCloud() {
     setSyncStatus('error');
   }
 }
+
+/* ============================================================
+   ONE-TIME MIGRATION — pulls data forward from the old PIN-based
+   sync scheme (/budgetApps/{sha256(pin)}) into the current signed-in
+   account (/users/{uid}). Needs a temporary Firestore rule granting
+   read access to /budgetApps/** (see the Settings panel for the exact
+   text) since the new rules alone don't reach that old collection —
+   remove that temporary rule again afterward.
+   ============================================================ */
+async function hashPinForMigration(pin) {
+  if (!window.crypto || !window.crypto.subtle) throw new Error('This needs to be loaded over https:// to work.');
+  const enc = new TextEncoder().encode('ledger-sync-v1:' + pin);
+  const digest = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+async function submitMigrateOldPin() {
+  const statusEl = document.getElementById('migrateStatus');
+  statusEl.innerHTML = '';
+  const pin = document.getElementById('migratePinInput').value.trim();
+  if (!pin) { statusEl.innerHTML = `<div class="status-msg err">Enter the old PIN first.</div>`; return; }
+  if (!fbState.db) { statusEl.innerHTML = `<div class="status-msg err">Not connected — sign in first.</div>`; return; }
+  try {
+    const hash = await hashPinForMigration(pin);
+    const snap = await fbState.db.collection('budgetApps').doc(hash).get();
+    if (!snap.exists || !snap.data() || !snap.data().state) {
+      statusEl.innerHTML = `<div class="status-msg err">No data found for that PIN. Double-check it, and that the temporary Firestore rule for /budgetApps is published.</div>`;
+      return;
+    }
+    const oldState = snap.data().state;
+    const profileNames = (oldState.profileOrder || []).map(id => (oldState.profiles[id]||{}).name).filter(Boolean).join(', ') || 'unnamed profiles';
+    if (!confirm(`Found: ${profileNames}\n\nImport this and REPLACE everything currently in this account (${fbState.email})? This can't be undone.`)) return;
+    state = oldState;
+    localStorage.setItem('ledger_state', JSON.stringify(state));
+    if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
+    selectedMonths = null;
+    renderProfileTabs();
+    updateNavVisibility();
+    renderAll();
+    await pushStateToCloud();
+    statusEl.innerHTML = `<div class="status-msg ok">Imported and synced to ${escapeHtml(fbState.email || 'this account')}. You can now remove the temporary /budgetApps read rule and delete that old document in the Firebase console.</div>`;
+  } catch(e) {
+    console.error(e);
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(e.message)}</div>`;
+  }
+}
 function disconnectSync() {
   if (!confirm('Log out and stop syncing on this device? Your data stays in the cloud under your account — sign back in any time with your email and password.')) return;
   if (fbState.unsubscribe) fbState.unsubscribe();
@@ -1658,7 +1703,16 @@ function renderCloudSyncPanel() {
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn btn-danger" onclick="disconnectSync()">Log out on this device</button>
-      </div>`;
+      </div>
+      <details style="margin-top:18px;">
+        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--blue);">Migrate data from an old PIN-synced account</summary>
+        <p style="font-size:12px;color:var(--txt-dim);margin:10px 0 12px;">Pulls data forward from the old shared-PIN sync scheme into this account. Needs a temporary Firestore rule — in the console's Rules tab, add this alongside your existing rule, then Publish:<br><code style="font-size:11px;">match /budgetApps/{'{'}doc{'}'} { allow read: if request.auth != null; }</code><br>Remove it again once the import below finishes.</p>
+        <div class="field" style="margin-bottom:10px;"><label>Old PIN</label><input type="text" id="migratePinInput" placeholder="e.g. 123456"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="submitMigrateOldPin()">Fetch &amp; import</button>
+        </div>
+        <div id="migrateStatus"></div>
+      </details>`;
   } else {
     el.innerHTML = `
       <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:10px;">This app signs in with the Firebase project built into it by default, so syncing works with no setup. You only need to touch this if you want to point the app at a different Firebase project of your own.</p>
