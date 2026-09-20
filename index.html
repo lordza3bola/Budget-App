@@ -69,8 +69,9 @@
     padding: 26px 18px;
     display: flex; flex-direction: column;
   }
-  .brand { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--txt); margin-bottom: 30px; padding: 0 10px; }
+  .brand { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--txt); margin-bottom: 6px; padding: 0 10px; }
   .brand span { color: var(--blue); }
+  .user-greeting { font-size: 12.5px; font-weight: 600; color: var(--txt-dim); padding: 0 10px; margin-bottom: 24px; min-height: 16px; }
   .nav a {
     display: flex; align-items: center; gap: 11px;
     color: var(--txt-dim); text-decoration: none;
@@ -498,6 +499,11 @@
   <div class="login-card">
     <div class="login-brand">Kashu<span>.</span></div>
     <div class="login-sub">Sign in to sync your budget across devices.</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div class="field"><label>First name</label><input type="text" id="loginFirstNameInput" placeholder="First name" autocomplete="given-name"></div>
+      <div class="field"><label>Last name</label><input type="text" id="loginLastNameInput" placeholder="Last name" autocomplete="family-name"></div>
+    </div>
+    <p style="font-size:11px;color:var(--txt-dim2);margin:-6px 0 14px;">Name is only used when signing up for the first time — ignored when logging in.</p>
     <div class="field"><label>Email</label><input type="email" id="loginEmailInput" placeholder="you@example.com" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="loginPasswordInput" placeholder="At least 6 characters" autocomplete="current-password"></div>
     <div class="btn-row">
@@ -518,6 +524,7 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="brand">Kashu<span>.</span></div>
+    <div id="userGreeting" class="user-greeting"></div>
     <div class="nav" id="nav">
       <a data-page="dashboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
       <a data-page="expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="navExpensesLabel">Expenses</span></a>
@@ -1383,7 +1390,7 @@ const DEFAULT_FIREBASE_CONFIG = {
   messagingSenderId: "233238547814",
   appId: "1:233238547814:web:a130ebbd5544ddb9018ca7"
 };
-let fbState = { app: null, db: null, auth: null, docRef: null, unsubscribe: null, applyingRemote: false, configured: false, lastSyncedAt: null, status: 'not_configured', email: null };
+let fbState = { app: null, db: null, auth: null, docRef: null, unsubscribe: null, applyingRemote: false, configured: false, lastSyncedAt: null, status: 'not_configured', email: null, firstName: '', lastName: '' };
 let pushDebounceTimer = null;
 
 function loadSyncConfig() {
@@ -1431,6 +1438,7 @@ function parseFirebaseConfigInput(raw) {
 function setSyncStatus(status) {
   fbState.status = status;
   renderSyncStatusBadge();
+  renderUserGreeting();
   if (document.getElementById('page-settings').classList.contains('on')) renderCloudSyncPanel();
 }
 function renderSyncStatusBadge() {
@@ -1444,6 +1452,16 @@ function renderSyncStatusBadge() {
     error: '<span class="chip sync-err">Sync error</span>'
   };
   el.innerHTML = map[fbState.status] || '';
+}
+// Sidebar greeting under the "Kashu." brand — only shown once signed in
+// and a name is known; empty/hidden otherwise (offline/local-only use,
+// or an account with no name saved).
+function renderUserGreeting() {
+  const el = document.getElementById('userGreeting');
+  if (!el) return;
+  const name = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
+  const show = (fbState.status === 'connected' || fbState.status === 'syncing') && name;
+  el.textContent = show ? `Hi, ${name}` : '';
 }
 // Turns a Firebase Auth error code into something a non-developer can act on.
 function friendlyAuthError(e) {
@@ -1493,15 +1511,26 @@ async function bindUserDoc(uid) {
   } else {
     await pushStateToCloud();
   }
+  const docData = snap.exists ? (snap.data() || {}) : {};
+  // Fall back to Auth's own displayName (e.g. an account that signed up
+  // before name fields existed, or was migrated from the old PIN scheme).
+  const authUser = fbState.auth && fbState.auth.currentUser;
+  const fallbackName = (authUser && authUser.displayName) ? authUser.displayName.split(' ') : [];
+  fbState.firstName = docData.firstName || fallbackName[0] || '';
+  fbState.lastName = docData.lastName || fallbackName.slice(1).join(' ') || '';
+  renderUserGreeting();
   subscribeToCloud();
   fbState.lastSyncedAt = new Date();
   setSyncStatus('connected');
 }
-async function signUpSync(firebaseConfigObj, email, password) {
+async function signUpSync(firebaseConfigObj, email, password, firstName, lastName) {
   setSyncStatus('connecting');
   await initFirebase(firebaseConfigObj);
   const cred = await fbState.auth.createUserWithEmailAndPassword(email, password);
   fbState.email = cred.user.email;
+  fbState.firstName = firstName || '';
+  fbState.lastName = lastName || '';
+  try { await cred.user.updateProfile({ displayName: `${firstName} ${lastName}`.trim() }); } catch(e) { console.error('updateProfile failed', e); }
   saveSyncConfig({ firebaseConfig: firebaseConfigObj });
   await bindUserDoc(cred.user.uid);
   showToast('Account created — this device is now syncing.');
@@ -1530,9 +1559,12 @@ function subscribeToCloud() {
     state = data.state;
     localStorage.setItem('ledger_state', JSON.stringify(state));
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
+    if (data.firstName !== undefined) fbState.firstName = data.firstName;
+    if (data.lastName !== undefined) fbState.lastName = data.lastName;
     renderProfileTabs();
     updateNavVisibility();
     renderAll();
+    renderUserGreeting();
     fbState.applyingRemote = false;
     fbState.lastSyncedAt = new Date();
     setSyncStatus('connected');
@@ -1550,7 +1582,13 @@ function pushStateToCloudDebounced() {
 async function pushStateToCloud() {
   if (!fbState.docRef) return;
   try {
-    await fbState.docRef.set({ state, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), email: fbState.email || null });
+    await fbState.docRef.set({
+      state,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      email: fbState.email || null,
+      firstName: fbState.firstName || '',
+      lastName: fbState.lastName || ''
+    });
     fbState.lastSyncedAt = new Date();
     setSyncStatus('connected');
   } catch(e) {
@@ -1611,6 +1649,8 @@ function disconnectSync() {
   fbState.unsubscribe = null;
   fbState.configured = false;
   fbState.email = null;
+  fbState.firstName = '';
+  fbState.lastName = '';
   setSyncStatus('not_configured');
 }
 function saveFirebaseConfigFromSettings() {
@@ -1634,11 +1674,14 @@ async function submitLoginSignUp() {
   const statusEl = document.getElementById('loginFormStatus');
   statusEl.innerHTML = '';
   try {
+    const firstName = document.getElementById('loginFirstNameInput').value.trim();
+    const lastName = document.getElementById('loginLastNameInput').value.trim();
     const email = document.getElementById('loginEmailInput').value.trim();
     const password = document.getElementById('loginPasswordInput').value;
+    if (!firstName || !lastName) throw new Error('Enter your first and last name.');
     if (!email) throw new Error('Enter your email.');
     if (!password || password.length < 6) throw new Error('Use a password of at least 6 characters.');
-    await signUpSync(effectiveFirebaseConfig(), email, password);
+    await signUpSync(effectiveFirebaseConfig(), email, password, firstName, lastName);
     hideLoginScreen();
   } catch(e) {
     console.error(e);
@@ -1699,6 +1742,7 @@ function renderCloudSyncPanel() {
   if (fbState.status === 'connected' || fbState.status === 'syncing') {
     el.innerHTML = `
       <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.</p>
+      <div class="field"><label>Name</label><input type="text" value="${escapeHtml(`${fbState.firstName||''} ${fbState.lastName||''}`.trim())}" readonly></div>
       <div class="field"><label>Signed in as</label><input type="text" value="${escapeHtml(fbState.email || '')}" readonly></div>
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
       <div class="btn-row" style="margin-top:10px;">
