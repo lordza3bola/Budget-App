@@ -220,10 +220,13 @@
   /* Forms */
   .field { margin-bottom: 14px; }
   .field label { display:block; font-size:12px; font-weight:700; color: var(--txt-dim); margin-bottom:6px; }
-  .field input[type=text], .field input[type=number], .field input[type=date], .field select {
+  .field input[type=text], .field input[type=number], .field input[type=date], .field input[type=email], .field input[type=password], .field select {
     width: 100%; background: var(--card); border: none; color: var(--txt);
     padding: 12px 14px; border-radius: 14px; font-size: 14px; box-shadow: var(--shadow-in);
+    box-sizing: border-box; font-family: inherit;
   }
+  .link-btn { background:none; border:none; padding:0; color: var(--blue); font-size:12.5px; font-weight:700; cursor:pointer; text-decoration: none; }
+  .link-btn:hover { text-decoration: underline; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip-btn {
     background: var(--card); border: none; color: var(--txt-dim);
@@ -449,6 +452,28 @@
     animation: wsTaglineIn 1.0s ease 2.0s forwards;
   }
   @keyframes wsTaglineIn { to { opacity: 1; transform: translateY(0); } }
+
+  /* ---- Login screen: shown after the splash when nobody's signed in yet.
+     Hidden by default; resolveAuthAndBoot()/showLoginScreen() reveal it only
+     once auth state is known, so it never flashes over an already-signed-in
+     session. ---- */
+  #loginScreen {
+    position: fixed; inset: 0; z-index: 9998;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .35s ease, visibility .35s ease;
+    padding: 20px; box-sizing: border-box;
+  }
+  #loginScreen.ls-show { opacity: 1; visibility: visible; pointer-events: auto; }
+  .login-card {
+    width: 100%; max-width: 360px; background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow-out); padding: 32px 26px; box-sizing: border-box;
+  }
+  .login-brand { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--txt); text-align: center; margin-bottom: 6px; }
+  .login-brand span { color: var(--blue); }
+  .login-sub { font-size: 12.5px; color: var(--txt-dim); text-align: center; margin-bottom: 22px; }
+
 </style>
 </head>
 <body>
@@ -467,6 +492,26 @@
     <polygon class="ws-piece ws-p-wing" points="262,270 369,317 289,305 235,336" fill="#b9ac96"/>
   </svg>
   <div class="ws-tagline">Clarity for your money.</div>
+</div>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-brand">Kashu<span>.</span></div>
+    <div class="login-sub">Sign in to sync your budget across devices.</div>
+    <div class="field"><label>Email</label><input type="email" id="loginEmailInput" placeholder="you@example.com" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPasswordInput" placeholder="At least 6 characters" autocomplete="current-password"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitLoginSignUp()">Sign Up</button>
+      <button class="btn btn-ghost" onclick="submitLoginLogIn()">Log In</button>
+    </div>
+    <div style="margin-top:12px;">
+      <button class="link-btn" onclick="submitLoginReset()">Forgot password?</button>
+    </div>
+    <div id="loginFormStatus"></div>
+    <div style="margin-top:22px; text-align:center;">
+      <button class="link-btn" style="color:var(--txt-dim2);" onclick="skipLoginForNow()">Continue without an account →</button>
+    </div>
+  </div>
 </div>
 
 <div id="app">
@@ -649,7 +694,7 @@
           </div>
         </div>
         <div class="field">
-          <label>Amount (EGP)</label>
+          <label>Amount (<span class="cur-unit">EGP</span>)</label>
           <input type="number" id="expAmount" placeholder="0" inputmode="decimal" oninput="document.getElementById('amountDisplay').textContent = this.value || '0';">
         </div>
         <div class="field">
@@ -861,7 +906,7 @@
 
         <div class="settings-panel" id="settingsPanel-card">
           <h3>Credit limit &amp; billing</h3>
-          <div class="field"><label>Credit limit (EGP)</label><input type="number" id="ccLimitInput" onchange="setCreditLimit(this.value)"></div>
+          <div class="field"><label>Credit limit (<span class="cur-unit">EGP</span>)</label><input type="number" id="ccLimitInput" onchange="setCreditLimit(this.value)"></div>
           <div class="field"><label>Statement closes on day</label><input type="number" id="ccStatementDayInput" min="1" max="28" onchange="setStatementDay(this.value)"></div>
           <div class="field"><label>Payment due on day</label><input type="number" id="ccDueDayInput" min="1" max="28" onchange="setDueDay(this.value)"></div>
 
@@ -914,6 +959,21 @@
           </div>
           <div class="btn-row">
             <button class="btn btn-ghost" onclick="exportExcel()">Export current profile to Excel</button>
+          </div>
+
+          <h3 style="margin-top:24px;">Report (CSV / printable PDF)</h3>
+          <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:12px;">A monthly-style summary — income, expenses, savings and a category breakdown — for one profile or all of them, over any date range. The PDF opens as a print preview; choose "Save as PDF" in the print dialog.</p>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Profile</label>
+            <select id="reportProfileSelect" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);color:var(--txt);padding:10px 12px;border-radius:12px;font-size:14px;"></select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div class="field" style="margin:0;"><label>From (optional)</label><input type="date" id="reportFromDate"></div>
+            <div class="field" style="margin:0;"><label>To (optional)</label><input type="date" id="reportToDate"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="exportReportCSV()">Export CSV</button>
+            <button class="btn btn-primary" onclick="exportReportPDF()">Open printable PDF report</button>
           </div>
         </div>
 
@@ -968,7 +1028,7 @@
     <div class="field"><label>Category</label><input type="text" id="bCategory" list="catList"></div>
     <div class="field"><label>Sub category</label><input type="text" id="bSubCategory"></div>
     <div class="field"><label>Description</label><input type="text" id="bDescription"></div>
-    <div class="field"><label>Planned value (EGP)</label><input type="number" id="bPlanned"></div>
+    <div class="field"><label>Planned value (<span class="cur-unit">EGP</span>)</label><input type="number" id="bPlanned"></div>
     <div class="field"><label>Start date</label><input type="date" id="bStartDate"></div>
     <div class="field">
       <label>Repeats</label>
@@ -997,7 +1057,7 @@
     <div class="field"><label>Category</label><input type="text" id="iCategory" list="catList"></div>
     <div class="field"><label>Sub category</label><input type="text" id="iSubCategory"></div>
     <div class="field"><label>Description</label><input type="text" id="iDescription"></div>
-    <div class="field"><label>Monthly payment (EGP)</label><input type="number" id="iMonthly"></div>
+    <div class="field"><label>Monthly payment (<span class="cur-unit">EGP</span>)</label><input type="number" id="iMonthly"></div>
     <div class="field"><label>Start date</label><input type="date" id="iStartDate"></div>
     <div class="field"><label>Finish date</label><input type="date" id="iFinishDate"></div>
     <div class="field"><label>Status (first month)</label>
@@ -1028,6 +1088,10 @@
       <div id="pfSavingsNote" style="display:none; font-size:11.5px; color:var(--txt-dim); margin-top:8px;">Savings profiles just track money in and out and the running balance — no due dates, no budget tab.</div>
     </div>
     <div class="field"><label>Last 4 digits (optional)</label><input type="text" id="pfLast4" placeholder="0000" inputmode="numeric" maxlength="4" pattern="[0-9]{0,4}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4); renderProfileCardPreview();"></div>
+    <div class="field"><label>Currency</label>
+      <select id="pfCurrency" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);color:var(--txt);padding:10px 12px;border-radius:12px;font-size:14px;"></select>
+      <div style="font-size:11px;color:var(--txt-dim2);margin-top:6px;">Changes the symbol shown for this profile's amounts only — no conversion between currencies.</div>
+    </div>
     <div class="field">
       <label>Preview</label>
       <div id="profileCardPreview"></div>
@@ -1046,7 +1110,7 @@
 <div class="modal-backdrop" id="paymentModalBackdrop">
   <div class="modal-sheet desktop-center">
     <div class="modal-head"><h2 id="paymentModalTitle">Record a payment</h2><button onclick="closePaymentModal()">✕</button></div>
-    <div class="field"><label>Amount (EGP)</label><input type="number" id="pmAmount"></div>
+    <div class="field"><label>Amount (<span class="cur-unit">EGP</span>)</label><input type="number" id="pmAmount"></div>
     <div class="field"><label>Date</label><input type="date" id="pmDate"></div>
     <div class="field"><label>Note (optional)</label><input type="text" id="pmNote" placeholder="e.g. paid via bank transfer"></div>
     <div class="btn-row">
@@ -1139,6 +1203,26 @@ const CARD_THEMES = {
   savings:    { label: 'Savings',    gradient: 'linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%)' }
 };
 
+/* ============================================================
+   CURRENCIES — display-only. No conversion or exchange rates:
+   this just changes the symbol/code a profile's amounts are
+   shown with. `position` controls whether the symbol goes before
+   or after the number.
+   ============================================================ */
+const CURRENCIES = {
+  EGP: { code: 'EGP', symbol: 'E£',  position: 'suffix', label: 'Egyptian Pound (EGP)' },
+  USD: { code: 'USD', symbol: '$',   position: 'prefix', label: 'US Dollar (USD)' },
+  EUR: { code: 'EUR', symbol: '€',   position: 'prefix', label: 'Euro (EUR)' },
+  GBP: { code: 'GBP', symbol: '£',   position: 'prefix', label: 'British Pound (GBP)' },
+  SAR: { code: 'SAR', symbol: 'SR',  position: 'suffix', label: 'Saudi Riyal (SAR)' },
+  AED: { code: 'AED', symbol: 'AED', position: 'suffix', label: 'UAE Dirham (AED)' },
+  KWD: { code: 'KWD', symbol: 'KD',  position: 'suffix', label: 'Kuwaiti Dinar (KWD)' },
+  JPY: { code: 'JPY', symbol: '¥',   position: 'prefix', label: 'Japanese Yen (JPY)' }
+};
+function currencyOf(profile) {
+  return CURRENCIES[(profile || activeProfile()).currency] || CURRENCIES.EGP;
+}
+
 function newProfileId() { return 'p' + Date.now() + Math.random().toString(36).slice(2,6); }
 function blankProfile(name, cardType, cardLast4) {
   return {
@@ -1146,6 +1230,7 @@ function blankProfile(name, cardType, cardLast4) {
     name: name || 'Main',
     cardType: cardType || 'visa',
     cardLast4: cardLast4 || '',
+    currency: 'EGP',
     expenses: [],
     budget: [],
     income: {},
@@ -1174,6 +1259,7 @@ function ensureProfileDefaults(p) {
   if (p.cashBalance === undefined) p.cashBalance = 0;
   if (p.bankBalance === undefined) p.bankBalance = 0;
   if (!p.categoryIcons) p.categoryIcons = {};
+  if (!p.currency || !CURRENCIES[p.currency]) p.currency = 'EGP';
   return p;
 }
 // A category's icon is keyed by its own name; a sub category's icon is keyed
@@ -1273,18 +1359,31 @@ function saveState() {
    CLOUD SYNC (Firebase) — optional. Off by default; the app behaves
    exactly as before until this is configured. Once connected, every
    saveState() (already called after every change anywhere in the app)
-   also pushes the whole `state` object to a Firestore document shared
-   by whichever devices enter the same PIN, and a realtime listener
-   pulls in changes made from other devices.
+   also pushes the whole `state` object to a Firestore document at
+   /users/{uid}, scoped to the signed-in account, and a realtime
+   listener pulls in changes made from other devices signed into the
+   same account.
 
-   Security note (shown to the user in the UI too): a PIN is much
-   weaker than a real account — anyone who learns it gets full access
-   to this data, with no recovery/reset. It's a deliberate simplicity
-   tradeoff for personal, low-stakes use across the person's own
-   devices, not a substitute for real authentication.
+   Real accounts (email + password) replace the old shared-PIN scheme:
+   Firebase Auth hashes and stores the password itself, this app never
+   sees or stores it, and the Firestore security rule ties each
+   document to request.auth.uid so only that account's own signed-in
+   session can read or write it.
    ============================================================ */
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
-let fbState = { app: null, db: null, auth: null, docRef: null, unsubscribe: null, applyingRemote: false, configured: false, lastSyncedAt: null, status: 'not_configured' };
+const SKIP_LOGIN_KEY = 'ledger_skip_login';
+// Baked-in default so the app can sign in "out of the box" with no setup —
+// Settings → Cloud Sync still shows this and lets it be replaced with a
+// different Firebase project's config if ever needed.
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDDQwBEbppNEUY1DJlyJQxMv8pY8CQ1cNE",
+  authDomain: "budget-app-d5876.firebaseapp.com",
+  projectId: "budget-app-d5876",
+  storageBucket: "budget-app-d5876.firebasestorage.app",
+  messagingSenderId: "233238547814",
+  appId: "1:233238547814:web:a130ebbd5544ddb9018ca7"
+};
+let fbState = { app: null, db: null, auth: null, docRef: null, unsubscribe: null, applyingRemote: false, configured: false, lastSyncedAt: null, status: 'not_configured', email: null };
 let pushDebounceTimer = null;
 
 function loadSyncConfig() {
@@ -1293,17 +1392,17 @@ function loadSyncConfig() {
     return raw ? JSON.parse(raw) : null;
   } catch(e) { return null; }
 }
+// Whatever config is actually used to connect — the saved/edited one if the
+// person set one in Settings, otherwise the built-in default above.
+function effectiveFirebaseConfig() {
+  const cfg = loadSyncConfig();
+  return (cfg && cfg.firebaseConfig) ? cfg.firebaseConfig : DEFAULT_FIREBASE_CONFIG;
+}
 function saveSyncConfig(cfg) {
   localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(cfg));
 }
 function clearSyncConfig() {
   localStorage.removeItem(SYNC_CONFIG_KEY);
-}
-async function hashPin(pin) {
-  if (!window.crypto || !window.crypto.subtle) throw new Error('This browser page needs to be loaded over https:// (e.g. your GitHub Pages link) for sync to work — it won\'t work opened directly as a local file.');
-  const enc = new TextEncoder().encode('ledger-sync-v1:' + pin);
-  const digest = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 // Accepts either a bare {...} object or a pasted "const firebaseConfig = {...};" snippet.
 function parseFirebaseConfigInput(raw) {
@@ -1346,18 +1445,38 @@ function renderSyncStatusBadge() {
   };
   el.innerHTML = map[fbState.status] || '';
 }
-
-async function connectSync(firebaseConfigObj, pin) {
+// Turns a Firebase Auth error code into something a non-developer can act on.
+function friendlyAuthError(e) {
+  const map = {
+    'auth/email-already-in-use': 'That email already has an account on this project — try Log In instead.',
+    'auth/invalid-email': "That doesn't look like a valid email address.",
+    'auth/weak-password': 'Password is too weak — use at least 6 characters.',
+    'auth/user-not-found': 'No account with that email — try Sign Up instead.',
+    'auth/wrong-password': 'Wrong password.',
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/invalid-login-credentials': 'Email or password is incorrect.',
+    'auth/too-many-requests': 'Too many attempts — wait a bit and try again.',
+    'auth/operation-not-allowed': 'Email/Password sign-in isn\'t enabled on this Firebase project yet — turn it on in Authentication → Sign-in method.',
+    'permission-denied': 'Signed in, but Firestore blocked the write — your Firestore Rules haven\'t been updated for accounts yet. In the Firebase console, go to Firestore Database → Rules and set: match /users/{userId} { allow read, write: if request.auth != null && request.auth.uid == userId; }'
+  };
+  return map[e.code] || e.message;
+}
+async function initFirebase(firebaseConfigObj) {
   if (!window.firebase) throw new Error('The Firebase library failed to load — check your internet connection and try again.');
-  setSyncStatus('connecting');
   if (!fbState.app) {
     fbState.app = firebase.initializeApp(firebaseConfigObj);
     fbState.db = firebase.firestore();
     fbState.auth = firebase.auth();
   }
-  await fbState.auth.signInAnonymously();
-  const pinHash = await hashPin(pin);
-  fbState.docRef = fbState.db.collection('budgetApps').doc(pinHash);
+}
+// Firebase Auth itself hashes/salts the password (scrypt) before it ever
+// leaves this function — the app, and anyone with Firestore access, never
+// sees the plaintext or a reversible form of it. Data lives at
+// /users/{uid}, and the Firestore rule (shown in the UI) restricts each
+// document to the signed-in user whose uid matches it — unlike the old
+// PIN scheme, a doc ID can no longer be guessed to reach someone else's data.
+async function bindUserDoc(uid) {
+  fbState.docRef = fbState.db.collection('users').doc(uid);
   fbState.configured = true;
 
   const snap = await fbState.docRef.get();
@@ -1375,10 +1494,30 @@ async function connectSync(firebaseConfigObj, pin) {
     await pushStateToCloud();
   }
   subscribeToCloud();
-  saveSyncConfig({ firebaseConfig: firebaseConfigObj, pin });
   fbState.lastSyncedAt = new Date();
   setSyncStatus('connected');
+}
+async function signUpSync(firebaseConfigObj, email, password) {
+  setSyncStatus('connecting');
+  await initFirebase(firebaseConfigObj);
+  const cred = await fbState.auth.createUserWithEmailAndPassword(email, password);
+  fbState.email = cred.user.email;
+  saveSyncConfig({ firebaseConfig: firebaseConfigObj });
+  await bindUserDoc(cred.user.uid);
+  showToast('Account created — this device is now syncing.');
+}
+async function logInSync(firebaseConfigObj, email, password) {
+  setSyncStatus('connecting');
+  await initFirebase(firebaseConfigObj);
+  const cred = await fbState.auth.signInWithEmailAndPassword(email, password);
+  fbState.email = cred.user.email;
+  saveSyncConfig({ firebaseConfig: firebaseConfigObj });
+  await bindUserDoc(cred.user.uid);
   showToast('Connected — this device is now syncing.');
+}
+async function resetSyncPassword(firebaseConfigObj, email) {
+  await initFirebase(firebaseConfigObj);
+  await fbState.auth.sendPasswordResetEmail(email);
 }
 function subscribeToCloud() {
   if (fbState.unsubscribe) fbState.unsubscribe();
@@ -1411,7 +1550,7 @@ function pushStateToCloudDebounced() {
 async function pushStateToCloud() {
   if (!fbState.docRef) return;
   try {
-    await fbState.docRef.set({ state, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await fbState.docRef.set({ state, updatedAt: firebase.firestore.FieldValue.serverTimestamp(), email: fbState.email || null });
     fbState.lastSyncedAt = new Date();
     setSyncStatus('connected');
   } catch(e) {
@@ -1420,76 +1559,166 @@ async function pushStateToCloud() {
   }
 }
 function disconnectSync() {
-  if (!confirm('Stop syncing on this device? Your data stays in the cloud and on this device — you can reconnect with the same PIN any time.')) return;
+  if (!confirm('Log out and stop syncing on this device? Your data stays in the cloud under your account — sign back in any time with your email and password.')) return;
   if (fbState.unsubscribe) fbState.unsubscribe();
+  if (fbState.auth) fbState.auth.signOut().catch(() => {});
   fbState.docRef = null;
   fbState.unsubscribe = null;
   fbState.configured = false;
-  clearSyncConfig();
+  fbState.email = null;
   setSyncStatus('not_configured');
 }
-async function submitSyncConnect() {
+function saveFirebaseConfigFromSettings() {
   const statusEl = document.getElementById('cloudSyncFormStatus');
   statusEl.innerHTML = '';
   try {
     const configObj = parseFirebaseConfigInput(document.getElementById('syncConfigInput').value);
-    const pin = document.getElementById('syncPinInput').value.trim();
-    if (!pin || pin.length < 4) throw new Error('Use a PIN of at least 4 characters — longer is safer.');
-    await connectSync(configObj, pin);
+    saveSyncConfig({ firebaseConfig: configObj });
+    fbState.app = null; fbState.db = null; fbState.auth = null; // force re-init with the new config next sign-in
+    statusEl.innerHTML = `<div class="status-msg ok">Saved. Use "Sign in" (or reload the app) to connect with this project.</div>`;
+  } catch(e) {
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(e.message)}</div>`;
+  }
+}
+function resetFirebaseConfigToDefault() {
+  clearSyncConfig();
+  fbState.app = null; fbState.db = null; fbState.auth = null;
+  renderCloudSyncPanel();
+}
+async function submitLoginSignUp() {
+  const statusEl = document.getElementById('loginFormStatus');
+  statusEl.innerHTML = '';
+  try {
+    const email = document.getElementById('loginEmailInput').value.trim();
+    const password = document.getElementById('loginPasswordInput').value;
+    if (!email) throw new Error('Enter your email.');
+    if (!password || password.length < 6) throw new Error('Use a password of at least 6 characters.');
+    await signUpSync(effectiveFirebaseConfig(), email, password);
+    hideLoginScreen();
   } catch(e) {
     console.error(e);
-    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(e.message)}</div>`;
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(friendlyAuthError(e))}</div>`;
     setSyncStatus(fbState.configured ? 'connected' : 'not_configured');
   }
+}
+async function submitLoginLogIn() {
+  const statusEl = document.getElementById('loginFormStatus');
+  statusEl.innerHTML = '';
+  try {
+    const email = document.getElementById('loginEmailInput').value.trim();
+    const password = document.getElementById('loginPasswordInput').value;
+    if (!email || !password) throw new Error('Enter your email and password.');
+    await logInSync(effectiveFirebaseConfig(), email, password);
+    hideLoginScreen();
+  } catch(e) {
+    console.error(e);
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(friendlyAuthError(e))}</div>`;
+    setSyncStatus(fbState.configured ? 'connected' : 'not_configured');
+  }
+}
+async function submitLoginReset() {
+  const statusEl = document.getElementById('loginFormStatus');
+  statusEl.innerHTML = '';
+  try {
+    const email = document.getElementById('loginEmailInput').value.trim();
+    if (!email) throw new Error('Enter your email above first, then tap "Forgot password".');
+    await resetSyncPassword(effectiveFirebaseConfig(), email);
+    statusEl.innerHTML = `<div class="status-msg ok">Password reset email sent to ${escapeHtml(email)} — check your inbox.</div>`;
+  } catch(e) {
+    console.error(e);
+    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(friendlyAuthError(e))}</div>`;
+  }
+}
+// "Continue without an account" — skip sign-in for now and use this device
+// locally. Settings → Cloud Sync still offers a "Sign in" button any time.
+function skipLoginForNow() {
+  localStorage.setItem(SKIP_LOGIN_KEY, '1');
+  hideLoginScreen();
+}
+function showLoginScreen() {
+  const el = document.getElementById('loginScreen');
+  if (!el) return;
+  document.getElementById('loginFormStatus').innerHTML = '';
+  el.classList.add('ls-show');
+}
+function hideLoginScreen() {
+  const el = document.getElementById('loginScreen');
+  if (!el) return;
+  el.classList.remove('ls-show');
 }
 function renderCloudSyncPanel() {
   const el = document.getElementById('cloudSyncContent');
   if (!el) return;
+  const cfg = loadSyncConfig();
+  const configText = JSON.stringify(cfg ? cfg.firebaseConfig : DEFAULT_FIREBASE_CONFIG, null, 2);
   if (fbState.status === 'connected' || fbState.status === 'syncing') {
-    const cfg = loadSyncConfig();
     el.innerHTML = `
-      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is syncing. Enter the same PIN on your other devices' Settings → Cloud Sync to see the same data there.</p>
-      <div class="field"><label>Sync PIN</label><input type="text" value="${escapeHtml(cfg ? cfg.pin : '')}" readonly style="font-family:var(--font-display);letter-spacing:.05em;"></div>
+      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.</p>
+      <div class="field"><label>Signed in as</label><input type="text" value="${escapeHtml(fbState.email || '')}" readonly></div>
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
       <div class="btn-row" style="margin-top:10px;">
-        <button class="btn btn-danger" onclick="disconnectSync()">Disconnect this device</button>
+        <button class="btn btn-danger" onclick="disconnectSync()">Log out on this device</button>
       </div>`;
   } else {
     el.innerHTML = `
-      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:10px;">Sync your data across your phone and desktop using your own free Firebase project — no server for you to run.</p>
+      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:10px;">This app signs in with the Firebase project built into it by default, so syncing works with no setup. You only need to touch this if you want to point the app at a different Firebase project of your own.</p>
       <details style="margin-bottom:14px;">
-        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--blue);">One-time setup (about 5 minutes)</summary>
+        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--blue);">Using your own Firebase project instead</summary>
         <ol style="font-size:12px;color:var(--txt-dim);margin:10px 0 0 18px; line-height:1.7;">
           <li>Go to console.firebase.google.com and create a free project (no credit card needed).</li>
           <li>In the project, open <strong>Build → Firestore Database</strong> → Create database → start in production mode.</li>
-          <li>In Firestore's <strong>Rules</strong> tab, paste:<br><code style="font-size:11px;">allow read, write: if request.auth != null;</code> inside a <code style="font-size:11px;">match /budgetApps/{doc} {'{'}...{'}'}</code> block, then Publish.</li>
-          <li>Open <strong>Build → Authentication</strong> → Sign-in method → enable <strong>Anonymous</strong>.</li>
-          <li>Open <strong>Project settings</strong> (gear icon) → scroll to "Your apps" → click the web icon (&lt;/&gt;) to register a web app → copy the <code style="font-size:11px;">firebaseConfig</code> object shown.</li>
-          <li>Paste that whole snippet below, pick a PIN, and connect. Enter the same PIN on your other device to link it.</li>
+          <li>In Firestore's <strong>Rules</strong> tab, paste:<br><code style="font-size:11px;">allow read, write: if request.auth != null && request.auth.uid == userId;</code><br>inside a <code style="font-size:11px;">match /users/{'{'}userId{'}'} {'{'}...{'}'}</code> block, then Publish.</li>
+          <li>Open <strong>Build → Authentication</strong> → Sign-in method → enable <strong>Email/Password</strong>.</li>
+          <li>Open <strong>Project settings</strong> (gear icon) → "Your apps" → web icon (&lt;/&gt;) → copy the <code style="font-size:11px;">firebaseConfig</code> object shown, paste it below, and Save.</li>
         </ol>
       </details>
-      <div class="field"><label>Firebase config (paste the whole snippet)</label>
-        <textarea id="syncConfigInput" rows="5" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, ... };" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:12px;padding:10px 12px;font-size:12px;font-family:var(--font-mono, monospace);color:var(--txt);resize:vertical;"></textarea>
+      <div class="field"><label>Firebase config (editable — defaults to the built-in project)</label>
+        <textarea id="syncConfigInput" rows="7" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:12px;padding:10px 12px;font-size:12px;font-family:var(--font-mono, monospace);color:var(--txt);resize:vertical;">${escapeHtml(configText)}</textarea>
       </div>
-      <div class="field"><label>Sync PIN — remember this, you'll enter it on your other device</label>
-        <input type="text" id="syncPinInput" placeholder="e.g. a phrase or 6+ characters">
-      </div>
-      <p style="font-size:11px;color:var(--txt-dim2);margin-bottom:14px;">A PIN is simpler than a real account, but weaker — anyone who learns it can see and change this data, and there's no password reset. Use something only you'd guess, and don't share it outside your own devices.</p>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="submitSyncConnect()">Connect</button>
+        <button class="btn btn-ghost" onclick="saveFirebaseConfigFromSettings()">Save configuration</button>
+        ${cfg ? '<button class="btn btn-ghost" onclick="resetFirebaseConfigToDefault()">Reset to default</button>' : ''}
       </div>
-      <div id="cloudSyncFormStatus"></div>`;
+      <div id="cloudSyncFormStatus"></div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="showLoginScreen()">Sign in</button>
+      </div>`;
   }
 }
-async function autoConnectSyncIfConfigured() {
-  const cfg = loadSyncConfig();
-  if (!cfg) { setSyncStatus('not_configured'); return; }
+// On load: re-establish Firebase Auth's own session (it persists sign-in
+// locally by default) rather than storing the password ourselves. Resolves
+// (or times out after 2.5s, e.g. if offline) before the welcome screen is
+// allowed to hide, so a returning signed-in user glides straight into the
+// app with no login-screen flash, and a signed-out one sees the login
+// screen appear right as the splash fades — no jarring swap after the fact.
+let authBootResolved = false;
+async function resolveAuthAndBoot() {
+  const skip = localStorage.getItem(SKIP_LOGIN_KEY) === '1';
   try {
-    await connectSync(cfg.firebaseConfig, cfg.pin);
+    await initFirebase(effectiveFirebaseConfig());
+    await new Promise((resolve) => {
+      let settled = false;
+      const finish = () => { if (!settled) { settled = true; clearTimeout(timeoutId); resolve(); } };
+      const timeoutId = setTimeout(finish, 2500);
+      fbState.auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          fbState.email = user.email;
+          if (!fbState.configured) await bindUserDoc(user.uid);
+          hideLoginScreen();
+        } else {
+          if (fbState.configured) { fbState.configured = false; setSyncStatus('not_configured'); }
+          if (!authBootResolved && !skip) showLoginScreen();
+        }
+        authBootResolved = true;
+        finish();
+      });
+    });
   } catch(e) {
     console.error('auto-connect failed', e);
     setSyncStatus('error');
+    authBootResolved = true;
   }
+  hideWelcomeScreen();
 }
 
 /* ============================================================
@@ -1566,6 +1795,9 @@ function openProfileModal(editId) {
   document.getElementById('profileModalTitle').textContent = p ? 'Edit profile' : 'Add profile';
   document.getElementById('pfName').value = p ? p.name : '';
   document.getElementById('pfLast4').value = p ? p.cardLast4 : '';
+  const curSel = document.getElementById('pfCurrency');
+  curSel.innerHTML = Object.values(CURRENCIES).map(c => `<option value="${c.code}">${escapeHtml(c.label)}</option>`).join('');
+  curSel.value = p ? (p.currency || 'EGP') : 'EGP';
   pfSelectedCardType = p ? p.cardType : 'visa';
   document.querySelectorAll('#profileModalBackdrop .chip-btn[data-card]').forEach(b =>
     b.classList.toggle('sel', b.dataset.card === pfSelectedCardType));
@@ -1579,13 +1811,16 @@ function saveProfile() {
   const name = document.getElementById('pfName').value.trim();
   if (!name) { alert('Give this profile a name.'); return; }
   const last4 = document.getElementById('pfLast4').value.trim();
+  const currency = document.getElementById('pfCurrency').value || 'EGP';
   if (profileModalEditingId && state.profiles[profileModalEditingId]) {
     const p = state.profiles[profileModalEditingId];
     p.name = name;
     p.cardType = pfSelectedCardType;
     p.cardLast4 = last4;
+    p.currency = currency;
   } else {
     const p = blankProfile(name, pfSelectedCardType, last4);
+    p.currency = currency;
     state.profiles[p.id] = p;
     state.profileOrder.push(p.id);
     state.activeProfileId = p.id;
@@ -1816,9 +2051,17 @@ function monthForDate(dateStr, profile) {
   }
   return dateStr.slice(0,7);
 }
-function fmt(n) {
+function fmtRaw(n) {
   n = Math.round((n||0) * 100) / 100;
   return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+// Formats a number with the given (or active) profile's currency symbol.
+// Display-only — no conversion happens anywhere; this just changes the label.
+function fmt(n, profile) {
+  const s = fmtRaw(n);
+  let cur;
+  try { cur = currencyOf(profile); } catch(e) { cur = CURRENCIES.EGP; }
+  return cur.position === 'prefix' ? (cur.symbol + s) : (s + ' ' + cur.symbol);
 }
 
 /* ============================================================
@@ -2886,11 +3129,11 @@ function renderExpensesPage() {
   if (!selectedMonths.length) {
     totalLineEl.textContent = 'No months selected.';
   } else if (savings) {
-    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Deposits ${fmt(paymentSum)} · Withdrawals ${fmt(chargeSum)} EGP`;
+    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Deposits ${fmt(paymentSum)} · Withdrawals ${fmt(chargeSum)}`;
   } else if (paymentSum > 0) {
-    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)} EGP`;
+    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)}`;
   } else {
-    totalLineEl.textContent = `${rows.length} expense${rows.length===1?'':'s'} · Total ${fmt(chargeSum)} EGP`;
+    totalLineEl.textContent = `${rows.length} expense${rows.length===1?'':'s'} · Total ${fmt(chargeSum)}`;
   }
   rows = rows.slice().sort((a,b)=> b.date.localeCompare(a.date));
   const body = document.getElementById('expTableBody');
@@ -3155,7 +3398,7 @@ function renderBudgetPage() {
   );
   rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
   const plannedSum = rows.reduce((s,b) => s + Number(b.plannedValue||0), 0);
-  document.getElementById('budgetTotalLine').textContent = `${rows.length} budget line${rows.length===1?'':'s'} · Total planned ${fmt(plannedSum)} EGP`;
+  document.getElementById('budgetTotalLine').textContent = `${rows.length} budget line${rows.length===1?'':'s'} · Total planned ${fmt(plannedSum)}`;
   const body = document.getElementById('budgetTableBody');
   const p = activeProfile();
   const instIds = new Set(installmentSourceRows(p).map(b => b.id));
@@ -3823,6 +4066,17 @@ function renderSettingsPage() {
   }).join('');
   importSel.value = state.profiles[prevImportTarget] ? prevImportTarget : state.activeProfileId;
 
+  // Which profile(s) a Report (CSV/PDF) export covers — defaults to the active one
+  const reportSel = document.getElementById('reportProfileSelect');
+  if (reportSel) {
+    const prevReportTarget = reportSel.value || state.activeProfileId;
+    reportSel.innerHTML = '<option value="__all__">All profiles</option>' + state.profileOrder.map(id => {
+      const p = state.profiles[id];
+      return p ? `<option value="${id}">${escapeHtml(p.name)}</option>` : '';
+    }).join('');
+    reportSel.value = (prevReportTarget === '__all__' || state.profiles[prevReportTarget]) ? prevReportTarget : state.activeProfileId;
+  }
+
   // Credit card settings (limit, billing days)
   if (credit) {
     const p = activeProfile();
@@ -4419,10 +4673,116 @@ function exportExcel() {
 }
 
 /* ============================================================
+   REPORT EXPORT (CSV + printable PDF) — a summary report, for
+   one chosen profile or all of them, over an optional date range.
+   Separate from the raw Excel export above: this is meant for
+   sharing/printing rather than round-tripping data back in.
+   ============================================================ */
+function reportSelectedProfileIds() {
+  const sel = (document.getElementById('reportProfileSelect') || {}).value || state.activeProfileId;
+  return sel === '__all__' ? state.profileOrder.slice() : [sel];
+}
+function csvCell(v) {
+  v = (v===undefined||v===null) ? '' : String(v);
+  if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+function downloadTextFile(content, filename, mime) {
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function exportReportCSV() {
+  const fromVal = document.getElementById('reportFromDate').value;
+  const toVal = document.getElementById('reportToDate').value;
+  const inRange = (dateStr) => (!fromVal || dateStr >= fromVal) && (!toVal || dateStr <= toVal);
+  const profileIds = reportSelectedProfileIds();
+
+  const rows = [['Profile','Date','Category','Sub Category','Method','Description','Amount','Currency']];
+  profileIds.forEach(pid => {
+    const p = state.profiles[pid];
+    if (!p) return;
+    const cur = currencyOf(p).code;
+    p.expenses.filter(e => inRange(e.date)).sort((a,b)=>a.date.localeCompare(b.date)).forEach(e => {
+      rows.push([p.name, e.date, e.category, e.subcategory, e.method, e.description, e.value, cur]);
+    });
+  });
+  const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  const label = profileIds.length === 1 ? (state.profiles[profileIds[0]]||{}).name : 'All_profiles';
+  const rangeSuffix = (fromVal || toVal) ? ('_' + (fromVal||'start') + '_to_' + (toVal||'end')) : '';
+  downloadTextFile(csv, 'Budget_report_' + (label||'profile').replace(/[^a-zA-Z0-9]+/g,'_') + rangeSuffix + '_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv;charset=utf-8;');
+}
+function exportReportPDF() {
+  const fromVal = document.getElementById('reportFromDate').value;
+  const toVal = document.getElementById('reportToDate').value;
+  const inRange = (dateStr) => (!fromVal || dateStr >= fromVal) && (!toVal || dateStr <= toVal);
+  const profileIds = reportSelectedProfileIds();
+
+  let sectionsHtml = '';
+  profileIds.forEach(pid => {
+    const p = state.profiles[pid];
+    if (!p) return;
+    const cur = currencyOf(p);
+    const money = n => (cur.position === 'prefix' ? (cur.symbol + fmtRaw(n)) : (fmtRaw(n) + ' ' + cur.symbol));
+    const exp = p.expenses.filter(e => inRange(e.date));
+    const totalExpense = exp.reduce((s,e) => s + Number(e.value||0), 0);
+    const months = Object.keys(p.income || {}).filter(m => inRange(m + '-01'));
+    const totalIncome = months.reduce((s,m) => s + Number(p.income[m]||0), 0);
+    const byCat = {};
+    exp.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.value||0); });
+    const catRows = Object.keys(byCat).sort((a,b) => byCat[b]-byCat[a])
+      .map(c => `<tr><td>${escapeHtml(c)}</td><td style="text-align:right;">${money(byCat[c])}</td></tr>`).join('');
+    const txRows = exp.slice().sort((a,b) => a.date.localeCompare(b.date))
+      .map(e => `<tr><td>${e.date}</td><td>${escapeHtml(e.category)}</td><td>${escapeHtml(e.subcategory||'')}</td><td>${escapeHtml(e.description||'')}</td><td style="text-align:right;">${money(e.value)}</td></tr>`).join('');
+    sectionsHtml += `
+      <h2>${escapeHtml(p.name)}</h2>
+      <table class="rep-summary">
+        <tr><td>Income</td><td style="text-align:right;">${money(totalIncome)}</td></tr>
+        <tr><td>Expenses</td><td style="text-align:right;">${money(totalExpense)}</td></tr>
+        <tr><td><strong>Net / Savings</strong></td><td style="text-align:right;"><strong>${money(totalIncome-totalExpense)}</strong></td></tr>
+      </table>
+      <h3>By category</h3>
+      <table class="rep-table">${catRows || '<tr><td colspan="2">No expenses in this range.</td></tr>'}</table>
+      <h3>Transactions</h3>
+      <table class="rep-table"><thead><tr><th>Date</th><th>Category</th><th>Sub</th><th>Description</th><th style="text-align:right;">Amount</th></tr></thead><tbody>${txRows || '<tr><td colspan="5">No expenses in this range.</td></tr>'}</tbody></table>`;
+  });
+
+  const rangeLabel = (fromVal || toVal) ? `${fromVal || 'Start'} to ${toVal || 'Today'}` : 'All time';
+  const win = window.open('', '_blank');
+  if (!win) { alert('Your browser blocked the report popup — allow popups for this site and try again.'); return; }
+  win.document.write(`<!DOCTYPE html><html><head><title>Budget report</title><meta charset="utf-8"><style>
+    body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;color:#1a1a1a;padding:30px;max-width:800px;margin:0 auto;}
+    h1{font-size:20px;margin-bottom:2px;} .sub{color:#666;font-size:12px;margin-bottom:24px;}
+    h2{font-size:16px;margin-top:28px;border-bottom:2px solid #333;padding-bottom:4px;}
+    h3{font-size:13px;margin-top:16px;color:#444;}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
+    .rep-table td, .rep-table th{padding:5px 8px;border-bottom:1px solid #eee;}
+    .rep-table th{text-align:left;color:#666;font-weight:600;}
+    .rep-summary td{padding:4px 8px;}
+    @media print { body{padding:0;} }
+  </style></head><body>
+    <h1>Budget report</h1>
+    <div class="sub">${escapeHtml(rangeLabel)} · Generated ${new Date().toLocaleDateString()}</div>
+    ${sectionsHtml}
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
+}
+
+/* ============================================================
    INIT
    ============================================================ */
+function refreshCurrencyLabels() {
+  const code = currencyOf().code;
+  document.querySelectorAll('.cur-unit').forEach(el => el.textContent = code);
+}
 function renderAll() {
   updateNavVisibility();
+  refreshCurrencyLabels();
   renderDashboard();
   if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
   if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
@@ -4468,8 +4828,7 @@ loadState();
 renderProfileTabs();
 renderAll();
 handleQuickAddFromURL();
-autoConnectSyncIfConfigured();
-hideWelcomeScreen();
+resolveAuthAndBoot();
 
 // Cold start only: local state is already rendered by this point (cloud
 // sync above runs in the background and re-renders when it lands, same
