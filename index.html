@@ -498,20 +498,22 @@
 <div id="loginScreen">
   <div class="login-card">
     <div class="login-brand">Kashu<span>.</span></div>
-    <div class="login-sub">Sign in to sync your budget across devices.</div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-      <div class="field"><label>First name</label><input type="text" id="loginFirstNameInput" placeholder="First name" autocomplete="given-name"></div>
-      <div class="field"><label>Last name</label><input type="text" id="loginLastNameInput" placeholder="Last name" autocomplete="family-name"></div>
+    <div class="login-sub" id="loginSub">Sign in to sync your budget across devices.</div>
+    <div id="loginNameFields" style="display:none;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="field"><label>First name</label><input type="text" id="loginFirstNameInput" placeholder="First name" autocomplete="given-name"></div>
+        <div class="field"><label>Last name</label><input type="text" id="loginLastNameInput" placeholder="Last name" autocomplete="family-name"></div>
+      </div>
     </div>
-    <p style="font-size:11px;color:var(--txt-dim2);margin:-6px 0 14px;">Name is only used when signing up for the first time — ignored when logging in.</p>
     <div class="field"><label>Email</label><input type="email" id="loginEmailInput" placeholder="you@example.com" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="loginPasswordInput" placeholder="At least 6 characters" autocomplete="current-password"></div>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="submitLoginSignUp()">Sign Up</button>
-      <button class="btn btn-ghost" onclick="submitLoginLogIn()">Log In</button>
+      <button class="btn btn-primary" id="loginSignUpBtn" onclick="handleSignUpClick()">Sign Up</button>
+      <button class="btn btn-ghost" id="loginLogInBtn" onclick="submitLoginLogIn()">Log In</button>
     </div>
     <div style="margin-top:12px;">
-      <button class="link-btn" onclick="submitLoginReset()">Forgot password?</button>
+      <button class="link-btn" id="loginBackBtn" style="display:none;" onclick="exitSignupMode()">← Back to log in</button>
+      <button class="link-btn" id="loginForgotBtn" onclick="submitLoginReset()">Forgot password?</button>
     </div>
     <div id="loginFormStatus"></div>
     <div style="margin-top:22px; text-align:center;">
@@ -1462,6 +1464,15 @@ function renderUserGreeting() {
   const name = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
   const show = (fbState.status === 'connected' || fbState.status === 'syncing') && name;
   el.textContent = show ? `Hi, ${name}` : '';
+  el.style.cursor = show ? 'pointer' : 'default';
+  el.title = show ? 'Edit name' : '';
+  el.onclick = show ? openEditNameFromGreeting : null;
+}
+function openEditNameFromGreeting() {
+  goPage('settings');
+  const cloudTabBtn = document.querySelector('#settingsTabs button[data-t="cloud"]');
+  if (cloudTabBtn) setSettingsTab('cloud', cloudTabBtn);
+  setTimeout(() => toggleEditName(true), 30);
 }
 // Turns a Firebase Auth error code into something a non-developer can act on.
 function friendlyAuthError(e) {
@@ -1699,6 +1710,35 @@ function resetFirebaseConfigToDefault() {
   fbState.app = null; fbState.db = null; fbState.auth = null;
   renderCloudSyncPanel();
 }
+let loginIsSignupMode = false;
+function enterSignupMode() {
+  loginIsSignupMode = true;
+  document.getElementById('loginNameFields').style.display = '';
+  document.getElementById('loginSub').textContent = 'Create your account to sync your budget across devices.';
+  document.getElementById('loginSignUpBtn').textContent = 'Create account';
+  document.getElementById('loginLogInBtn').style.display = 'none';
+  document.getElementById('loginForgotBtn').style.display = 'none';
+  document.getElementById('loginBackBtn').style.display = '';
+  document.getElementById('loginFormStatus').innerHTML = '';
+  document.getElementById('loginFirstNameInput').focus();
+}
+function exitSignupMode() {
+  loginIsSignupMode = false;
+  document.getElementById('loginNameFields').style.display = 'none';
+  document.getElementById('loginSub').textContent = 'Sign in to sync your budget across devices.';
+  document.getElementById('loginSignUpBtn').textContent = 'Sign Up';
+  document.getElementById('loginLogInBtn').style.display = '';
+  document.getElementById('loginForgotBtn').style.display = '';
+  document.getElementById('loginBackBtn').style.display = 'none';
+  document.getElementById('loginFormStatus').innerHTML = '';
+}
+// The "Sign Up" button does double duty: first tap just reveals the name
+// fields (no account created yet); once in that mode, tapping "Create
+// account" actually submits.
+function handleSignUpClick() {
+  if (!loginIsSignupMode) { enterSignupMode(); return; }
+  submitLoginSignUp();
+}
 async function submitLoginSignUp() {
   const statusEl = document.getElementById('loginFormStatus');
   statusEl.innerHTML = '';
@@ -1755,6 +1795,7 @@ function skipLoginForNow() {
 function showLoginScreen() {
   const el = document.getElementById('loginScreen');
   if (!el) return;
+  exitSignupMode(); // always open on the plain sign-in view by default
   document.getElementById('loginFormStatus').innerHTML = '';
   el.classList.add('ls-show');
 }
@@ -1769,12 +1810,13 @@ function renderCloudSyncPanel() {
   const cfg = loadSyncConfig();
   const configText = JSON.stringify(cfg ? cfg.firebaseConfig : DEFAULT_FIREBASE_CONFIG, null, 2);
   if (fbState.status === 'connected' || fbState.status === 'syncing') {
+    const fullName = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
     el.innerHTML = `
       <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.</p>
       <div class="field" id="nameDisplayRow">
         <label>Name</label>
         <div style="display:flex; align-items:center; gap:10px;">
-          <input type="text" value="${escapeHtml(`${fbState.firstName||''} ${fbState.lastName||''}`.trim()) || '—'}" readonly style="flex:1;">
+          <input type="text" value="${escapeHtml(fullName) || '—'}" readonly style="flex:1;">
           <button class="link-btn" style="white-space:nowrap;" onclick="toggleEditName(true)">Edit</button>
         </div>
       </div>
