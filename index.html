@@ -197,9 +197,11 @@
   .ms-btn { background:var(--card); border:1px solid var(--card-b); color:var(--txt); padding:7px 26px 7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; text-align:left; position:relative; cursor:pointer; min-width:140px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ms-btn::after { content:'▾'; position:absolute; right:9px; top:50%; transform:translateY(-50%); color:var(--txt-dim); font-size:11px; }
   .ms-btn.active { color:var(--blue); border-color:var(--blue); }
-  .th-filter { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-transform:inherit; letter-spacing:inherit; }
+  .th-filter { background:var(--blue-soft); border:1px solid transparent; padding:4px 9px; border-radius:8px; font:inherit; font-weight:800; color:var(--blue); cursor:pointer; display:inline-flex; align-items:center; gap:5px; text-transform:inherit; letter-spacing:inherit; }
+  .th-filter:hover { border-color:var(--blue); }
   .th-filter .th-caret { font-size:10px; }
-  .th-filter.active { color:var(--blue); }
+  .th-filter.active { background:var(--blue); color:#fff; }
+  .th-filter.active .th-count { background:#fff; color:var(--blue); }
   .th-filter .th-count { background:var(--blue); color:#fff; border-radius:8px; padding:0 6px; font-size:10px; line-height:16px; }
   #msPanel { display:none; position:fixed; z-index:75; background:var(--card); border:1px solid var(--card-b); border-radius:16px; padding:10px; width:250px; max-height:320px; overflow-y:auto; box-shadow:var(--shadow-out); }
   #msPanel .ms-actions { display:flex; gap:8px; margin-bottom:8px; }
@@ -387,7 +389,7 @@
     .grid2 { grid-template-columns: 1fr; padding: 0 18px; margin-top: 14px; }
     .form-panel { padding: 0 18px; }
     .profile-strip { padding-left: 18px; padding-right: 18px; }
-    .settings-block, .budget-filter, .table-wrap { padding: 0 18px; }
+    .settings-block, .budget-filter, .table-wrap, #expTotalLine, #budgetTotalLine { padding: 0 18px; }
     /* #settingsTabs can hold up to 6 buttons (Income/Card/Categories/Excel
        sync/Cloud Sync/Data) — tighten them on narrow screens so they sit
        neatly rather than wrapping awkwardly or crowding the edges. */
@@ -776,10 +778,11 @@
           style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
         <button type="button" class="ms-btn" id="msBtn_expCat" onclick="openMs('expCat', this)">All categories</button>
         <button type="button" class="ms-btn" id="msBtn_expSub" onclick="openMs('expSub', this)">All sub categories</button>
+        <button type="button" class="ms-btn" id="msBtn_expDateBar" onclick="openMs('expDateBar', this)">All days</button>
       </div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th><button type="button" class="th-filter" id="msBtn_expDate" onclick="openMs('expDate', this)" title="Filter by day">Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
+          <thead><tr><th><button type="button" class="th-filter" id="msBtn_expDate" onclick="openMs('expDate', this)" title="Filter by day"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
           <tbody id="expTableBody"></tbody>
         </table>
       </div>
@@ -812,7 +815,7 @@
       </div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>Date</th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th><button type="button" class="th-filter" id="budgetDateHdrBtn" onclick="event.stopPropagation(); toggleMonthPanel('budget')" title="Filter by month"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
           <tbody id="budgetTableBody"></tbody>
         </table>
       </div>
@@ -2494,6 +2497,11 @@ function syncMonthPickers() {
   });
 }
 function updateMonthBtnLabel(prefix) {
+  if (prefix === 'budget') {
+    const hb = document.getElementById('budgetDateHdrBtn');
+    if (hb) { ensureSelectedMonths(); const n = selectedMonths.length;
+      hb.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date ${n > 1 ? `<span class="th-count">${n}</span>` : ''}<span class="th-caret">▾</span>`; }
+  }
   const btn = document.getElementById(prefix + 'MonthFilterBtn');
   if (!btn) return;
   ensureSelectedMonths();
@@ -3372,8 +3380,8 @@ function dayLabel(iso) {
   if (isNaN(d)) return iso;
   return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
 }
-const MS_KEYS = ['dashCat','dashSub','expCat','expSub','budgetCat','budgetSub','expDate'];
-function msKind(key) { return key.endsWith('Cat') ? 'cats' : key.endsWith('Sub') ? 'subs' : 'dates'; }
+const MS_KEYS = ['dashCat','dashSub','expCat','expSub','budgetCat','budgetSub','expDate','expDateBar'];
+function msKind(key) { return key.endsWith('Cat') ? 'cats' : key.endsWith('Sub') ? 'subs' : 'dates'; } // expDate (table header) and expDateBar (filter row) are the same day filter
 // Category/sub pairs a tab's picker offers — each tab lists what exists in its own data.
 function msPairs(key) {
   const p = activeProfile();
@@ -3490,8 +3498,12 @@ function updateMsButtons() {
     const sel = f[kind];
     btn.classList.toggle('active', sel.length > 0);
     if (kind === 'dates') {
-      btn.innerHTML = `Date ${sel.length ? `<span class="th-count">${sel.length}</span>` : ''}<span class="th-caret">▾</span>`;
       btn.title = sel.length ? sel.map(dayLabel).join(', ') : 'Filter by day';
+      if (btn.classList.contains('th-filter')) {
+        btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date ${sel.length ? `<span class="th-count">${sel.length}</span>` : ''}<span class="th-caret">▾</span>`;
+      } else {
+        btn.textContent = !sel.length ? 'All days' : sel.length === 1 ? dayLabel(sel[0]) : sel.length + ' days';
+      }
       return;
     }
     let text;
