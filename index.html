@@ -211,6 +211,69 @@
   #msPanel label .ms-hint { color:var(--txt-dim2); font-size:11px; }
   #msPanel .ms-empty { font-size:12px; color:var(--txt-dim); padding:8px 4px; }
   .filter-clear { color:var(--blue); cursor:pointer; font-weight:700; }
+  /* ---- Phone card layout (Expenses + Budget). Desktop keeps the tables. ---- */
+  .card-list { display:none; flex-direction:column; gap:10px; padding:4px 18px 24px; }
+  .day-head { display:flex; justify-content:space-between; align-items:baseline; padding:10px 4px 0; font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--txt-dim); }
+  .day-head:first-child { padding-top:2px; }
+  .day-head .day-total { text-transform:none; letter-spacing:0; font-size:12px; font-weight:700; }
+  .tx-card { border:none; font:inherit; color:inherit; text-align:left; box-sizing:border-box; width:100%; display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--card); border-radius:16px; box-shadow:var(--shadow-out-sm); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:box-shadow .15s ease; }
+  .tx-card:active { box-shadow: inset 3px 3px 7px #c3c8d4, inset -3px -3px 7px #ffffff; }
+  .tx-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex:none; }
+  .tx-icon.c0 { background:var(--blue-soft); } .tx-icon.c1 { background:var(--green-soft); } .tx-icon.c2 { background:var(--amber-soft); } .tx-icon.c3 { background:var(--red-soft); }
+  .tx-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .tx-title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-sub { font-size:12px; color:var(--txt-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-tag { color:var(--blue); font-weight:700; }
+  .tx-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none; }
+  .tx-amt { font-size:14px; font-weight:800; }
+  .tx-meta { font-size:11px; color:var(--txt-dim); }
+  .tx-amt.neg, .tx-meta.neg { color:#23835f; }
+  .tx-meta.neg { font-weight:700; }
+  .tx-amt.withdraw { color:#b3483f; }
+  .bud-card { flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-radius:18px; }
+  .bud-top { display:flex; align-items:center; gap:12px; }
+  .status-pill { flex:none; font-size:11px; font-weight:800; padding:4px 10px; border-radius:10px; }
+  .status-pill.ongoing { background:var(--amber-soft); color:#8a5a14; }
+  .status-pill.closed { background:var(--green-soft); color:#23835f; }
+  .bud-bar { display:block; height:8px; border-radius:4px; box-shadow: inset 2px 2px 4px #c3c8d4, inset -2px -2px 4px #ffffff; overflow:hidden; }
+  .bud-bar > span { display:block; height:100%; border-radius:4px; background:var(--blue); }
+  .bud-bar.over > span { background:var(--red); }
+  .bud-bar.done > span { background:var(--green); }
+  .bud-stats { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+  .bud-stats > span { display:flex; flex-direction:column; gap:2px; }
+  .bud-stats > span:last-child { align-items:flex-end; }
+  .bud-stats .l { font-size:11px; color:var(--txt-dim); font-weight:600; }
+  .bud-stats .v { font-size:13px; font-weight:800; }
+  .bud-stats .v.pos { color:#23835f; } .bud-stats .v.neg { color:#b3483f; }
+  /* Edit bottom sheet (tap a card) */
+  .sheet-backdrop { position:fixed; inset:0; z-index:60; background:rgba(30,33,44,.38); display:none; align-items:flex-end; justify-content:center; }
+  .sheet-backdrop.on { display:flex; }
+  .sheet { width:100%; max-width:560px; box-sizing:border-box; background:var(--bg); border-radius:26px 26px 0 0; padding:10px 20px calc(24px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:14px; max-height:90vh; overflow-y:auto; box-shadow:0 -10px 30px rgba(30,33,44,.18); animation: sheetUp .22s ease; }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+  .sheet-handle { width:40px; height:5px; border-radius:3px; background:#c3c8d4; align-self:center; flex:none; }
+  .sheet-head { display:flex; justify-content:space-between; align-items:center; }
+  .sheet-head h2 { margin:0; font-family:var(--font-display); font-size:20px; font-weight:700; }
+  .sheet-close { border:none; width:44px; height:44px; border-radius:22px; background:var(--bg); color:var(--txt-dim); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-out-sm); }
+  .sheet-close svg { width:18px; height:18px; }
+  .sheet-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .sheet-field > label { font-size:12px; font-weight:700; color:var(--txt-dim); }
+  .sheet-field input, .sheet-field select { border:none; font:inherit; font-size:16px; font-weight:600; color:var(--txt); padding:0 14px; height:46px; border-radius:14px; background:var(--bg); box-shadow: inset 4px 4px 8px #c3c8d4, inset -4px -4px 8px #ffffff; width:100%; min-width:0; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
+  .sheet-field input.sheet-amt { font-size:22px; font-weight:800; height:50px; }
+  .sheet-row { display:flex; gap:8px; }
+  .sheet-row input { flex:1; }
+  .sheet-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+  .sheet-sign { border:none; flex:none; font:inherit; font-size:13px; font-weight:800; padding:0 14px; height:50px; border-radius:14px; background:var(--bg); color:var(--txt); box-shadow:var(--shadow-out-sm); white-space:nowrap; }
+  .sheet-sign.neg { color:#23835f; }
+  .sheet-seg { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:4px; padding:4px; border-radius:16px; box-shadow: inset 4px 4px 8px #c3c8d4, inset -4px -4px 8px #ffffff; }
+  .sheet-seg button { border:none; font:inherit; font-size:13px; font-weight:700; height:40px; border-radius:12px; background:transparent; color:var(--txt-dim); }
+  .sheet-seg button.sel { background:var(--bg); color:var(--blue); font-weight:800; box-shadow:var(--shadow-out-sm); }
+  .sheet-summary { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; padding:12px 14px; border-radius:16px; box-shadow:var(--shadow-out-sm); }
+  .sheet-summary > span { display:flex; flex-direction:column; gap:2px; }
+  .sheet-summary .l { font-size:11px; color:var(--txt-dim); font-weight:600; }
+  .sheet-summary .v { font-size:13.5px; font-weight:800; }
+  .sheet-actions { display:flex; gap:12px; margin-top:4px; }
+  .sheet-actions .del { border:none; font:inherit; font-size:14px; font-weight:800; height:50px; padding:0 20px; border-radius:16px; background:var(--bg); color:#b3483f; box-shadow:var(--shadow-out-sm); }
+  .sheet-actions .save { border:none; flex:1; font:inherit; font-size:14px; font-weight:800; height:50px; border-radius:16px; background:var(--blue); color:#fff; box-shadow: 5px 5px 12px #b7bdea, -5px -5px 12px #ffffff; }
   .table .amt-cell.amt-deposit { color: var(--green); }
   .table .amt-cell.amt-withdraw { color: var(--red); }
   .table .amt-cell { text-align: right; font-weight: 700; }
@@ -390,6 +453,8 @@
     .form-panel { padding: 0 18px; }
     .profile-strip { padding-left: 18px; padding-right: 18px; }
     .settings-block, .budget-filter, .table-wrap, #expTotalLine, #budgetTotalLine { padding: 0 18px; }
+    #page-expenses .table-wrap, #page-budget .table-wrap { display: none; }
+    .card-list { display: flex; }
     /* #settingsTabs can hold up to 6 buttons (Income/Card/Categories/Excel
        sync/Cloud Sync/Data) — tighten them on narrow screens so they sit
        neatly rather than wrapping awkwardly or crowding the edges. */
@@ -786,6 +851,7 @@
           <tbody id="expTableBody"></tbody>
         </table>
       </div>
+      <div class="card-list" id="expCardList"></div>
     </div>
 
     <!-- BUDGET -->
@@ -819,6 +885,7 @@
           <tbody id="budgetTableBody"></tbody>
         </table>
       </div>
+      <div class="card-list" id="budgetCardList"></div>
     </div>
 
     <!-- INSTALLMENTS -->
@@ -1129,6 +1196,7 @@
 
 <!-- Icon picker popover (categories & sub categories) -->
 <div id="msPanel"></div>
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="if (event.target === this) closeSheet()"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="iconPickerPopover" style="display:none; position:fixed; z-index:70; background:var(--card); border:1px solid var(--card-b); border-radius:12px; padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.18); width:224px; max-height:220px; overflow-y:auto;"></div>
 
 <!-- Record payment modal (credit card profiles) -->
@@ -2322,6 +2390,7 @@ function goPage(name) {
   const prevPageEl = document.querySelector('.page.on');
   const prevName = prevPageEl ? (prevPageEl.id.startsWith('page-dashboard') ? 'dashboard' : prevPageEl.id.replace('page-','')) : null;
   if (typeof closeMs === 'function') closeMs();
+  if (typeof closeSheet === 'function') closeSheet();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on','dir-left','dir-right'));
   const pageId = name === 'dashboard' ? dashboardPageId() : 'page-' + name;
   const target = document.getElementById(pageId);
@@ -3321,17 +3390,9 @@ function renderExpensesPage() {
     if (editKey === editingRowKey) return buildEditRow(r, p);
     const isPayment = r.kind === 'payment';
     const catTag = (isPayment && !r.hasCategory) ? `<span class="cat-tag payment-tag">${secondaryLabel}</span>` : `<span class="cat-tag">${getCategoryIcon(p, r.category, r.subcategory)} ${escapeHtml(r.category)}</span>`;
-    let amtText, amtClass;
-    if (savings) {
-      const signed = isPayment ? r.value : -r.value;
-      amtText = (signed >= 0 ? '+' : '-') + fmt(Math.abs(r.value));
-      amtClass = signed >= 0 ? ' amt-deposit' : ' amt-withdraw';
-    } else {
-      // Payments, and expenses entered as a negative amount (income / refund), reduce the total.
-      const signed = isPayment ? -r.value : r.value;
-      amtText = fmt(signed);
-      amtClass = signed < 0 ? ' amt-negative' : '';
-    }
+    const ai = txAmountInfo(r, savings);
+    const amtText = ai.text;
+    const amtClass = savings ? (ai.signed >= 0 ? ' amt-deposit' : ' amt-withdraw') : (ai.signed < 0 ? ' amt-negative' : '');
     return `<tr>
       <td class="editable" onclick="startRowEdit('${editKey}')">${r.date}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${catTag}</td>
@@ -3341,6 +3402,198 @@ function renderExpensesPage() {
       <td><button class="del-btn" onclick="${isPayment ? `deletePayment('${r.id}')` : `deleteExpense('${r.id}')`}">✕</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="6" class="empty-note">No transactions match this filter for ${escapeHtml(monthsLabel)}.</td></tr>`;
+  renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel);
+}
+// Signed amount + display text for one Expenses row (shared by the table and the phone cards).
+function txAmountInfo(r, savings) {
+  const isPayment = r.kind === 'payment';
+  if (savings) {
+    const signed = isPayment ? r.value : -r.value;
+    return { signed, text: (signed >= 0 ? '+' : '-') + fmt(Math.abs(r.value)) };
+  }
+  // Payments, and expenses entered as a negative amount (income / refund), reduce the total.
+  const signed = isPayment ? -r.value : r.value;
+  return { signed, text: fmt(signed) };
+}
+function catTone(cat) {
+  let h = 0;
+  for (const ch of String(cat || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return 'c' + (h % 4);
+}
+function localIso(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function dayHeadLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  const now = new Date();
+  const opts = { weekday:'short', day:'numeric', month:'short' };
+  if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+  const base = d.toLocaleDateString('en-GB', opts).replace(',', '');
+  const today = localIso(now);
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (iso === today) return 'Today · ' + base;
+  if (iso === localIso(y)) return 'Yesterday · ' + base;
+  return base;
+}
+function renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel) {
+  const el = document.getElementById('expCardList');
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = `<div class="empty-note">No transactions match this filter for ${escapeHtml(monthsLabel)}.</div>`; return; }
+  const dayTotals = {};
+  rows.forEach(r => { dayTotals[r.date] = (dayTotals[r.date] || 0) + txAmountInfo(r, savings).signed; });
+  let html = '', lastDate = null;
+  rows.forEach(r => {
+    if (r.date !== lastDate) {
+      lastDate = r.date;
+      const t = dayTotals[r.date];
+      const tText = savings ? ((t >= 0 ? '+' : '-') + fmt(Math.abs(t))) : fmt(t);
+      html += `<div class="day-head"><span>${escapeHtml(dayHeadLabel(r.date))}</span><span class="day-total">${tText}</span></div>`;
+    }
+    const isPayment = r.kind === 'payment';
+    const ai = txAmountInfo(r, savings);
+    const plainPayment = isPayment && !r.hasCategory;
+    const title = r.description || (plainPayment ? secondaryLabel : (r.subcategory || r.category));
+    const subLine = plainPayment ? secondaryLabel : (r.subcategory && r.subcategory !== r.category ? `${r.category} · ${r.subcategory}` : r.category);
+    let amtCls = '', meta = '', metaCls = '';
+    if (savings) { amtCls = ai.signed >= 0 ? 'neg' : 'withdraw'; meta = isPayment ? 'Deposit' : 'Withdrawal'; metaCls = ai.signed >= 0 ? 'neg' : ''; }
+    else if (isPayment) { amtCls = 'neg'; meta = secondaryLabel; metaCls = 'neg'; }
+    else if (ai.signed < 0) { amtCls = 'neg'; meta = 'Income'; metaCls = 'neg'; }
+    else meta = r.method || '';
+    const icon = plainPayment ? '💳' : getCategoryIcon(p, r.category, r.subcategory);
+    html += `<button type="button" class="tx-card" onclick="openTxSheet('${r.kind}','${r.id}')">
+      <span class="tx-icon ${plainPayment ? 'c1' : catTone(r.category)}">${icon}</span>
+      <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span></span>
+      <span class="tx-right"><span class="tx-amt ${amtCls}">${ai.text}</span>${meta ? `<span class="tx-meta ${metaCls}">${escapeHtml(meta)}</span>` : ''}</span>
+    </button>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ---------- Edit bottom sheet (phone card layout) ----------
+   The sheet reuses the same input ids as the desktop inline edit row, so saving
+   goes through exactly the same saveExpenseEdit / savePaymentEdit / saveBudgetEdit logic. */
+const SHEET_CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+function openSheet(html) {
+  document.getElementById('sheet').innerHTML = `<div class="sheet-handle"></div>` + html;
+  document.getElementById('sheetBackdrop').classList.add('on');
+}
+function closeSheet() {
+  const bd = document.getElementById('sheetBackdrop');
+  if (!bd) return;
+  bd.classList.remove('on');
+  document.getElementById('sheet').innerHTML = '';
+}
+function sheetHead(title) {
+  return `<div class="sheet-head"><h2>${escapeHtml(title)}</h2><button type="button" class="sheet-close" aria-label="Close" onclick="closeSheet()">${SHEET_CLOSE_SVG}</button></div>`;
+}
+function syncSheetSign(inputId) {
+  const btn = document.getElementById('sheetSignBtn');
+  if (!btn) return;
+  const neg = Number(document.getElementById(inputId).value) < 0;
+  btn.textContent = neg ? '− Income' : '+ Expense';
+  btn.classList.toggle('neg', neg);
+}
+function flipSheetSign(inputId) {
+  const el = document.getElementById(inputId);
+  const v = Number(el.value);
+  if (v) el.value = String(-v);
+  syncSheetSign(inputId);
+}
+function openTxSheet(kind, id) {
+  const p = activeProfile();
+  const savings = isSavings(p);
+  editingRowKey = null;
+  const unit = escapeHtml((currencyOf(p) || {}).code || '');
+  if (kind === 'expense') {
+    const e = p.expenses.find(x => x.id === id);
+    if (!e) return;
+    const subs = p.categories[e.category] || [];
+    const methods = Array.from(new Set(['Visa', 'Cash', 'Other', 'Card', ...p.expenses.map(x => x.method).filter(Boolean)]));
+    openSheet(sheetHead(savings ? 'Edit withdrawal' : (isCredit(p) ? 'Edit transaction' : 'Edit expense')) + `
+      <div class="sheet-field"><label for="editVal_${id}">Amount${unit ? ' (' + unit + ')' : ''}</label>
+        <div class="sheet-row">${savings ? '' : `<button type="button" class="sheet-sign" id="sheetSignBtn" onclick="flipSheetSign('editVal_${id}')">+ Expense</button>`}
+        <input type="number" inputmode="decimal" class="sheet-amt" id="editVal_${id}" value="${e.value}" oninput="syncSheetSign('editVal_${id}')"></div></div>
+      <div class="sheet-grid">
+        <div class="sheet-field"><label for="editCat_${id}">Category</label><input type="text" id="editCat_${id}" value="${escapeHtml(e.category)}" list="catList" oninput="onEditCategoryInput('${id}')"></div>
+        <div class="sheet-field"><label for="editSub_${id}">Sub category</label><input type="text" id="editSub_${id}" value="${escapeHtml(e.subcategory)}" list="editSubList_${id}"><datalist id="editSubList_${id}">${subs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+      </div>
+      <div class="sheet-grid">
+        <div class="sheet-field"><label for="editDate_${id}">Date</label><input type="date" id="editDate_${id}" value="${e.date}"></div>
+        <div class="sheet-field"><label for="editMethod_${id}">Method</label><input type="text" id="editMethod_${id}" value="${escapeHtml(e.method || '')}" list="sheetMethodList"><datalist id="sheetMethodList">${methods.map(m => `<option value="${escapeHtml(m)}">`).join('')}</datalist></div>
+      </div>
+      <div class="sheet-field"><label for="editDesc_${id}">Description</label><input type="text" id="editDesc_${id}" value="${escapeHtml(e.description || '')}"></div>
+      <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('expense','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('expense','${id}')">Save changes</button></div>`);
+    syncSheetSign('editVal_' + id);
+    return;
+  }
+  const pm = p.payments.find(x => x.id === id);
+  if (!pm) return;
+  const label = savings ? 'deposit' : 'payment';
+  const subs = pm.category ? (p.categories[pm.category] || []) : [];
+  openSheet(sheetHead('Edit ' + label) + `
+    <div class="sheet-field"><label for="editVal_pm_${id}">Amount${unit ? ' (' + unit + ')' : ''}</label><input type="number" inputmode="decimal" class="sheet-amt" id="editVal_pm_${id}" value="${pm.amount}"></div>
+    ${savings ? `<div class="sheet-grid">
+      <div class="sheet-field"><label for="editCat_pm_${id}">Category</label><input type="text" id="editCat_pm_${id}" value="${escapeHtml(pm.category || '')}" list="catList" placeholder="Category" oninput="onEditPaymentCategoryInput('${id}')"></div>
+      <div class="sheet-field"><label for="editSub_pm_${id}">Sub category</label><input type="text" id="editSub_pm_${id}" value="${escapeHtml(pm.subcategory || '')}" list="editSubList_pm_${id}"><datalist id="editSubList_pm_${id}">${subs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+    </div>` : ''}
+    <div class="sheet-field"><label for="editDate_pm_${id}">Date</label><input type="date" id="editDate_pm_${id}" value="${pm.date}"></div>
+    <div class="sheet-field"><label for="editDesc_pm_${id}">Note</label><input type="text" id="editDesc_pm_${id}" value="${escapeHtml(pm.note || '')}" placeholder="Note (optional)"></div>
+    <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('payment','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('payment','${id}')">Save changes</button></div>`);
+}
+let sheetBudgetStatus = null;
+function openBudgetSheet(id) {
+  const p = activeProfile();
+  const b = p.budget.find(x => x.id === id);
+  if (!b) return;
+  editingBudgetId = null;
+  sheetBudgetStatus = b.status === 'Done' ? 'Done' : 'Not Paid Yet';
+  const actual = actualForBudgetLine(b);
+  const planned = Number(b.plannedValue || 0);
+  const remaining = planned - actual;
+  const subs = p.categories[b.category] || [];
+  const unit = escapeHtml((currencyOf(p) || {}).code || '');
+  openSheet(sheetHead('Edit budget line') + `
+    <div class="sheet-summary">
+      <span><span class="l">Planned</span><span class="v">${fmt(planned)}</span></span>
+      <span><span class="l">Actual</span><span class="v">${fmt(actual)}</span></span>
+      <span><span class="l">${remaining < 0 ? 'Over by' : 'Remaining'}</span><span class="v" style="color:${remaining < 0 ? '#b3483f' : '#23835f'};">${fmt(Math.abs(remaining))}</span></span>
+    </div>
+    <div class="sheet-field"><label>Status</label><div class="sheet-seg" id="sheetStatusSeg">
+      <button type="button" data-st="Not Paid Yet" onclick="pickSheetStatus(this)" class="${sheetBudgetStatus !== 'Done' ? 'sel' : ''}">Ongoing</button>
+      <button type="button" data-st="Done" onclick="pickSheetStatus(this)" class="${sheetBudgetStatus === 'Done' ? 'sel' : ''}">Closed</button>
+    </div></div>
+    <div class="sheet-field"><label for="editBPlanned_${id}">Planned amount${unit ? ' (' + unit + ')' : ''}</label><input type="number" inputmode="decimal" class="sheet-amt" id="editBPlanned_${id}" value="${b.plannedValue}"></div>
+    <div class="sheet-grid">
+      <div class="sheet-field"><label for="editBCat_${id}">Category</label><input type="text" id="editBCat_${id}" value="${escapeHtml(b.category)}" list="catList" oninput="onEditBudgetCategoryInput('${id}')"></div>
+      <div class="sheet-field"><label for="editBSub_${id}">Sub category</label><input type="text" id="editBSub_${id}" value="${escapeHtml(b.subcategory)}" list="editBSubList_${id}"><datalist id="editBSubList_${id}">${subs.map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+    </div>
+    <div class="sheet-field"><label for="editBDate_${id}">Date (sets the month)</label><input type="date" id="editBDate_${id}" value="${b.month ? b.month + '-05' : ''}"></div>
+    <div class="sheet-field"><label for="editBDesc_${id}">Description</label><input type="text" id="editBDesc_${id}" value="${escapeHtml(b.description || '')}"></div>
+    <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('budget','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('budget','${id}')">Save changes</button></div>`);
+}
+function pickSheetStatus(btn) {
+  sheetBudgetStatus = btn.dataset.st;
+  document.querySelectorAll('#sheetStatusSeg button').forEach(b => b.classList.toggle('sel', b === btn));
+}
+function sheetSave(kind, id) {
+  let ok = false;
+  if (kind === 'expense') ok = saveExpenseEdit(id);
+  else if (kind === 'payment') ok = savePaymentEdit(id);
+  else if (kind === 'budget') {
+    ok = saveBudgetEdit(id);
+    if (ok) {
+      const line = activeProfile().budget.find(b => b.id === id);
+      if (line && sheetBudgetStatus && line.status !== sheetBudgetStatus) setBudgetStatus(id, sheetBudgetStatus);
+    }
+  }
+  if (ok) closeSheet();
+}
+function sheetDelete(kind, id) {
+  const what = kind === 'budget' ? 'budget line' : kind === 'payment' ? (isSavings() ? 'deposit' : 'payment') : 'transaction';
+  if (!confirm(`Delete this ${what}?`)) return;
+  closeSheet();
+  if (kind === 'expense') deleteExpense(id);
+  else if (kind === 'payment') deletePayment(id);
+  else deleteBudgetLine(id);
 }
 
 /* ============================================================
@@ -3371,7 +3624,7 @@ function creationStamp(id) { const m = String(id || '').match(/\d{13}/); return 
 function buildExpenseRows(p) {
   const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
   return [
-    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, value:Number(e.value||0), stamp: creationStamp(e.id), idx })),
+    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx })),
     ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx }))
   ];
 }
@@ -3651,6 +3904,8 @@ function saveExpenseEdit(id) {
   e.subcategory = subVal || catVal;
   e.description = descVal;
   e.value = valNum;
+  const methodEl = document.getElementById('editMethod_' + id);
+  if (methodEl) e.method = methodEl.value.trim();
   // A category or sub category typed fresh (not picked from the list) is kept for next time too.
   if (!p.categories[catVal]) p.categories[catVal] = [];
   if (subVal && !p.categories[catVal].includes(subVal)) p.categories[catVal].push(subVal);
@@ -3658,6 +3913,7 @@ function saveExpenseEdit(id) {
   saveState();
   renderExpensesPage();
   renderDashboard();
+  return true;
 }
 function onEditPaymentCategoryInput(id) {
   const catVal = document.getElementById('editCat_pm_' + id).value;
@@ -3697,6 +3953,7 @@ function savePaymentEdit(id) {
   saveState();
   renderExpensesPage();
   renderDashboard();
+  return true;
 }
 function deleteExpense(id) {
   activeProfile().expenses = activeProfile().expenses.filter(e => e.id !== id);
@@ -3782,6 +4039,39 @@ function renderBudgetPage() {
       <td><button class="del-btn" onclick="deleteBudgetLine('${b.id}')">✕</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty-note">${selectedMonths.length ? 'No budget lines for the selected months.' : 'Select at least one month above.'}</td></tr>`;
+  renderBudgetCards(rows, p, instIds);
+}
+function renderBudgetCards(rows, p, instIds) {
+  const el = document.getElementById('budgetCardList');
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = `<div class="empty-note">${selectedMonths.length ? 'No budget lines for the selected months.' : 'Select at least one month above.'}</div>`; return; }
+  const showMonth = selectedMonths.length > 1;
+  el.innerHTML = rows.map(b => {
+    const actual = actualForBudgetLine(b);
+    const planned = Number(b.plannedValue || 0);
+    const remaining = planned - actual;
+    const closed = b.status === 'Done';
+    const over = remaining < 0;
+    const pct = planned > 0 ? Math.max(0, Math.min(100, actual / planned * 100)) : (actual > 0 ? 100 : 0);
+    const title = b.description || b.subcategory || b.category;
+    const parts = [b.subcategory && b.subcategory !== b.category ? `${escapeHtml(b.category)} · ${escapeHtml(b.subcategory)}` : escapeHtml(b.category)];
+    if (showMonth) parts.push(escapeHtml(monthLabel(b.month)));
+    if (instIds.has(b.id)) parts.push('<span class="tx-tag">Installment</span>');
+    else if (b.recurringGroupId) parts.push('<span class="tx-tag">Recurring</span>');
+    return `<button type="button" class="tx-card bud-card" onclick="openBudgetSheet('${b.id}')">
+      <span class="bud-top">
+        <span class="tx-icon ${catTone(b.category)}">${getCategoryIcon(p, b.category, b.subcategory)}</span>
+        <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${parts.join(' · ')}</span></span>
+        <span class="status-pill ${closed ? 'closed' : 'ongoing'}">${closed ? 'Closed' : 'Ongoing'}</span>
+      </span>
+      <span class="bud-bar ${over ? 'over' : (closed ? 'done' : '')}"><span style="width:${pct.toFixed(1)}%;"></span></span>
+      <span class="bud-stats">
+        <span><span class="l">Planned</span><span class="v">${fmtRaw(planned)}</span></span>
+        <span><span class="l">Actual</span><span class="v">${fmtRaw(actual)}</span></span>
+        <span><span class="l">${over ? 'Over by' : 'Remaining'}</span><span class="v ${over ? 'neg' : (remaining > 0 ? 'pos' : '')}">${fmtRaw(Math.abs(remaining))}</span></span>
+      </span>
+    </button>`;
+  }).join('');
 }
 let editingBudgetId = null;
 function startBudgetEdit(id) {
@@ -3821,6 +4111,7 @@ function saveBudgetEdit(id) {
   saveState();
   renderBudgetPage();
   renderDashboard();
+  return true;
 }
 function setBudgetStatus(id, status) {
   const line = activeProfile().budget.find(b => b.id === id);
