@@ -193,6 +193,22 @@
   .table .cat-tag { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 8px; background: var(--blue-soft); color: var(--blue); }
   .table .cat-tag.payment-tag { background: var(--green-soft); color: var(--green); }
   .table .amt-cell.amt-negative { color: var(--green); }
+  /* Multi-select filter buttons (category / sub category / table date column) */
+  .ms-btn { background:var(--card); border:1px solid var(--card-b); color:var(--txt); padding:7px 26px 7px 10px; border-radius:8px; font-size:12.5px; font-weight:600; text-align:left; position:relative; cursor:pointer; min-width:140px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ms-btn::after { content:'▾'; position:absolute; right:9px; top:50%; transform:translateY(-50%); color:var(--txt-dim); font-size:11px; }
+  .ms-btn.active { color:var(--blue); border-color:var(--blue); }
+  .th-filter { background:none; border:none; padding:0; font:inherit; color:inherit; cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-transform:inherit; letter-spacing:inherit; }
+  .th-filter .th-caret { font-size:10px; }
+  .th-filter.active { color:var(--blue); }
+  .th-filter .th-count { background:var(--blue); color:#fff; border-radius:8px; padding:0 6px; font-size:10px; line-height:16px; }
+  #msPanel { display:none; position:fixed; z-index:75; background:var(--card); border:1px solid var(--card-b); border-radius:16px; padding:10px; width:250px; max-height:320px; overflow-y:auto; box-shadow:var(--shadow-out); }
+  #msPanel .ms-actions { display:flex; gap:8px; margin-bottom:8px; }
+  #msPanel .ms-actions button { flex:1; padding:6px; font-size:11.5px; }
+  #msPanel label { display:flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; cursor:pointer; }
+  #msPanel label .ms-count { margin-left:auto; color:var(--txt-dim2); font-size:11px; }
+  #msPanel label .ms-hint { color:var(--txt-dim2); font-size:11px; }
+  #msPanel .ms-empty { font-size:12px; color:var(--txt-dim); padding:8px 4px; }
+  .filter-clear { color:var(--blue); cursor:pointer; font-weight:700; }
   .table .amt-cell.amt-deposit { color: var(--green); }
   .table .amt-cell.amt-withdraw { color: var(--red); }
   .table .amt-cell { text-align: right; font-weight: 700; }
@@ -267,6 +283,10 @@
   .income-cell .row { display: flex; align-items: center; gap: 6px; }
   .income-cell input { flex: 1; min-width: 0; background: transparent; border: none; color: var(--txt); font-size: 13px; font-weight: 700; padding: 0; }
   /* hide native number-input spinner arrows */
+  /* No up/down spinner arrows on any number field anywhere in the app */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .income-cell input::-webkit-outer-spin-button,
   .income-cell input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .income-cell input[type=number] { -moz-appearance: textfield; }
@@ -353,7 +373,7 @@
        toggle button) for desktop. On a narrow screen that anchor math easily
        pushes the panel partly off-screen, clipping it. Fixed + inset instead
        so it's always fully visible regardless of where its button landed. */
-    #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel, #instMonthFilterPanel {
+    #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel, #instMonthFilterPanel, #msPanel {
       position: fixed !important;
       left: 16px !important;
       right: 16px !important;
@@ -568,12 +588,8 @@
         <div class="card">
           <h3>Budget vs actual by category</h3>
           <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <select id="dashCatFilter" onchange="onDashCatFilterChange()" style="flex:1; background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 8px;border-radius:8px;font-size:12px;">
-              <option value="">All categories</option>
-            </select>
-            <select id="dashSubFilter" onchange="onDashSubFilterChange()" style="flex:1; background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 8px;border-radius:8px;font-size:12px;">
-              <option value="">All sub categories</option>
-            </select>
+            <button type="button" class="ms-btn" id="msBtn_dashCat" style="flex:1; max-width:none; min-width:0;" onclick="openMs('dashCat', this)">All categories</button>
+            <button type="button" class="ms-btn" id="msBtn_dashSub" style="flex:1; max-width:none; min-width:0;" onclick="openMs('dashSub', this)">All sub categories</button>
           </div>
           <div id="catRows"><div class="empty-note">No budget lines for this month yet.</div></div>
         </div>
@@ -704,7 +720,11 @@
         </div>
         <div class="field">
           <label>Amount (<span class="cur-unit">EGP</span>)</label>
-          <input type="number" id="expAmount" placeholder="0" inputmode="decimal" oninput="document.getElementById('amountDisplay').textContent = this.value || '0';">
+          <div style="display:flex; gap:8px; align-items:stretch;">
+            <button type="button" class="btn btn-ghost" id="expSignBtn" onclick="toggleAmountSign()" title="Switch between a normal expense and a negative amount (income / refund)" style="flex:none; padding:0 14px; font-size:13px; font-weight:800; white-space:nowrap;">+ Expense</button>
+            <input type="number" id="expAmount" placeholder="0" inputmode="decimal" style="flex:1; min-width:0;" oninput="onExpAmountInput()">
+          </div>
+          <div id="expSignHint" style="font-size:11.5px; color:var(--txt-dim); margin-top:6px;">Tap the button to log a negative amount (income / refund) — it reduces the spent total.</div>
         </div>
         <div class="field">
           <label>Category</label>
@@ -754,16 +774,12 @@
       <div class="budget-filter" style="flex-wrap:wrap;">
         <input type="text" id="expSearch" placeholder="Search description…" oninput="renderExpensesPage()"
           style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
-        <select id="expCatFilter" onchange="onExpCatFilterChange()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
-          <option value="">All categories</option>
-        </select>
-        <select id="expSubFilter" onchange="renderExpensesPage()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
-          <option value="">All sub categories</option>
-        </select>
+        <button type="button" class="ms-btn" id="msBtn_expCat" onclick="openMs('expCat', this)">All categories</button>
+        <button type="button" class="ms-btn" id="msBtn_expSub" onclick="openMs('expSub', this)">All sub categories</button>
       </div>
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>Date</th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
+          <thead><tr><th><button type="button" class="th-filter" id="msBtn_expDate" onclick="openMs('expDate', this)" title="Filter by day">Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
           <tbody id="expTableBody"></tbody>
         </table>
       </div>
@@ -791,12 +807,8 @@
       <div class="budget-filter" style="flex-wrap:wrap;">
         <input type="text" id="budgetSearch" placeholder="Search description…" oninput="renderBudgetPage()"
           style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
-        <select id="budgetCatFilter" onchange="onBudgetCatFilterChange()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
-          <option value="">All categories</option>
-        </select>
-        <select id="budgetSubFilter" onchange="renderBudgetPage()" style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px;">
-          <option value="">All sub categories</option>
-        </select>
+        <button type="button" class="ms-btn" id="msBtn_budgetCat" onclick="openMs('budgetCat', this)">All categories</button>
+        <button type="button" class="ms-btn" id="msBtn_budgetSub" onclick="openMs('budgetSub', this)">All sub categories</button>
       </div>
       <div class="table-wrap">
         <table class="table">
@@ -1113,6 +1125,7 @@
 </div>
 
 <!-- Icon picker popover (categories & sub categories) -->
+<div id="msPanel"></div>
 <div id="iconPickerPopover" style="display:none; position:fixed; z-index:70; background:var(--card); border:1px solid var(--card-b); border-radius:12px; padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.18); width:224px; max-height:220px; overflow-y:auto;"></div>
 
 <!-- Record payment modal (credit card profiles) -->
@@ -2242,10 +2255,11 @@ function fmtRaw(n) {
 // Formats a number with the given (or active) profile's currency symbol.
 // Display-only — no conversion happens anywhere; this just changes the label.
 function fmt(n, profile) {
-  const s = fmtRaw(n);
+  const neg = Math.round((Number(n)||0) * 100) < 0;
+  const s = fmtRaw(Math.abs(Number(n) || 0));
   let cur;
   try { cur = currencyOf(profile); } catch(e) { cur = CURRENCIES.EGP; }
-  return cur.position === 'prefix' ? (cur.symbol + s) : (s + ' ' + cur.symbol);
+  return (neg ? '-' : '') + (cur.position === 'prefix' ? (cur.symbol + s) : (s + ' ' + cur.symbol));
 }
 
 /* ============================================================
@@ -2304,6 +2318,7 @@ function goPage(name) {
   if ((name === 'budget' || name === 'installments') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments tab
   const prevPageEl = document.querySelector('.page.on');
   const prevName = prevPageEl ? (prevPageEl.id.startsWith('page-dashboard') ? 'dashboard' : prevPageEl.id.replace('page-','')) : null;
+  if (typeof closeMs === 'function') closeMs();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('on','dir-left','dir-right'));
   const pageId = name === 'dashboard' ? dashboardPageId() : 'page-' + name;
   const target = document.getElementById(pageId);
@@ -2407,7 +2422,6 @@ function monthSummary(m) {
 /* ============================================================
    DASHBOARD
    ============================================================ */
-let dashCatFilter = '', dashSubFilter = '';
 let selectedMonths = null; // shared month filter — kept in sync across Dashboard, Expenses and Budget
 function ensureSelectedMonths() {
   if (selectedMonths === null) selectedMonths = [currentMonth];
@@ -2495,30 +2509,6 @@ function renderMonthDependentPages() {
   if (document.getElementById('page-installments').classList.contains('on')) renderInstallmentsPage();
 }
 
-function populateDashFilters(buds) {
-  const catSel = document.getElementById('dashCatFilter');
-  const cats = Array.from(new Set(buds.map(b => b.category))).sort();
-  catSel.innerHTML = '<option value="">All categories</option>' +
-    cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  catSel.value = cats.includes(dashCatFilter) ? dashCatFilter : '';
-  dashCatFilter = catSel.value;
-
-  const subSel = document.getElementById('dashSubFilter');
-  const subs = Array.from(new Set(buds.filter(b => !dashCatFilter || b.category === dashCatFilter).map(b => b.subcategory))).sort();
-  subSel.innerHTML = '<option value="">All sub categories</option>' +
-    subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  subSel.value = subs.includes(dashSubFilter) ? dashSubFilter : '';
-  dashSubFilter = subSel.value;
-}
-function onDashCatFilterChange() {
-  dashCatFilter = document.getElementById('dashCatFilter').value;
-  dashSubFilter = '';
-  renderDashboard();
-}
-function onDashSubFilterChange() {
-  dashSubFilter = document.getElementById('dashSubFilter').value;
-  renderDashboard();
-}
 let editingPlannedIds = null;
 function setDashBudgetStatus(idsCsv, status) {
   const ids = idsCsv.split(',');
@@ -2667,10 +2657,8 @@ function renderDashboard() {
 
   // Category + sub category rows for the selected months
   const buds = selMonths.flatMap(m => budgetForMonth(m));
-  populateDashFilters(buds);
-  let filteredBuds = buds;
-  if (dashCatFilter) filteredBuds = filteredBuds.filter(b => b.category === dashCatFilter);
-  if (dashSubFilter) filteredBuds = filteredBuds.filter(b => b.subcategory === dashSubFilter);
+  updateMsButtons();
+  const filteredBuds = buds.filter(b => passesCatSub(b.category, b.subcategory));
   const byCat = {};
   filteredBuds.forEach(b => {
     const key = b.category + '|' + b.subcategory;
@@ -3125,7 +3113,11 @@ function renderAddExpensePage() {
   document.querySelectorAll('#expTypeField .chip-btn').forEach(b => b.classList.toggle('sel', b.dataset.exptype === 'withdrawal'));
   document.getElementById('saveExpenseBtn').textContent = savings ? 'Add withdrawal' : (isCredit() ? 'Add transaction' : 'Add expense');
   document.getElementById('expAmount').value = '';
-  document.getElementById('amountDisplay').textContent = '0';
+  expAmountNegative = false;
+  // Savings accounts already have a Deposit type for money coming in, so the sign toggle is for budget/credit profiles only.
+  document.getElementById('expSignBtn').style.display = savings ? 'none' : '';
+  document.getElementById('expSignHint').style.display = savings ? 'none' : '';
+  updateAmountSignUI();
   document.getElementById('expDesc').value = '';
   document.getElementById('expDate').value = new Date().toISOString().slice(0,10);
   expSelectedCategory = null; expSelectedSub = null; expSelectedMethod = 'Visa';
@@ -3165,9 +3157,36 @@ function pickMethod(btn) {
   btn.classList.add('sel');
   expSelectedMethod = btn.dataset.method;
 }
+// Negative amounts = income / refunds logged as an expense line. iPhone's decimal
+// keypad has no minus key, so the +/− button next to the amount sets the sign.
+let expAmountNegative = false;
+function signedExpAmount() {
+  const raw = Number(document.getElementById('expAmount').value);
+  if (!raw || isNaN(raw)) return 0;
+  if (raw < 0) return raw; // typed a minus sign directly (desktop)
+  return expAmountNegative ? -raw : raw;
+}
+function updateAmountSignUI() {
+  const btn = document.getElementById('expSignBtn');
+  const neg = expAmountNegative || Number(document.getElementById('expAmount').value) < 0;
+  btn.textContent = neg ? '− Income' : '+ Expense';
+  btn.style.color = neg ? 'var(--green)' : '';
+  const v = signedExpAmount();
+  document.getElementById('amountDisplay').textContent = v ? String(v) : (neg ? '-0' : '0');
+  document.getElementById('amountDisplay').style.color = neg ? 'var(--green)' : '';
+}
+function toggleAmountSign() {
+  const el = document.getElementById('expAmount');
+  const raw = Number(el.value);
+  if (raw < 0) { el.value = String(Math.abs(raw)); expAmountNegative = false; }
+  else expAmountNegative = !expAmountNegative;
+  updateAmountSignUI();
+}
+function onExpAmountInput() { updateAmountSignUI(); }
 function saveExpense() {
-  const amount = Number(document.getElementById('expAmount').value);
-  if (!amount || amount <= 0) { alert('Enter an amount.'); return; }
+  const isDeposit = isSavings(activeProfile()) && expSelectedType === 'deposit';
+  const amount = isDeposit ? Math.abs(Number(document.getElementById('expAmount').value)) : signedExpAmount();
+  if (!amount || isNaN(amount)) { alert('Enter an amount.'); return; }
   if (!expSelectedCategory) { alert('Pick a category.'); return; }
   const date = document.getElementById('expDate').value || new Date().toISOString().slice(0,10);
   const month = monthForDate(date);
@@ -3205,7 +3224,7 @@ function saveExpense() {
 // Returns a plain string so a Shortcut can speak/show it as confirmation.
 window.quickAddExpense = function(amount, category, subcategory, description, method, dateStr) {
   amount = Number(amount);
-  if (!amount || amount <= 0) return 'Error: amount must be a positive number.';
+  if (!amount || isNaN(amount)) return 'Error: amount must be a nonzero number (negative = income / refund).';
   if (!category || !String(category).trim()) return 'Error: category is required.';
   const date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : new Date().toISOString().slice(0,10);
   const month = monthForDate(date);
@@ -3229,7 +3248,6 @@ window.quickAddExpense = function(amount, category, subcategory, description, me
 /* ============================================================
    EXPENSES LIST PAGE
    ============================================================ */
-let expCatFilterValue = '', expSubFilterValue = '';
 function allKnownMonths() {
   const p = activeProfile();
   const s = new Set([
@@ -3242,50 +3260,10 @@ function allKnownMonths() {
   return Array.from(s).sort().reverse();
 }
 
-function populateExpFilters() {
-  const catSel = document.getElementById('expCatFilter');
-  const prevCat = catSel.value;
-  const p = activeProfile();
-  const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
-  const cats = new Set(p.expenses.map(e => e.category));
-  let hasUncategorizedPayments = false;
-  p.payments.forEach(pm => { if (pm.category) cats.add(pm.category); else hasUncategorizedPayments = true; });
-  const catList = Array.from(cats).sort();
-  if (hasUncategorizedPayments) catList.push(secondaryLabel);
-  catSel.innerHTML = '<option value="">All categories</option>' +
-    catList.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  catSel.value = catList.includes(prevCat) ? prevCat : '';
-  populateExpSubFilter();
-}
-function populateExpSubFilter() {
-  const cat = document.getElementById('expCatFilter').value;
-  const p = activeProfile();
-  const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
-  const subSel = document.getElementById('expSubFilter');
-  const prevSub = subSel.value;
-  let subs;
-  if (cat === secondaryLabel) {
-    subs = [];
-  } else {
-    const fromExpenses = p.expenses.filter(e => !cat || e.category === cat).map(e => e.subcategory);
-    const fromPayments = p.payments.filter(pm => pm.category && (!cat || pm.category === cat)).map(pm => pm.subcategory).filter(Boolean);
-    subs = Array.from(new Set([...fromExpenses, ...fromPayments])).sort();
-  }
-  subSel.innerHTML = '<option value="">All sub categories</option>' +
-    subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  subSel.value = subs.includes(prevSub) ? prevSub : '';
-}
-function onExpCatFilterChange() {
-  populateExpSubFilter();
-  renderExpensesPage();
-}
 function renderExpensesPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('exp');
-  populateExpFilters();
   populateCatListDatalist();
-  const catFilter = document.getElementById('expCatFilter').value;
-  const subFilter = document.getElementById('expSubFilter').value;
   const search = document.getElementById('expSearch').value.trim().toLowerCase();
   const p = activeProfile();
   const savings = isSavings(p);
@@ -3295,31 +3273,39 @@ function renderExpensesPage() {
   // kind is just a transaction that moves the balance the opposite direction.
   // Deposits carry a real category when the person picked one (mainly savings);
   // fall back to the generic label when they don't (credit-card payments, older data).
-  let allRows = [
-    ...p.expenses.map(e => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, value:Number(e.value||0) })),
-    ...p.payments.map(pm => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category }))
-  ];
-  let rows = allRows.filter(r => selectedMonths.includes(r.month));
-  if (catFilter) rows = rows.filter(r => r.category === catFilter);
-  if (subFilter) rows = rows.filter(r => r.subcategory === subFilter);
+  const monthRows = buildExpenseRows(p).filter(r => selectedMonths.includes(r.month));
+  // A picked day that's no longer inside the selected months is dropped, so the
+  // date filter can never silently hide everything after a month change.
+  const f = sf();
+  const monthDates = new Set(monthRows.map(r => r.date));
+  f.dates = f.dates.filter(d => monthDates.has(d));
+  updateMsButtons();
+  let rows = monthRows.filter(r => passesCatSub(r.category, r.subcategory));
   if (search) rows = rows.filter(r =>
     (r.description||'').toLowerCase().includes(search) ||
     (r.category||'').toLowerCase().includes(search) ||
     (r.subcategory||'').toLowerCase().includes(search)
   );
+  if (f.dates.length) rows = rows.filter(r => f.dates.includes(r.date));
   const chargeSum = rows.filter(r=>r.kind==='expense').reduce((s,r)=>s+r.value,0);
   const paymentSum = rows.filter(r=>r.kind==='payment').reduce((s,r)=>s+r.value,0);
   const totalLineEl = document.getElementById('expTotalLine');
+  let totalText;
   if (!selectedMonths.length) {
-    totalLineEl.textContent = 'No months selected.';
+    totalText = 'No months selected.';
   } else if (savings) {
-    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Deposits ${fmt(paymentSum)} · Withdrawals ${fmt(chargeSum)}`;
+    totalText = `${rows.length} transaction${rows.length===1?'':'s'} · Deposits ${fmt(paymentSum)} · Withdrawals ${fmt(chargeSum)}`;
   } else if (paymentSum > 0) {
-    totalLineEl.textContent = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)}`;
+    totalText = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)}`;
   } else {
-    totalLineEl.textContent = `${rows.length} expense${rows.length===1?'':'s'} · Total ${fmt(chargeSum)}`;
+    totalText = `${rows.length} expense${rows.length===1?'':'s'} · Total ${fmt(chargeSum)}`;
   }
-  rows = rows.slice().sort((a,b)=> b.date.localeCompare(a.date));
+  let totalHtml = escapeHtml(totalText);
+  if (f.dates.length) totalHtml += ` · <span class="filter-clear" onclick="clearSharedFilter('dates')">${f.dates.length === 1 ? escapeHtml(dayLabel(f.dates[0])) : f.dates.length + ' days'} ✕</span>`;
+  totalLineEl.innerHTML = totalHtml;
+  // Newest first: by date, then — for several transactions on the same day —
+  // by when each was entered, so the one just added lands on top, not at the bottom.
+  rows = rows.slice().sort((a,b)=> b.date.localeCompare(a.date) || (b.stamp - a.stamp) || (b.idx - a.idx));
   const body = document.getElementById('expTableBody');
   const monthsLabel = selectedMonths.length ? selectedMonths.map(monthLabel).join(', ') : 'the selected months';
   body.innerHTML = rows.length ? rows.map(r => {
@@ -3329,11 +3315,14 @@ function renderExpensesPage() {
     const catTag = (isPayment && !r.hasCategory) ? `<span class="cat-tag payment-tag">${secondaryLabel}</span>` : `<span class="cat-tag">${getCategoryIcon(p, r.category, r.subcategory)} ${escapeHtml(r.category)}</span>`;
     let amtText, amtClass;
     if (savings) {
-      amtText = (isPayment ? '+' : '-') + fmt(r.value);
-      amtClass = isPayment ? ' amt-deposit' : ' amt-withdraw';
+      const signed = isPayment ? r.value : -r.value;
+      amtText = (signed >= 0 ? '+' : '-') + fmt(Math.abs(r.value));
+      amtClass = signed >= 0 ? ' amt-deposit' : ' amt-withdraw';
     } else {
-      amtText = (isPayment ? '-' : '') + fmt(r.value);
-      amtClass = isPayment ? ' amt-negative' : '';
+      // Payments, and expenses entered as a negative amount (income / refund), reduce the total.
+      const signed = isPayment ? -r.value : r.value;
+      amtText = fmt(signed);
+      amtClass = signed < 0 ? ' amt-negative' : '';
     }
     return `<tr>
       <td class="editable" onclick="startRowEdit('${editKey}')">${r.date}</td>
@@ -3345,6 +3334,182 @@ function renderExpensesPage() {
     </tr>`;
   }).join('') : `<tr><td colspan="6" class="empty-note">No transactions match this filter for ${escapeHtml(monthsLabel)}.</td></tr>`;
 }
+
+/* ============================================================
+   SHARED CATEGORY / SUB CATEGORY / DAY FILTERS
+   One selection shared by Dashboard, Expenses and Budget (like the month
+   filter) — change it on any tab and every tab follows. Resets when you
+   switch profile, since each profile has its own categories.
+   ============================================================ */
+const SUB_SEP = '\u0001';
+let sharedFilters = { pid: null, cats: [], subs: [], dates: [] }; // subs stored as 'category␁sub' so same-named subs under different categories stay distinct
+function sf() {
+  if (sharedFilters.pid !== state.activeProfileId) sharedFilters = { pid: state.activeProfileId, cats: [], subs: [], dates: [] };
+  return sharedFilters;
+}
+function subKey(cat, sub) { return (cat || '') + SUB_SEP + (sub || ''); }
+function subKeyParts(k) { const i = k.indexOf(SUB_SEP); return [k.slice(0, i), k.slice(i + 1)]; }
+// Picked sub categories narrow only their own parent category: pick Food + Car
+// and then "Restaurant" (under Food) → Food shows only Restaurant, Car shows everything.
+function passesCatSub(cat, sub) {
+  const { cats, subs } = sf();
+  if (cats.length && !cats.includes(cat)) return false;
+  if (!subs.length) return true;
+  if (subs.includes(subKey(cat, sub))) return true;
+  if (!cats.length) return false;
+  return !subs.some(k => subKeyParts(k)[0] === cat);
+}
+function creationStamp(id) { const m = String(id || '').match(/\d{13}/); return m ? Number(m[0]) : 0; }
+function buildExpenseRows(p) {
+  const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
+  return [
+    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, value:Number(e.value||0), stamp: creationStamp(e.id), idx })),
+    ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx }))
+  ];
+}
+function dayLabel(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+const MS_KEYS = ['dashCat','dashSub','expCat','expSub','budgetCat','budgetSub','expDate'];
+function msKind(key) { return key.endsWith('Cat') ? 'cats' : key.endsWith('Sub') ? 'subs' : 'dates'; }
+// Category/sub pairs a tab's picker offers — each tab lists what exists in its own data.
+function msPairs(key) {
+  const p = activeProfile();
+  if (key.startsWith('dash')) { ensureSelectedMonths(); return selectedMonths.flatMap(m => budgetForMonth(m)).map(b => [b.category, b.subcategory]); }
+  if (key.startsWith('budget')) return p.budget.map(b => [b.category, b.subcategory]);
+  return buildExpenseRows(p).map(r => [r.category, r.subcategory]);
+}
+let msOpenKey = null, msOptionsCache = [];
+function msOptions(key) {
+  const f = sf();
+  const kind = msKind(key);
+  if (kind === 'cats') {
+    const cats = new Set(msPairs(key).map(x => x[0]).filter(c => c != null && c !== ''));
+    f.cats.forEach(c => cats.add(c)); // keep picked ones visible so they can be unticked here too
+    return Array.from(cats).sort((a,b) => String(a).localeCompare(String(b))).map(c => ({ value: c, label: c }));
+  }
+  if (kind === 'subs') {
+    const keys = new Set();
+    msPairs(key).forEach(([c, s]) => { if (s && (!f.cats.length || f.cats.includes(c))) keys.add(subKey(c, s)); });
+    f.subs.forEach(k => keys.add(k));
+    const list = Array.from(keys).map(k => { const [c, s] = subKeyParts(k); return { value: k, cat: c, sub: s }; });
+    const nameCount = {};
+    list.forEach(o => { nameCount[o.sub] = (nameCount[o.sub] || 0) + 1; });
+    return list.sort((a,b) => a.sub.localeCompare(b.sub) || a.cat.localeCompare(b.cat))
+      .map(o => ({ value: o.value, label: o.sub, hint: (nameCount[o.sub] > 1 || (f.cats.length !== 1 && o.sub !== o.cat)) ? o.cat : '' }));
+  }
+  // Days: whatever's in the Expenses table right now (months + category + search), newest first.
+  ensureSelectedMonths();
+  const p = activeProfile();
+  const search = (document.getElementById('expSearch').value || '').trim().toLowerCase();
+  const counts = {};
+  buildExpenseRows(p)
+    .filter(r => selectedMonths.includes(r.month) && passesCatSub(r.category, r.subcategory))
+    .filter(r => !search || (r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search))
+    .forEach(r => { counts[r.date] = (counts[r.date] || 0) + 1; });
+  f.dates.forEach(d => { if (!(d in counts)) counts[d] = 0; });
+  return Object.keys(counts).sort().reverse().map(d => ({ value: d, label: dayLabel(d), count: counts[d] }));
+}
+function openMs(key, anchor) {
+  const panel = document.getElementById('msPanel');
+  if (msOpenKey === key && panel.style.display === 'block') { closeMs(); return; }
+  msOpenKey = key;
+  renderMsPanel();
+  panel.style.display = 'block';
+  const r = anchor.getBoundingClientRect();
+  const w = panel.offsetWidth || 250;
+  let left = r.left;
+  if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+  panel.style.left = Math.max(8, left) + 'px';
+  let top = r.bottom + 6;
+  const h = panel.offsetHeight || 320;
+  if (top + h > window.innerHeight - 8 && r.top - h - 6 > 8) top = r.top - h - 6;
+  panel.style.top = top + 'px';
+}
+function closeMs() {
+  document.getElementById('msPanel').style.display = 'none';
+  msOpenKey = null;
+}
+function renderMsPanel() {
+  if (!msOpenKey) return;
+  const f = sf();
+  const kind = msKind(msOpenKey);
+  const selected = f[kind];
+  msOptionsCache = msOptions(msOpenKey);
+  const allLabel = kind === 'cats' ? 'All categories' : kind === 'subs' ? 'All sub categories' : 'All days';
+  let actions = `<button class="btn btn-ghost" onclick="clearSharedFilter('${kind}')">${allLabel}</button>`;
+  if (kind === 'dates') {
+    const today = new Date().toISOString().slice(0,10);
+    if (msOptionsCache.some(o => o.value === today)) actions += `<button class="btn btn-ghost" onclick="onlySharedFilter('dates','${today}')">Today only</button>`;
+  }
+  const list = msOptionsCache.length ? msOptionsCache.map((o, i) => `
+    <label>
+      <input type="checkbox" ${selected.includes(o.value) ? 'checked' : ''} onchange="msToggle(${i}, this.checked)">
+      <span>${escapeHtml(o.label)}${o.hint ? ` <span class="ms-hint">· ${escapeHtml(o.hint)}</span>` : ''}</span>
+      ${o.count != null ? `<span class="ms-count">${o.count}</span>` : ''}
+    </label>`).join('') : `<div class="ms-empty">Nothing to filter here yet.</div>`;
+  document.getElementById('msPanel').innerHTML = `<div class="ms-actions">${actions}</div>${list}`;
+}
+function msToggle(i, checked) {
+  const o = msOptionsCache[i];
+  if (!o || !msOpenKey) return;
+  const f = sf();
+  const kind = msKind(msOpenKey);
+  if (checked) { if (!f[kind].includes(o.value)) f[kind].push(o.value); }
+  else f[kind] = f[kind].filter(v => v !== o.value);
+  onSharedFiltersChanged(kind);
+}
+function clearSharedFilter(kind) {
+  const f = sf();
+  f[kind] = [];
+  onSharedFiltersChanged(kind);
+}
+function onlySharedFilter(kind, value) {
+  const f = sf();
+  f[kind] = [value];
+  onSharedFiltersChanged(kind);
+}
+function onSharedFiltersChanged(kind) {
+  const f = sf();
+  // Unpicking a category drops any sub categories that were picked under it.
+  if (kind === 'cats' && f.cats.length) f.subs = f.subs.filter(k => f.cats.includes(subKeyParts(k)[0]));
+  updateMsButtons();
+  renderDashboard();
+  if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
+  if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
+  renderMsPanel();
+}
+function updateMsButtons() {
+  const f = sf();
+  MS_KEYS.forEach(key => {
+    const btn = document.getElementById('msBtn_' + key);
+    if (!btn) return;
+    const kind = msKind(key);
+    const sel = f[kind];
+    btn.classList.toggle('active', sel.length > 0);
+    if (kind === 'dates') {
+      btn.innerHTML = `Date ${sel.length ? `<span class="th-count">${sel.length}</span>` : ''}<span class="th-caret">▾</span>`;
+      btn.title = sel.length ? sel.map(dayLabel).join(', ') : 'Filter by day';
+      return;
+    }
+    let text;
+    if (!sel.length) text = kind === 'cats' ? 'All categories' : 'All sub categories';
+    else if (sel.length === 1) text = kind === 'cats' ? sel[0] : subKeyParts(sel[0])[1];
+    else text = sel.length + (kind === 'cats' ? ' categories' : ' sub categories');
+    btn.textContent = text;
+    btn.title = sel.length ? (kind === 'cats' ? sel.join(', ') : sel.map(k => subKeyParts(k)[1]).join(', ')) : '';
+  });
+}
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('msPanel');
+  if (!panel || panel.style.display !== 'block') return;
+  if (!e.target.isConnected) return; // panel re-rendered under the click (checkbox toggle) — not an outside click
+  if (panel.contains(e.target) || e.target.closest('.ms-btn, .th-filter')) return;
+  closeMs();
+});
+window.addEventListener('resize', () => { if (msOpenKey) closeMs(); });
 let editingRowKey = null; // 'expense:<id>' or 'payment:<id>'
 let iconPickerTarget = null; // { category, subcategory|null }
 function openIconPicker(category, subcategory, anchorEl) {
@@ -3534,47 +3699,20 @@ function deleteExpense(id) {
 let budgetFilterMode = 'all';
 function filterBudget(mode, btn) {
   budgetFilterMode = mode;
-  document.querySelectorAll('.budget-filter button').forEach(b=>b.classList.remove('on'));
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  renderBudgetPage();
-}
-function populateBudgetFilters() {
-  const catSel = document.getElementById('budgetCatFilter');
-  const prevCat = catSel.value;
-  const p = activeProfile();
-  const catList = Array.from(new Set(p.budget.map(b => b.category))).sort();
-  catSel.innerHTML = '<option value="">All categories</option>' +
-    catList.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-  catSel.value = catList.includes(prevCat) ? prevCat : '';
-  populateBudgetSubFilter();
-}
-function populateBudgetSubFilter() {
-  const cat = document.getElementById('budgetCatFilter').value;
-  const p = activeProfile();
-  const subSel = document.getElementById('budgetSubFilter');
-  const prevSub = subSel.value;
-  const subs = Array.from(new Set(p.budget.filter(b => !cat || b.category === cat).map(b => b.subcategory))).sort();
-  subSel.innerHTML = '<option value="">All sub categories</option>' +
-    subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-  subSel.value = subs.includes(prevSub) ? prevSub : '';
-}
-function onBudgetCatFilterChange() {
-  populateBudgetSubFilter();
   renderBudgetPage();
 }
 function renderBudgetPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('budget');
   populateCatListDatalist();
-  populateBudgetFilters();
-  const catFilter = document.getElementById('budgetCatFilter').value;
-  const subFilter = document.getElementById('budgetSubFilter').value;
+  updateMsButtons();
   const search = document.getElementById('budgetSearch').value.trim().toLowerCase();
   let rows = selectedMonths.flatMap(m => budgetForMonth(m));
   if (budgetFilterMode === 'done') rows = rows.filter(b=>b.status==='Done');
   if (budgetFilterMode === 'notpaid') rows = rows.filter(b=>b.status==='Not Paid Yet');
-  if (catFilter) rows = rows.filter(b => b.category === catFilter);
-  if (subFilter) rows = rows.filter(b => b.subcategory === subFilter);
+  rows = rows.filter(b => passesCatSub(b.category, b.subcategory));
   if (search) rows = rows.filter(b =>
     (b.description||'').toLowerCase().includes(search) ||
     (b.category||'').toLowerCase().includes(search) ||
