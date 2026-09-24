@@ -3,7 +3,7 @@
 // opens instantly and works with no connection. Firebase's own traffic
 // (auth + Firestore sync) is left completely alone — never cached, never
 // intercepted — so your data always reflects the network, not a stale copy.
-const CACHE_NAME = 'kashu-app-shell-v5';
+const CACHE_NAME = 'kashu-app-shell-v6';
 
 // Same-origin app shell — always cached on install.
 const CORE_ASSETS = [

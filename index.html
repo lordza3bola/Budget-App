@@ -1617,6 +1617,7 @@ async function bindUserDoc(uid) {
   subscribeToCloud();
   fbState.lastSyncedAt = new Date();
   setSyncStatus('connected');
+  flushPendingQuickAdd();
 }
 async function signUpSync(firebaseConfigObj, email, password, firstName, lastName) {
   setSyncStatus('connecting');
@@ -1986,6 +1987,11 @@ async function resolveAuthAndBoot() {
     setSyncStatus('error');
     authBootResolved = true;
   }
+  // Signed in → already added by bindUserDoc. Not signed in and the login
+  // screen is waiting → keep it until they sign in. Otherwise (offline, or
+  // "continue without account") add it to the local copy now.
+  const loginVisible = document.getElementById('loginScreen') && document.getElementById('loginScreen').classList.contains('ls-show');
+  if (!fbState.configured && !loginVisible) flushPendingQuickAdd();
   hideWelcomeScreen();
 }
 
@@ -3303,7 +3309,7 @@ window.quickAddExpense = function(amount, category, subcategory, description, me
   amount = Number(amount);
   if (!amount || isNaN(amount)) return 'Error: amount must be a nonzero number (negative = income / refund).';
   if (!category || !String(category).trim()) return 'Error: category is required.';
-  const date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : new Date().toISOString().slice(0,10);
+  const date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : localIso(new Date());
   const month = monthForDate(date);
   const cat = String(category).trim();
   activeProfile().expenses.push({
@@ -5429,23 +5435,37 @@ function showToast(msg, isError) {
 // parameters - e.g. https://.../?amount=50&category=Food&description=lunch
 // No script injection needed: the app reads these itself on load, adds the
 // expense immediately, then cleans the URL so a refresh can't re-add it.
+// The expense is NOT added straight away: at page load the app only has the
+// local copy, and a moment later sign-in replaces it with the cloud copy —
+// which used to wipe the just-added expense. So the request is held and
+// added only once the cloud copy has loaded (or right away when running
+// without an account), then synced up like any other change.
+let pendingQuickAdd = null;
 function handleQuickAddFromURL() {
   const params = new URLSearchParams(window.location.search);
   const amount = params.get('amount');
   const category = params.get('category');
-  if (!amount || !category) return;
-  const result = window.quickAddExpense(
-    amount,
-    category,
-    params.get('subcategory') || '',
-    params.get('description') || '',
-    params.get('method') || '',
-    params.get('date') || ''
-  );
-  const isError = result.startsWith('Error');
-  showToast(result, isError);
   // Strip the query string so refreshing/reopening this exact link doesn't add it again
-  window.history.replaceState(null, '', window.location.pathname);
+  if (params.has('amount') || params.has('category')) window.history.replaceState(null, '', window.location.pathname);
+  if (!amount || !category) {
+    if (params.has('amount') || params.has('category')) showToast('Shortcut link is missing the ' + (!amount ? 'amount' : 'category') + '.', true);
+    return;
+  }
+  pendingQuickAdd = {
+    amount: amount.trim().replace(',', '.'),
+    category,
+    subcategory: params.get('subcategory') || '',
+    description: params.get('description') || '',
+    method: params.get('method') || '',
+    date: params.get('date') || ''
+  };
+}
+function flushPendingQuickAdd() {
+  if (!pendingQuickAdd) return;
+  const q = pendingQuickAdd;
+  pendingQuickAdd = null;
+  const result = window.quickAddExpense(q.amount, q.category, q.subcategory, q.description, q.method, q.date);
+  showToast(result, result.startsWith('Error'));
   goPage('dashboard');
 }
 
