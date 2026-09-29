@@ -1,5 +1,5 @@
 // ============================================================
-// Kashu — Home Screen widgets (Available Balance + Add Expense)
+// Kashu — Available Balance widget + Shortcuts quick-add
 // ============================================================
 // SETUP (one-time):
 // 1. Install the free "Scriptable" app from the App Store.
@@ -17,27 +17,17 @@
 // widget in whichever size you like -> Edit Widget -> Script: this
 // script. Shows only Available Balance for the current pay-cycle month.
 //
-// ADD EXPENSE WIDGET (quick-add without opening the app):
-// This same script also powers a separate "+" tile that logs an expense
-// straight to Firestore — no browser/app ever opens.
-// 1. Long-press the Home Screen -> "+" -> Scriptable -> add a SMALL
-//    widget (a second, separate one from your balance widget).
-// 2. Long-press it -> Edit Widget:
-//      - Script: this same script
-//      - Parameter: add
-//      - When Interacting: Run Script   <- important, this is what lets
-//        it pop up a prompt instead of just opening Scriptable
-// 3. Tap the tile any time: it opens a small Kashu-styled form (Amount /
-//    Category / Subcategory / Description), then writes the expense
-//    directly to your synced Firestore doc under whichever profile is
-//    currently active in the app (same profile the app's own quick-add
-//    Shortcut/URL route would use). Enter a negative amount to log
-//    income, same as the app's own convention. Pay-cycle month bucketing
-//    is computed the same way the app does it.
-//    Note: tapping it still briefly switches to the Scriptable app before
-//    the form appears — that hop is an iOS platform requirement for
-//    running any code from a widget tap, not something this script (or
-//    any app's widget) can skip.
+// SHORTCUTS (add an expense from an iPhone Shortcut — no browser opens):
+// In your Shortcut, replace the Text + "Open URLs" steps with:
+//   1. Dictionary  → amount: [Value from Ask for Number]
+//                    category: [Selected Item from Choose from List]
+//                    (optional keys: subcategory, description, method, date YYYY-MM-DD)
+//   2. Scriptable → "Run Script": Script = this script, Parameter = Dictionary,
+//      and switch "Run In App" OFF so it runs in the background.
+//   3. Show Notification → the Run Script output ("Added 50 E£ → Food").
+// Writes straight to your synced Firestore data under the app's active
+// profile. A negative amount = income. (There is no "+" add widget —
+// adding happens only through the Shortcut.)
 //
 // SECURITY NOTE: your password is only ever sent straight to Google's own
 // Firebase Auth endpoint (identitytoolkit.googleapis.com) to get a fresh
@@ -98,7 +88,7 @@ function decodeFirestoreValue(v) {
   if (v.nullValue !== undefined) return null;
   return null;
 }
-// ---- Firestore write helpers (Add Expense widget only) -------------------
+// ---- Firestore write helpers (Shortcuts quick-add only) ------------------
 // The reverse of decodeFirestoreValue: turns a plain JS value into
 // Firestore's typed REST format so it can be sent back up.
 function encodeFirestoreValue(v) {
@@ -176,13 +166,6 @@ function isoDateToday() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-async function presentSimpleAlert(title, message) {
-  const a = new Alert();
-  a.title = title;
-  a.message = message;
-  a.addAction('OK');
-  await a.presentAlert();
-}
 function parseQueryString(qs) {
   const out = {};
   (qs || '').split('&').filter(Boolean).forEach(pair => {
@@ -191,188 +174,73 @@ function parseQueryString(qs) {
   });
   return out;
 }
-// Matches the app's own palette/neumorphism (see manifest.json theme_color
-// and the app's --card/--shadow-* variables) so this doesn't look like a
-// generic system dialog dropped on top of Kashu.
-const KASHU_STYLE = `
-  :root { --sage:#6e8c78; --sage-dark:#4f6a58; --cream:#f0ebe1; --card:#f5f1e9;
-          --shadow-l:#ffffff; --shadow-d:#d7d0bf; --txt:#3a3a34; --txt-dim:#8a8578; }
-  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;
-         background:var(--cream); color:var(--txt);
-         padding:calc(env(safe-area-inset-top) + 28px) 20px calc(env(safe-area-inset-bottom) + 24px); }
-`;
-function buildAddExpenseFormHtml() {
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>${KASHU_STYLE}
-  h1 { font-size:22px; font-weight:800; margin:0 0 4px; color:var(--sage-dark); }
-  p.sub { font-size:13px; color:var(--txt-dim); margin:0 0 26px; line-height:1.4; }
-  .field { margin-bottom:16px; }
-  label { display:block; font-size:11.5px; font-weight:700; color:var(--txt-dim); margin-bottom:6px;
-          text-transform:uppercase; letter-spacing:.04em; }
-  input { width:100%; border:none; border-radius:14px; padding:14px 16px; font-size:16px; background:var(--card);
-          box-shadow: inset 3px 3px 6px var(--shadow-d), inset -3px -3px 6px var(--shadow-l); color:var(--txt); }
-  input:focus { outline:2px solid var(--sage); }
-  .hint { font-size:11px; color:var(--txt-dim); margin-top:6px; }
-  #err { color:#c0524f; font-size:12.5px; min-height:16px; margin:-10px 0 14px; }
-  .btns { display:flex; gap:12px; margin-top:12px; }
-  button { flex:1; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:700; }
-  .btn-add { background:var(--sage); color:#fff; box-shadow: 3px 3px 8px var(--shadow-d); }
-  .btn-cancel { background:var(--card); color:var(--txt-dim);
-                box-shadow: 3px 3px 8px var(--shadow-d), -3px -3px 8px var(--shadow-l); }
-</style></head><body>
-  <h1>Add Expense</h1>
-  <p class="sub">Logs to the profile currently active in Kashu.</p>
-  <div id="err"></div>
-  <div class="field"><label>Amount</label>
-    <input id="amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00" autofocus>
-    <div class="hint">Negative amount = income</div>
-  </div>
-  <div class="field"><label>Category</label><input id="category" type="text" placeholder="e.g. Food"></div>
-  <div class="field"><label>Subcategory (optional)</label><input id="subcategory" type="text" placeholder="e.g. Restaurant"></div>
-  <div class="field"><label>Description (optional)</label><input id="description" type="text" placeholder="e.g. lunch with team"></div>
-  <div class="btns">
-    <button class="btn-cancel" onclick="location.href='kashu://cancel'">Cancel</button>
-    <button class="btn-add" onclick="submitForm()">Add</button>
-  </div>
-<script>
-function submitForm() {
-  const amount = document.getElementById('amount').value.trim();
-  const category = document.getElementById('category').value.trim();
-  const subcategory = document.getElementById('subcategory').value.trim();
-  const description = document.getElementById('description').value.trim();
-  const err = document.getElementById('err');
-  const n = Number(amount);
-  if (!amount || isNaN(n) || n === 0) { err.textContent = 'Enter a nonzero amount.'; return; }
-  if (!category) { err.textContent = 'Category is required.'; return; }
-  const qs = ['amount=' + encodeURIComponent(amount), 'category=' + encodeURIComponent(category),
-              'subcategory=' + encodeURIComponent(subcategory), 'description=' + encodeURIComponent(description)].join('&');
-  location.href = 'kashu://submit?' + qs;
-}
-</script>
-</body></html>`;
-}
-function buildResultHtml(success, title, message) {
-  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>${KASHU_STYLE}
-  body { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; text-align:center; }
-  .icon { font-size:46px; margin-bottom:10px; }
-  h1 { font-size:19px; margin:0 0 6px; color:${success ? 'var(--sage-dark)' : '#c0524f'}; }
-  p { font-size:13.5px; color:var(--txt-dim); margin:0; max-width:280px; }
-</style></head><body>
-  <div class="icon">${success ? '✓' : '⚠️'}</div>
-  <h1>${title}</h1>
-  <p>${message}</p>
-</body></html>`;
-}
-// Presents the branded form and resolves once the user submits, cancels,
-// or dismisses it manually. Returns the still-open WebView (so the caller
-// can swap its content to a result screen) alongside the submitted fields
-// (null if cancelled/dismissed without submitting).
-function presentAddExpenseForm() {
-  const wv = new WebView();
-  return new Promise((resolve) => {
-    wv.shouldAllowRequest = (request) => {
-      if (request.url.startsWith('kashu://submit')) {
-        resolve({ wv, fields: parseQueryString(request.url.split('?')[1] || '') });
-        return false;
-      }
-      if (request.url.startsWith('kashu://cancel')) {
-        resolve({ wv, fields: null });
-        return false;
-      }
-      return true;
-    };
-    wv.loadHTML(buildAddExpenseFormHtml())
-      .then(() => wv.present(true))
-      .then(() => resolve({ wv, fields: null })); // dismissed without submit/cancel button
-  });
-}
 function configIsFilledIn() {
   return CONFIG.apiKey && !CONFIG.apiKey.startsWith('PASTE_') &&
     CONFIG.projectId && !CONFIG.projectId.startsWith('PASTE_') &&
     CONFIG.email && !CONFIG.email.startsWith('PASTE_') &&
     CONFIG.password && !CONFIG.password.startsWith('PASTE_');
 }
-// Prompts for Amount/Category/Subcategory/Description in a Kashu-styled
-// form, then writes straight to Firestore — the same active profile the
-// app's own quick-add uses. Amount can be negative, matching the app's own
-// convention for logging income inline as a negative expense.
-async function runAddExpenseFlow() {
-  if (!configIsFilledIn()) {
-    await presentSimpleAlert('Not configured', 'Fill in CONFIG (email/password) at the top of the script first.');
-    return;
+// Used by the Shortcuts entry point: signs in, finds the
+// app's active profile, and appends one expense atomically to Firestore.
+async function addExpenseToCloud({ amount, category, subcategory, description, method, date, idPrefix }) {
+  const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
+  const docId = uid;
+
+  const d1 = await fetchMaskedFields(CONFIG.projectId, docId, idToken, ['state.activeProfileId']);
+  const profileId = d1.state && d1.state.activeProfileId;
+  if (!profileId) throw new Error('No synced profile found for this account yet — open the app once to sync first.');
+
+  const d2 = await fetchMaskedFields(CONFIG.projectId, docId, idToken, [
+    `state.profiles.${profileId}.incomeCycles`,
+    `state.profiles.${profileId}.currency`
+  ]);
+  const prof = (d2.state && d2.state.profiles && d2.state.profiles[profileId]) || {};
+  const incomeCycles = prof.incomeCycles || {};
+  const currencyCode = prof.currency || 'EGP';
+
+  const day = (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date : isoDateToday();
+  const expense = {
+    id: (idPrefix || 'e_widget_') + Date.now(),
+    month: monthForDateOffline(day, incomeCycles),
+    date: day,
+    category,
+    subcategory: subcategory || category,
+    method: method || '',
+    description: description || '',
+    value: amount
+  };
+  await commitAddExpense(CONFIG.projectId, docId, idToken, profileId, expense);
+  return { expense, currencyCode };
+}
+// Shortcuts "Run Script" entry point. Accepts a Dictionary (preferred), JSON
+// text, or "amount=50&category=Food" text. Returns a one-line result that the
+// Shortcut can show as a notification.
+async function runFromShortcut(param) {
+  let p = param;
+  if (typeof p === 'string') {
+    const t = p.trim();
+    try { p = JSON.parse(t); } catch (e) { p = parseQueryString(t.replace(/^.*\?/, '')); }
   }
-  const { wv, fields } = await presentAddExpenseForm();
-  if (!fields) return; // cancelled or dismissed
-
-  const amount = Number(fields.amount);
-  const category = (fields.category || '').trim();
-  const subcategory = (fields.subcategory || '').trim();
-  const description = (fields.description || '').trim();
-  // The form's own JS already validates before it ever sends kashu://submit;
-  // this is just a defensive second check.
-  if (!amount || Number.isNaN(amount)) { await wv.loadHTML(buildResultHtml(false, 'Could not add expense', 'Enter a nonzero amount.')); return; }
-  if (!category) { await wv.loadHTML(buildResultHtml(false, 'Could not add expense', 'Category is required.')); return; }
-
+  p = p || {};
+  const amount = Number(String(p.amount ?? p.Amount ?? '').trim().replace(/\s/g, '').replace(',', '.'));
+  const category = String(p.category ?? p.Category ?? '').trim();
+  if (!configIsFilledIn()) return 'Error: fill in CONFIG (email/password) at the top of the Kashu script first.';
+  if (!amount || Number.isNaN(amount)) return 'Error: amount must be a nonzero number.';
+  if (!category) return 'Error: category is required.';
   try {
-    const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
-    const docId = uid;
-
-    const d1 = await fetchMaskedFields(CONFIG.projectId, docId, idToken, ['state.activeProfileId']);
-    const profileId = d1.state && d1.state.activeProfileId;
-    if (!profileId) throw new Error('No synced profile found for this account yet — open the app once to sync first.');
-
-    const d2 = await fetchMaskedFields(CONFIG.projectId, docId, idToken, [
-      `state.profiles.${profileId}.incomeCycles`,
-      `state.profiles.${profileId}.currency`
-    ]);
-    const prof = (d2.state && d2.state.profiles && d2.state.profiles[profileId]) || {};
-    const incomeCycles = prof.incomeCycles || {};
-    const currencyCode = prof.currency || 'EGP';
-
-    const date = isoDateToday();
-    const expense = {
-      id: 'e_widget_' + Date.now(),
-      month: monthForDateOffline(date, incomeCycles),
-      date,
-      category,
-      subcategory: subcategory || category,
-      method: '',
-      description,
-      value: amount
-    };
-    await commitAddExpense(CONFIG.projectId, docId, idToken, profileId, expense);
-    await wv.loadHTML(buildResultHtml(true, amount < 0 ? 'Income added' : 'Added', `${fmtCur(amount, currencyCode)} → ${category}`));
+    const { currencyCode } = await addExpenseToCloud({
+      amount, category,
+      subcategory: String(p.subcategory ?? '').trim(),
+      description: String(p.description ?? '').trim(),
+      method: String(p.method ?? '').trim(),
+      date: String(p.date ?? '').trim(),
+      idPrefix: 'e_shortcut_'
+    });
+    return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, currencyCode)} → ${category}`;
   } catch (err) {
-    await wv.loadHTML(buildResultHtml(false, 'Could not add expense', err.message));
+    return 'Error: ' + err.message;
   }
 }
-// The static "+" tile shown for this widget's background/home-screen
-// rendering — tapping it is what triggers runAddExpenseFlow() above via
-// the widget's "Run Script" interaction, not this rendering pass.
-function buildAddExpenseTile() {
-  const widget = new ListWidget();
-  widget.backgroundColor = Color.dynamic(new Color('#F4F5F9'), new Color('#1B1C22'));
-  const col = widget.addStack();
-  col.layoutVertically();
-  col.addSpacer();
-  const row = col.addStack();
-  row.layoutHorizontally();
-  row.addSpacer();
-  const plus = row.addText('+');
-  plus.font = Font.boldSystemFont(46);
-  plus.textColor = new Color('#6e8c78');
-  row.addSpacer();
-  col.addSpacer(4);
-  const label = col.addText('Add Expense');
-  label.font = Font.mediumSystemFont(12);
-  label.centerAlignText();
-  label.textColor = Color.dynamic(new Color('#6b6f7d'), new Color('#9a9dab'));
-  col.addSpacer();
-  return widget;
-}
-
 async function fetchSyncedState(projectId, apiKey, email, password) {
   const { idToken, uid } = await signInWithPassword(apiKey, email, password);
   const docId = uid;
@@ -466,7 +334,8 @@ async function buildWidget() {
     const budgetP = pickBudgetProfile(data.state, CONFIG.budgetProfileName);
     if (!budgetP) throw new Error('No budget profile found for this account.');
 
-    const m = currentMonthKey();
+    // Pay-cycle month for today (e.g. 30 Sep → October when October's cycle starts on the 30th).
+    const m = monthForDateOffline(isoDateToday(), budgetP.incomeCycles);
     const value = monthSummary(budgetP, m).availableBalance;
     const currencyCode = budgetP.currency || 'EGP';
 
@@ -503,14 +372,9 @@ async function buildWidget() {
 }
 
 async function main() {
-  if ((args.widgetParameter || '').trim() === 'add') {
-    if (config.runsInWidget) {
-      // Background/home-screen render of this widget instance: just the tile.
-      Script.setWidget(buildAddExpenseTile());
-    } else {
-      // Triggered by a tap ("Run Script") or run manually from Scriptable.
-      await runAddExpenseFlow();
-    }
+  if (config.runsWithSiri || args.shortcutParameter !== undefined && args.shortcutParameter !== null) {
+    const msg = await runFromShortcut(args.shortcutParameter);
+    Script.setShortcutOutput(msg);
     Script.complete();
     return;
   }

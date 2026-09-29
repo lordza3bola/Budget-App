@@ -1599,10 +1599,13 @@ async function bindUserDoc(uid) {
     localStorage.setItem('ledger_state', JSON.stringify(state));
     fbState.applyingRemote = false;
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
+    const movedOnLoad = rebucketAllProfiles();
+    currentMonth = todayCycleMonth();
     selectedMonths = null;
     renderProfileTabs();
     updateNavVisibility();
     renderAll();
+    if (movedOnLoad) { localStorage.setItem('ledger_state', JSON.stringify(state)); await pushStateToCloud(); }
   } else {
     await pushStateToCloud();
   }
@@ -1657,11 +1660,13 @@ function subscribeToCloud() {
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
     if (data.firstName !== undefined) fbState.firstName = data.firstName;
     if (data.lastName !== undefined) fbState.lastName = data.lastName;
+    const movedRemote = rebucketAllProfiles();
     renderProfileTabs();
     updateNavVisibility();
     renderAll();
     renderUserGreeting();
     fbState.applyingRemote = false;
+    if (movedRemote) saveState(); // e.g. an expense added from the Shortcut before the cycle existed
     fbState.lastSyncedAt = new Date();
     setSyncStatus('connected');
   }, err => {
@@ -2317,6 +2322,38 @@ function prevMonthOf(m) {
 // month wins — even if it crosses a calendar-month boundary (e.g. salary paid
 // on the 28th makes the 28th–27th the cycle for that month). Falls back to the
 // date's own calendar month when no cycle covers it.
+// Re-files a profile's expenses whenever its pay cycles change (or on load,
+// to repair older data): each expense whose date falls inside a pay cycle is
+// moved to that cycle's month. Expenses no cycle covers keep whatever month
+// they already have (e.g. the Month column from an Excel import), so nothing
+// outside the defined cycles is disturbed. Returns true if anything moved.
+function rebucketProfile(p) {
+  let changed = false;
+  if (!p || !p.incomeCycles || !Object.keys(p.incomeCycles).length) return false;
+  (p.expenses || []).forEach(e => {
+    if (!e || !e.date) return;
+    const cycles = p.incomeCycles;
+    for (const m in cycles) {
+      const c = cycles[m];
+      if (c && c.start && c.end && e.date >= c.start && e.date <= c.end) {
+        if (e.month !== m) { e.month = m; changed = true; }
+        break;
+      }
+    }
+  });
+  return changed;
+}
+function rebucketAllProfiles() {
+  let changed = false;
+  (state.profileOrder || []).forEach(id => { if (rebucketProfile(state.profiles[id])) changed = true; });
+  return changed;
+}
+// The pay-cycle month "today" belongs to — e.g. on 30 Sep, with October's
+// cycle starting 30 Sep, this is October, not September.
+function todayCycleMonth() {
+  try { return monthForDate(localIso(new Date())); }
+  catch (e) { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+}
 function monthForDate(dateStr, profile) {
   const cycles = (profile || activeProfile()).incomeCycles || {};
   for (const m in cycles) {
@@ -3144,7 +3181,7 @@ function openPaymentModal(prefillAmount) {
   document.getElementById('paymentModalSaveBtn').textContent = isSavings() ? 'Save deposit' : 'Save payment';
   document.getElementById('pmNote').placeholder = isSavings() ? 'e.g. monthly transfer' : 'e.g. paid via bank transfer';
   document.getElementById('pmAmount').value = prefillAmount ? Math.round(prefillAmount*100)/100 : '';
-  document.getElementById('pmDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('pmDate').value = localIso(new Date());
   document.getElementById('pmNote').value = '';
   document.getElementById('paymentModalBackdrop').classList.add('on');
 }
@@ -3152,7 +3189,7 @@ function closePaymentModal() { document.getElementById('paymentModalBackdrop').c
 function savePayment() {
   const amount = Number(document.getElementById('pmAmount').value);
   if (!amount || amount <= 0) { alert(isSavings() ? 'Enter a deposit amount.' : 'Enter a payment amount.'); return; }
-  const date = document.getElementById('pmDate').value || new Date().toISOString().slice(0,10);
+  const date = document.getElementById('pmDate').value || localIso(new Date());
   const p = activeProfile();
   p.payments.push({ id: 'pm' + Date.now(), date, amount, note: document.getElementById('pmNote').value.trim() });
   saveState();
@@ -3202,7 +3239,7 @@ function renderAddExpensePage() {
   document.getElementById('expSignHint').style.display = savings ? 'none' : '';
   updateAmountSignUI();
   document.getElementById('expDesc').value = '';
-  document.getElementById('expDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('expDate').value = localIso(new Date());
   expSelectedCategory = null; expSelectedSub = null; expSelectedMethod = 'Visa';
   document.querySelectorAll('#page-add .chip-btn[data-method]').forEach(b => b.classList.toggle('sel', b.dataset.method==='Visa'));
 
@@ -3271,7 +3308,7 @@ function saveExpense() {
   const amount = isDeposit ? Math.abs(Number(document.getElementById('expAmount').value)) : signedExpAmount();
   if (!amount || isNaN(amount)) { alert('Enter an amount.'); return; }
   if (!expSelectedCategory) { alert('Pick a category.'); return; }
-  const date = document.getElementById('expDate').value || new Date().toISOString().slice(0,10);
+  const date = document.getElementById('expDate').value || localIso(new Date());
   const month = monthForDate(date);
   const p = activeProfile();
   const description = document.getElementById('expDesc').value.trim();
@@ -3708,7 +3745,7 @@ function renderMsPanel() {
   const allLabel = kind === 'cats' ? 'All categories' : kind === 'subs' ? 'All sub categories' : 'All days';
   let actions = `<button class="btn btn-ghost" onclick="clearSharedFilter('${kind}')">${allLabel}</button>`;
   if (kind === 'dates') {
-    const today = new Date().toISOString().slice(0,10);
+    const today = localIso(new Date());
     if (msOptionsCache.some(o => o.value === today)) actions += `<button class="btn btn-ghost" onclick="onlySharedFilter('dates','${today}')">Today only</button>`;
   }
   const list = msOptionsCache.length ? msOptionsCache.map((o, i) => `
@@ -4957,7 +4994,14 @@ function setIncomeCycle(m, which, val) {
   if (!activeProfile().incomeCycles[m]) activeProfile().incomeCycles[m] = {};
   activeProfile().incomeCycles[m][which] = val || null;
   if (!activeProfile().incomeCycles[m].start && !activeProfile().incomeCycles[m].end) delete activeProfile().incomeCycles[m];
+  // Move any already-logged expenses into the cycle they now belong to.
+  const moved = rebucketProfile(activeProfile());
   saveState();
+  if (moved) {
+    currentMonth = todayCycleMonth();
+    renderAll();
+    showToast('Expenses re-filed to match the updated pay cycle.');
+  }
 }
 function deleteIncomeMonth(m) {
   if (!confirm(`Remove the income entry for ${monthLabel(m)}?`)) return;
@@ -5300,7 +5344,7 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(budRows), 'Budget');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sumRows), 'Summary');
   const rangeSuffix = (fromVal || toVal) ? ('_' + (fromVal||'start') + '_to_' + (toVal||'end')) : '';
-  XLSX.writeFile(wb, 'Budget_export_' + activeProfile().name.replace(/[^a-zA-Z0-9]+/g,'_') + rangeSuffix + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  XLSX.writeFile(wb, 'Budget_export_' + activeProfile().name.replace(/[^a-zA-Z0-9]+/g,'_') + rangeSuffix + '_' + localIso(new Date()) + '.xlsx');
 }
 
 /* ============================================================
@@ -5344,7 +5388,7 @@ function exportReportCSV() {
   const csv = rows.map(r => r.map(csvCell).join(',')).join('\r\n');
   const label = profileIds.length === 1 ? (state.profiles[profileIds[0]]||{}).name : 'All_profiles';
   const rangeSuffix = (fromVal || toVal) ? ('_' + (fromVal||'start') + '_to_' + (toVal||'end')) : '';
-  downloadTextFile(csv, 'Budget_report_' + (label||'profile').replace(/[^a-zA-Z0-9]+/g,'_') + rangeSuffix + '_' + new Date().toISOString().slice(0,10) + '.csv', 'text/csv;charset=utf-8;');
+  downloadTextFile(csv, 'Budget_report_' + (label||'profile').replace(/[^a-zA-Z0-9]+/g,'_') + rangeSuffix + '_' + localIso(new Date()) + '.csv', 'text/csv;charset=utf-8;');
 }
 function exportReportPDF() {
   const fromVal = document.getElementById('reportFromDate').value;
@@ -5470,6 +5514,8 @@ function flushPendingQuickAdd() {
 }
 
 loadState();
+if (rebucketAllProfiles()) localStorage.setItem('ledger_state', JSON.stringify(state));
+currentMonth = todayCycleMonth();
 renderProfileTabs();
 renderAll();
 handleQuickAddFromURL();
