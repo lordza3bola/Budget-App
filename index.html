@@ -318,6 +318,57 @@
   .table .amt-cell { text-align: right; font-weight: 700; }
   .table td.editable { cursor: pointer; }
   .table td.editable:hover { background: var(--line); }
+
+  /* ===== Row drag-and-drop (Expenses / Budget tables) ===== */
+  .table tbody tr[data-drag-id] { -webkit-touch-callout: none; }
+  .table tbody tr[data-drag-id]:hover > td { background: rgba(108,123,255,.035); }
+  .table tbody tr[data-drag-id]:hover > td.editable:hover { background: var(--line); }
+  .table tbody tr[data-drag-id] > td:first-child { position: relative; }
+  .drag-handle {
+    position: absolute; left: -20px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 26px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; line-height: 1; color: var(--txt-dim2); border-radius: 6px;
+    opacity: 0; transition: opacity .15s ease, background .15s ease; cursor: grab;
+    user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .table tbody tr[data-drag-id]:hover .drag-handle { opacity: .75; }
+  .drag-handle:hover { opacity: 1 !important; background: var(--line); color: var(--txt-dim); }
+  body.row-dragging, body.row-dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+  body.row-dragging .drag-handle { opacity: 0 !important; }
+  body.row-dragging .table tbody tr:hover > td { background: transparent; }
+  body.row-dragging .table td.editable:hover { background: transparent; }
+  /* The row's original slot while it's lifted: same height, contents hidden */
+  .table tbody tr.drag-placeholder > td { background: rgba(108,123,255,.07) !important; color: transparent !important; border-bottom-color: transparent; box-shadow: inset 0 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
+  .table tbody tr.drag-placeholder > td > * { visibility: hidden; }
+  .table tbody tr.drag-placeholder > td:first-child { border-radius: 10px 0 0 10px; box-shadow: inset 1px 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
+  .table tbody tr.drag-placeholder > td:last-child { border-radius: 0 10px 10px 0; box-shadow: inset -1px 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
+  /* Rows of the day/month the row may be dropped into */
+  body.row-dragging .table tbody tr.drop-zone:not(.drag-placeholder) > td { background: rgba(108,123,255,.03); }
+  body.row-dragging .table tbody tr.drop-zone-off:not(.drag-placeholder) > td { background: transparent; }
+  /* Floating copy of the row */
+  .drag-float-wrap { position: fixed; z-index: 1000; pointer-events: none; will-change: transform; }
+  .drag-float-wrap.settling { transition: transform .2s cubic-bezier(.2,.7,.3,1); }
+  .drag-float-wrap.returning { transition: transform .26s cubic-bezier(.3,.7,.3,1); }
+  .table.drag-float {
+    table-layout: fixed; border-collapse: separate; border-spacing: 0;
+    background: var(--card); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(30,35,60,.08);
+    transform-origin: center center;
+    transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, opacity .18s ease, outline-color .15s ease;
+    outline: 1.5px solid transparent; outline-offset: -1.5px;
+  }
+  .table.drag-float td { border-bottom: none !important; overflow: hidden; text-overflow: ellipsis; background: transparent !important; }
+  .table.drag-float .drag-handle { display: none; }
+  .drag-float-wrap.lifted .table.drag-float { transform: scale(1.02); box-shadow: 0 14px 30px rgba(30,35,60,.16), 0 3px 8px rgba(30,35,60,.10); }
+  .drag-float-wrap.invalid .table.drag-float { outline-color: rgba(224,82,79,.55); }
+  .drag-float-wrap.settling .table.drag-float, .drag-float-wrap.returning .table.drag-float { transform: scale(1); box-shadow: 0 1px 2px rgba(30,35,60,.06); outline-color: transparent; opacity: 1; }
+  .drag-float-hint {
+    position: absolute; right: 10px; top: -24px; font-size: 11px; font-weight: 700;
+    color: var(--red); background: var(--card); padding: 3px 9px; border-radius: 8px;
+    box-shadow: var(--shadow-out-sm); opacity: 0; transform: translateY(4px);
+    transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
+  }
+  .drag-float-wrap.invalid .drag-float-hint { opacity: 1; transform: translateY(0); }
   .table td input[type=text], .table td input[type=date], .table td input[type=number] {
     width: 100%; background: var(--card); border: none; box-shadow: var(--shadow-in); border-radius: 8px;
     padding: 6px 8px; font-size: 12.5px; color: var(--txt); font-family: inherit; box-sizing: border-box;
@@ -3499,7 +3550,7 @@ function renderExpensesPage() {
   totalLineEl.innerHTML = totalHtml;
   // Newest first: by date, then — for several transactions on the same day —
   // by when each was entered, so the one just added lands on top, not at the bottom.
-  rows = rows.slice().sort((a,b)=> b.date.localeCompare(a.date) || (b.stamp - a.stamp) || (b.idx - a.idx));
+  rows = rows.slice().sort((a,b)=> b.date.localeCompare(a.date) || expenseDayOrderCmp(a, b));
   const body = document.getElementById('expTableBody');
   const monthsLabel = selectedMonths.length ? selectedMonths.map(monthLabel).join(', ') : 'the selected months';
   body.innerHTML = rows.length ? rows.map(r => {
@@ -3510,8 +3561,8 @@ function renderExpensesPage() {
     const ai = txAmountInfo(r, savings);
     const amtText = ai.text;
     const amtClass = savings ? (ai.signed >= 0 ? ' amt-deposit' : ' amt-withdraw') : (ai.signed < 0 ? ' amt-negative' : '');
-    return `<tr>
-      <td class="editable" onclick="startRowEdit('${editKey}')">${r.date}</td>
+    return `<tr data-drag-id="${editKey}" data-drag-group="${r.date}">
+      <td class="editable" onclick="startRowEdit('${editKey}')"><span class="drag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>${r.date}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${catTag}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.subcategory) || (isPayment ? '<span style="color:var(--txt-dim2);">—</span>' : '')}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
@@ -3737,12 +3788,30 @@ function passesCatSub(cat, sub) {
   if (!cats.length) return false;
   return !subs.some(k => subKeyParts(k)[0] === cat);
 }
+// Manual order within one day (Expenses) / one month (Budget), set only by
+// drag-and-drop. Rows a person has placed carry a numeric `pos`; rows added
+// afterwards have none. Expenses: unplaced rows (i.e. newer entries) stay on
+// top of their day, newest first. Budget: unplaced rows keep their original
+// order after the placed ones.
+function hasPos(x) { return typeof x.pos === 'number' && isFinite(x.pos); }
+function expenseDayOrderCmp(a, b) {
+  const ha = hasPos(a), hb = hasPos(b);
+  if (ha && hb) return a.pos - b.pos;
+  if (ha !== hb) return ha ? 1 : -1;
+  return (b.stamp - a.stamp) || (b.idx - a.idx);
+}
+function budgetMonthOrderCmp(a, b) {
+  const ha = hasPos(a), hb = hasPos(b);
+  if (ha && hb) return a.pos - b.pos;
+  if (ha !== hb) return ha ? -1 : 1;
+  return 0; // stable sort keeps the original order
+}
 function creationStamp(id) { const m = String(id || '').match(/\d{13}/); return m ? Number(m[0]) : 0; }
 function buildExpenseRows(p) {
   const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
   return [
-    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx })),
-    ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx }))
+    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx, pos: e.pos })),
+    ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx, pos: pm.pos }))
   ];
 }
 function dayLabel(iso) {
@@ -4106,7 +4175,7 @@ function renderBudgetPage() {
     (b.category||'').toLowerCase().includes(search) ||
     (b.subcategory||'').toLowerCase().includes(search)
   );
-  rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||''));
+  rows = rows.slice().sort((a,b) => (a.month||'').localeCompare(b.month||'') || budgetMonthOrderCmp(a, b));
   const plannedSum = rows.reduce((s,b) => s + Number(b.plannedValue||0), 0);
   document.getElementById('budgetTotalLine').textContent = `${rows.length} budget line${rows.length===1?'':'s'} · Total planned ${fmt(plannedSum)}`;
   const body = document.getElementById('budgetTableBody');
@@ -4146,8 +4215,8 @@ function renderBudgetPage() {
         </td>
       </tr>`;
     }
-    return `<tr>
-      <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(monthLabel(b.month))}</td>
+    return `<tr data-drag-id="${b.id}" data-drag-group="${b.month}">
+      <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="drag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>${escapeHtml(monthLabel(b.month))}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="cat-tag">${getCategoryIcon(p, b.category, b.subcategory)} ${escapeHtml(b.category)}</span></td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${instIds.has(b.id) ? '<span title="Installment" style="margin-right:4px;">📆</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
@@ -5590,6 +5659,323 @@ function flushPendingQuickAdd() {
   showToast(result, result.startsWith('Error'));
   goPage('dashboard');
 }
+
+// ============================================================
+// Row drag-and-drop for the Expenses and Budget tables.
+// A row lifts only after the pointer moves past a small threshold (mouse)
+// or after a short press-and-hold (touch), so clicks, inline editing,
+// status menus and ✕ buttons keep working exactly as before. While dragging,
+// the row's own <tr> stays in the table as a same-height placeholder and is
+// moved to the predicted drop slot; a floating copy (same column widths)
+// follows the pointer. Rows may only move within their own group (a day on
+// Expenses, a month on Budget) so a drag can never change a date. Nothing is
+// written until a successful drop, and a drop only ever sets `pos` (order).
+// ============================================================
+const RowDrag = (() => {
+  const MOUSE_THRESHOLD = 5, TOUCH_HOLD_MS = 240, TOUCH_SLOP = 8;
+  let pend = null;   // pointer down, not yet dragging
+  let d = null;      // active drag
+  const configs = new Map(); // tbody id -> { onDrop, invalidHint }
+
+  function register(tbodyId, cfg) {
+    const tb = document.getElementById(tbodyId);
+    if (!tb) return;
+    configs.set(tbodyId, cfg);
+    tb.addEventListener('pointerdown', onDown);
+  }
+  function blockedTarget(t) {
+    if (t.closest('.drag-handle')) return false;
+    return !!t.closest('button, input, select, textarea, a, label, [contenteditable], .no-drag');
+  }
+  function onDown(e) {
+    if (d || pend) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const tr = e.target.closest('tr[data-drag-id]');
+    if (!tr || blockedTarget(e.target)) return;
+    if (editingRowKey || editingBudgetId) return; // don't fight an open inline edit
+    const fromHandle = !!e.target.closest('.drag-handle');
+    pend = { tr, tbody: tr.parentElement, x: e.clientX, y: e.clientY, id: e.pointerId, type: e.pointerType, fromHandle, timer: null };
+    if (e.pointerType !== 'mouse' && !fromHandle) {
+      pend.timer = setTimeout(() => { if (pend) activate(pend.x, pend.y); }, TOUCH_HOLD_MS);
+    }
+    if (fromHandle) e.preventDefault();
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  }
+  function onMove(e) {
+    if (pend && e.pointerId === pend.id) {
+      const dist = Math.hypot(e.clientX - pend.x, e.clientY - pend.y);
+      if (pend.type === 'mouse' || pend.fromHandle) {
+        if (dist > MOUSE_THRESHOLD) activate(e.clientX, e.clientY);
+      } else if (dist > TOUCH_SLOP) {
+        abortPending(); // it's a scroll, not a drag
+      }
+      return;
+    }
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.preventDefault();
+    d.px = e.clientX; d.py = e.clientY;
+    positionFloat();
+    place();
+  }
+  function onUp(e) {
+    if (pend && e.pointerId === pend.id) { abortPending(); return; } // plain click / tap
+    if (!d || e.pointerId !== d.pointerId) return;
+    swallowNextClick();
+    finish(false);
+  }
+  function onCancel(e) {
+    if (pend && e.pointerId === pend.id) { abortPending(); return; }
+    if (d && e.pointerId === d.pointerId) finish(true);
+  }
+  function onKey(e) { if (d && e.key === 'Escape') { e.preventDefault(); finish(true); } }
+  function onTouchMove(e) { if (d) e.preventDefault(); } // stop the page scrolling under a touch drag
+  function abortPending() {
+    if (pend && pend.timer) clearTimeout(pend.timer);
+    pend = null;
+    if (!d) removeWindowListeners();
+  }
+  function removeWindowListeners() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onCancel);
+  }
+  function swallowNextClick() {
+    const stop = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 60);
+  }
+
+  function activate(px, py) {
+    const p0 = pend; if (!p0) return;
+    if (p0.timer) clearTimeout(p0.timer);
+    pend = null;
+    const tr = p0.tr, tbody = p0.tbody;
+    if (!tr.isConnected) { removeWindowListeners(); return; }
+    const cfg = configs.get(tbody.id) || {};
+    const rect = tr.getBoundingClientRect();
+    const widths = [...tr.cells].map(td => td.getBoundingClientRect().width);
+
+    // Floating copy: a real one-row table with the same column widths.
+    const wrap = document.createElement('div');
+    wrap.className = 'drag-float-wrap';
+    wrap.style.left = rect.left + 'px';
+    wrap.style.top = rect.top + 'px';
+    wrap.style.width = rect.width + 'px';
+    const tbl = document.createElement('table');
+    tbl.className = 'table drag-float';
+    tbl.style.width = rect.width + 'px';
+    const cg = document.createElement('colgroup');
+    widths.forEach(w => { const c = document.createElement('col'); c.style.width = w + 'px'; cg.appendChild(c); });
+    tbl.appendChild(cg);
+    const tb2 = document.createElement('tbody');
+    const clone = tr.cloneNode(true);
+    clone.removeAttribute('data-drag-id');
+    clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    clone.querySelectorAll('[onclick],[onchange]').forEach(n => { n.removeAttribute('onclick'); n.removeAttribute('onchange'); });
+    // keep the Status select showing the same choice
+    const srcSel = tr.querySelectorAll('select'), dstSel = clone.querySelectorAll('select');
+    srcSel.forEach((s, i) => { if (dstSel[i]) dstSel[i].value = s.value; });
+    [...clone.cells].forEach((td, i) => { td.style.height = rect.height + 'px'; td.style.width = widths[i] + 'px'; });
+    tb2.appendChild(clone); tbl.appendChild(tb2); wrap.appendChild(tbl);
+    const hint = document.createElement('div');
+    hint.className = 'drag-float-hint';
+    hint.textContent = cfg.invalidHint || "Can't move here";
+    wrap.appendChild(hint);
+    document.body.appendChild(wrap);
+
+    tr.classList.add('drag-placeholder');
+    document.body.classList.add('row-dragging');
+    const group = tr.dataset.dragGroup;
+    tbody.querySelectorAll('tr[data-drag-id]').forEach(r => r.classList.toggle('drop-zone', r.dataset.dragGroup === group));
+
+    d = {
+      tr, tbody, cfg, group, rect, wrap, pointerId: p0.id,
+      sx: p0.x, sy: p0.y, px, py,
+      origNext: tr.nextElementSibling, origPrev: tr.previousElementSibling,
+      valid: true, raf: 0
+    };
+    window.addEventListener('keydown', onKey, true);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    positionFloat();
+    requestAnimationFrame(() => { if (d && d.wrap === wrap) wrap.classList.add('lifted'); });
+    d.raf = requestAnimationFrame(autoScrollLoop);
+    if (navigator.vibrate && p0.type === 'touch') { try { navigator.vibrate(8); } catch (e) {} }
+  }
+
+  function positionFloat() {
+    const dx = Math.max(-24, Math.min(24, (d.px - d.sx) * 0.3)); // mostly vertical, slight give sideways
+    const dy = d.py - d.sy;
+    d.wrap.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+  }
+  // Row positions from layout (offsetTop), not getBoundingClientRect, so rows
+  // that are mid-animation don't make the insertion point flicker.
+  function rowBox(r) {
+    const tRect = r.closest('table').getBoundingClientRect();
+    return { top: tRect.top + r.offsetTop, h: r.offsetHeight };
+  }
+  function place() {
+    if (!d) return;
+    if (!d.tr.isConnected) { hardReset(); return; } // table re-rendered (e.g. cloud sync) mid-drag
+    const centerY = d.rect.top + (d.py - d.sy) + d.rect.height / 2;
+    const all = [...d.tbody.querySelectorAll(`tr[data-drag-id]`)].filter(r => r.dataset.dragGroup === d.group);
+    const others = all.filter(r => r !== d.tr);
+    let valid = true;
+    if (all.length) {
+      const first = rowBox(all[0]), last = rowBox(all[all.length - 1]);
+      const margin = d.rect.height * 0.9;
+      valid = centerY >= first.top - margin && centerY <= last.top + last.h + margin;
+    }
+    if (valid && others.length) {
+      let target = null;
+      for (const r of others) { const b = rowBox(r); if (b.top + b.h / 2 > centerY) { target = r; break; } }
+      if (target) { if (d.tr.nextElementSibling !== target) flipMove(() => d.tbody.insertBefore(d.tr, target)); }
+      else {
+        const lastRow = others[others.length - 1];
+        if (d.tr.previousElementSibling !== lastRow) flipMove(() => d.tbody.insertBefore(d.tr, lastRow.nextElementSibling));
+      }
+    } else if (!valid) {
+      restoreSlot();
+    }
+    if (valid !== d.valid) {
+      d.valid = valid;
+      d.wrap.classList.toggle('invalid', !valid);
+      d.tbody.querySelectorAll('tr.drop-zone').forEach(r => r.classList.toggle('drop-zone-off', !valid));
+    }
+  }
+  function restoreSlot() {
+    if (!d) return;
+    if (d.origNext && d.origNext.isConnected) { if (d.tr.nextElementSibling !== d.origNext) flipMove(() => d.tbody.insertBefore(d.tr, d.origNext)); }
+    else if (d.origPrev && d.origPrev.isConnected) { if (d.tr.previousElementSibling !== d.origPrev) flipMove(() => d.tbody.insertBefore(d.tr, d.origPrev.nextElementSibling)); }
+  }
+  // Smoothly slide the rows that shift when the placeholder moves (FLIP).
+  function flipMove(mutate) {
+    const rows = [...d.tbody.children];
+    const before = new Map(rows.map(r => [r, r.offsetTop]));
+    mutate();
+    rows.forEach(r => {
+      const delta = before.get(r) - r.offsetTop;
+      if (!delta) return;
+      r.style.transition = 'none';
+      r.style.transform = `translateY(${delta}px)`;
+      r.getBoundingClientRect();
+      r.style.transition = 'transform .16s cubic-bezier(.2,.7,.3,1)';
+      r.style.transform = '';
+      clearTimeout(r._flipT);
+      r._flipT = setTimeout(() => { r.style.transition = ''; }, 200);
+    });
+  }
+  function autoScrollLoop() {
+    if (!d) return;
+    const thead = d.tbody.parentElement.querySelector('thead');
+    const topEdge = thead ? Math.max(0, thead.getBoundingClientRect().bottom) : 0;
+    const zone = 56;
+    let v = 0;
+    if (d.py < topEdge + zone) v = -Math.ceil(((topEdge + zone - d.py) / zone) * 14);
+    else if (d.py > window.innerHeight - zone) v = Math.ceil(((d.py - (window.innerHeight - zone)) / zone) * 14);
+    if (v) {
+      const before = window.scrollY;
+      window.scrollBy(0, v);
+      if (window.scrollY !== before) place();
+    }
+    d.raf = requestAnimationFrame(autoScrollLoop);
+  }
+
+  function hardReset() {
+    const s = d; if (!s) return;
+    cancelAnimationFrame(s.raf);
+    removeWindowListeners();
+    window.removeEventListener('keydown', onKey, true);
+    document.removeEventListener('touchmove', onTouchMove, { passive: false });
+    s.wrap.remove();
+    document.body.classList.remove('row-dragging');
+    d = null;
+  }
+  function finish(cancelled) {
+    const s = d; if (!s) return;
+    if (!s.tr.isConnected) { hardReset(); return; }
+    cancelAnimationFrame(s.raf);
+    removeWindowListeners();
+    window.removeEventListener('keydown', onKey, true);
+    document.removeEventListener('touchmove', onTouchMove, { passive: false });
+    const moved = s.tr.nextElementSibling !== s.origNext || s.tr.previousElementSibling !== s.origPrev;
+    const commit = !cancelled && s.valid && moved;
+    if (!commit) restoreSlot();
+    // Glide the floating row into the placeholder's final slot.
+    const tb = rowBox(s.tr);
+    const dy = tb.top - s.rect.top;
+    s.wrap.classList.remove('lifted', 'invalid');
+    s.wrap.classList.add(commit ? 'settling' : 'returning');
+    s.wrap.style.transform = `translate3d(0, ${dy}px, 0)`;
+    const ms = commit ? 210 : 270;
+    d = null;
+    let order = null;
+    if (commit) order = [...s.tbody.querySelectorAll('tr[data-drag-id]')].filter(r => r.dataset.dragGroup === s.group).map(r => r.dataset.dragId);
+    setTimeout(() => {
+      s.wrap.remove();
+      s.tr.classList.remove('drag-placeholder');
+      s.tbody.querySelectorAll('tr.drop-zone, tr.drop-zone-off').forEach(r => r.classList.remove('drop-zone', 'drop-zone-off'));
+      document.body.classList.remove('row-dragging');
+      if (commit && s.cfg.onDrop) {
+        let ok = false;
+        try { ok = s.cfg.onDrop(s.tr.dataset.dragId, s.group, order); }
+        catch (err) { console.error('row drop failed', err); ok = false; }
+        if (!ok) { showToast("Couldn't move that row — nothing was changed.", true); s.cfg.rerender && s.cfg.rerender(); }
+      }
+    }, ms);
+  }
+  return { register, isDragging: () => !!d };
+})();
+
+// Moves `dragKey` inside the full ordered list of its group (including rows
+// hidden by filters/search) next to its new visible neighbour, so hidden rows
+// keep their relative order. Returns the new full order, or null if nothing
+// changed or anything doesn't line up.
+function mergeVisibleOrder(fullKeys, dragKey, visibleKeys) {
+  if (!fullKeys.includes(dragKey)) return null;
+  if (!visibleKeys.every(k => fullKeys.includes(k))) return null;
+  const i = visibleKeys.indexOf(dragKey);
+  if (i === -1) return null;
+  const next = fullKeys.filter(k => k !== dragKey);
+  if (i < visibleKeys.length - 1) next.splice(next.indexOf(visibleKeys[i + 1]), 0, dragKey);
+  else if (i > 0) next.splice(next.indexOf(visibleKeys[i - 1]) + 1, 0, dragKey);
+  else return null;
+  if (next.length !== fullKeys.length) return null;
+  if (next.every((k, j) => k === fullKeys[j])) return null; // same order
+  return next;
+}
+function persistExpenseRowOrder(dragKey, date, visibleKeys) {
+  const p = activeProfile();
+  const dayRows = buildExpenseRows(p).filter(r => r.date === date).sort(expenseDayOrderCmp);
+  const fullKeys = dayRows.map(r => r.kind + ':' + r.id);
+  const newOrder = mergeVisibleOrder(fullKeys, dragKey, visibleKeys);
+  if (!newOrder) return true; // nothing to change — not an error
+  const lookup = key => {
+    const [kind, ...rest] = key.split(':'); const id = rest.join(':');
+    return (kind === 'payment' ? p.payments : p.expenses).find(x => x.id === id);
+  };
+  const objs = newOrder.map(lookup);
+  if (objs.some(o => !o || o.date !== date)) return false; // leave data untouched
+  objs.forEach((o, i) => { o.pos = i; }); // the only field a drop writes
+  saveState();
+  renderAll();
+  return true;
+}
+function persistBudgetRowOrder(dragId, month, visibleIds) {
+  const p = activeProfile();
+  const monthLines = p.budget.filter(b => b.month === month).slice().sort(budgetMonthOrderCmp);
+  const newOrder = mergeVisibleOrder(monthLines.map(b => b.id), dragId, visibleIds);
+  if (!newOrder) return true;
+  const objs = newOrder.map(id => p.budget.find(b => b.id === id));
+  if (objs.some(o => !o || o.month !== month)) return false;
+  objs.forEach((o, i) => { o.pos = i; });
+  saveState();
+  renderAll();
+  return true;
+}
+RowDrag.register('expTableBody', { onDrop: persistExpenseRowOrder, rerender: () => renderExpensesPage(), invalidHint: 'Rows can only move within the same day' });
+RowDrag.register('budgetTableBody', { onDrop: persistBudgetRowOrder, rerender: () => renderBudgetPage(), invalidHint: 'Lines can only move within the same month' });
 
 loadState();
 if (rebucketAllProfiles()) localStorage.setItem('ledger_state', JSON.stringify(state));
