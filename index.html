@@ -117,7 +117,31 @@
   .kpi { background: var(--card); border: none; border-radius: 14px; padding: 11px 14px; box-shadow: var(--shadow-out-sm); min-width: 0; }
   .kpi .l { font-size: 11px; color: var(--txt-dim); font-weight: 600; margin-bottom: 4px; }
   .kpi .v { font-family: var(--font-display); font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .kpi .delta { margin-top: 2px; font-size: 10.5px; }
+  .kpi .delta { display: none; } /* numbers only — no month-over-month comparison */
+  /* ===== Summary tiles (design E: icon tiles, the key figure filled) ===== */
+  .kpi { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; }
+  .kpi .kt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .kpi .l { margin-bottom: 0; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .v { font-size: 21px; }
+  .kpi .ki { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--line); color: var(--txt-dim); }
+  .kpi .ki svg { width: 19px; height: 19px; }
+  .kpi .ki.in { background: #e4e7fd; color: #5563e0; }
+  .kpi .ki.out, .kpi .ki.up { background: #fbe6e4; color: #c4574f; }
+  .kpi .ki.rem, .kpi .ki.net { background: #e1f6ee; color: #2f9e74; }
+  .kpi .ki.card, .kpi .ki.pct { background: #e4e7fd; color: #5563e0; }
+  .kpi .v.pos { color: #2f9e74; }
+  .kpi.hero { background: linear-gradient(135deg, #e2a64c 0%, #c98a2c 100%); box-shadow: 0 12px 22px rgba(201,138,44,.32); }
+  .kpi.hero .l { color: rgba(255,255,255,.88); }
+  .kpi.hero .v, .kpi.hero .v.pos, .kpi.hero .v.warn, .kpi.hero .v.neg { color: #fff; }
+  .kpi.hero .ki { background: rgba(255,255,255,.22); color: #fff; }
+  .kpi.hero.is-neg { background: linear-gradient(135deg, #e0716a 0%, #c4574f 100%); box-shadow: 0 12px 22px rgba(196,87,79,.30); }
+  @media (max-width: 860px) {
+    .kpis { gap: 12px; }
+    .kpi { padding: 12px; gap: 10px; }
+    .kpi .ki { width: 34px; height: 34px; border-radius: 10px; }
+    .kpi .ki svg { width: 17px; height: 17px; }
+    .kpi .v { font-size: 17px; }
+  }
   /* Copy of the Dashboard's 4 summary cards shown on Expenses/Budget/Installments */
   .kpis-mirror:empty { display: none; }
 
@@ -574,6 +598,47 @@
   .profile-tab.on .profile-tab-name { color: var(--blue); }
   #profileCardPreview .profile-card { width: 100%; height: 100px; margin: 0 auto; }
 
+  /* ===== Hero card strip: the active profile as a large card, the rest as smaller cards ===== */
+  .profile-strip.hero-strip { align-items: flex-end; gap: 16px; padding: 6px 12px 40px; margin: 0 -12px -18px; }
+  .profile-strip.hero-strip .profile-tab { width: auto; }
+  .hero-card, .peek-card { position: relative; overflow: hidden; color: #fff; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: left; }
+  .hero-card { width: 330px; height: 176px; border-radius: 20px; padding: 18px 20px; box-shadow: 0 18px 34px rgba(26,31,110,.30), 0 4px 10px rgba(26,31,110,.20); cursor: default; }
+  .hero-card.mastercard { box-shadow: 0 18px 34px rgba(0,0,0,.32), 0 4px 10px rgba(0,0,0,.2); }
+  .hero-card.savings { box-shadow: 0 18px 34px rgba(15,92,74,.32), 0 4px 10px rgba(15,92,74,.2); }
+  .peek-card { width: 170px; height: 104px; border-radius: 16px; padding: 12px 14px; opacity: .82; box-shadow: 0 8px 16px rgba(30,35,60,.18); transition: opacity .15s ease, transform .15s ease; }
+  .profile-tab:hover .peek-card { opacity: 1; transform: translateY(-2px); }
+  .hero-card.visa, .peek-card.visa { background: linear-gradient(135deg, #1a1f6e 0%, #2c3fa8 55%, #3f5bd9 100%); }
+  .hero-card.mastercard, .peek-card.mastercard { background: linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 100%); }
+  .hero-card.other, .peek-card.other { background: linear-gradient(135deg, #5b5f6b 0%, #383b42 100%); }
+  .hero-card.savings, .peek-card.savings { background: linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%); }
+  .hero-card .deco1, .hero-card .deco2 { position: absolute; border-radius: 50%; pointer-events: none; }
+  .hero-card .deco1 { right: -60px; top: -80px; width: 220px; height: 220px; background: rgba(255,255,255,.08); }
+  .hero-card .deco2 { right: 40px; bottom: -110px; width: 200px; height: 200px; background: rgba(255,255,255,.06); }
+  .hero-row { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .hero-name { font-size: 13px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-net { font-size: 15px; font-weight: 800; font-style: italic; letter-spacing: .05em; }
+  .hero-lbl { position: relative; font-size: 11px; font-weight: 600; opacity: .78; }
+  .hero-val { position: relative; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-chip { width: 26px; height: 19px; border-radius: 4px; background: linear-gradient(135deg, #e8d68a, #cba84f); }
+  .hero-digits { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; direction: ltr; }
+  .hero-card .profile-edit-btn { position: absolute; top: auto; bottom: 16px; right: 50%; transform: translateX(50%); width: 26px; height: 26px; opacity: .85; }
+  .hero-card .profile-edit-btn svg { width: 13px; height: 13px; }
+  .peek-name { font-size: 11.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peek-net { font-size: 10px; font-weight: 800; font-style: italic; letter-spacing: .05em; flex-shrink: 0; }
+  .peek-lbl { display: block; font-size: 10px; font-weight: 600; opacity: .78; }
+  .peek-val { display: block; font-family: var(--font-display); font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peek-card .profile-card-mc-dots span, .hero-card .profile-card-mc-dots span { width: 13px; height: 13px; }
+  .hero-card .profile-card-mc-dots span { width: 18px; height: 18px; }
+  .peek-add { width: 104px; height: 104px; border-radius: 16px; background: var(--card); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; }
+  .peek-add svg { width: 16px; height: 16px; }
+  @media (max-width: 860px) {
+    .profile-strip.hero-strip { padding: 8px 18px 36px; margin: 0 0 -14px; gap: 12px; scroll-snap-type: x mandatory; scroll-padding-left: 18px; }
+    .profile-strip.hero-strip .profile-tab { scroll-snap-align: start; }
+    .hero-card { width: 300px; height: 166px; }
+    .peek-card { width: 150px; height: 166px; }
+    .peek-add { width: 90px; height: 166px; }
+  }
+
   /* ===== Responsive: iPhone-ish ===== */
   @media (max-width: 860px) {
     /* iOS Safari zooms the whole page in when a focused input's font-size is
@@ -791,10 +856,10 @@
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="l">Income</div><div class="v" id="kpiIncome">0</div></div>
-        <div class="kpi"><div class="l">Spent</div><div class="v" id="kpiSpent">0</div><div class="delta" id="kpiSpentDelta"></div></div>
-        <div class="kpi"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div>
-        <div class="kpi"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div>
+        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l">Income</div><div class="v" id="kpiIncome">0</div></div></div>
+        <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Spent</div><div class="v" id="kpiSpent">0</div><div class="delta" id="kpiSpentDelta"></div></div></div>
+        <div class="kpi"><span class="ki rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg></span><div class="kt"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div></div>
+        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div></div>
       </div>
       <div class="dash-grid">
         <div class="card dash-bva">
@@ -841,10 +906,10 @@
         <h1>Card overview</h1>
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div>
-        <div class="kpi"><div class="l">Balance</div><div class="v" id="ccKpiBalance">0</div></div>
-        <div class="kpi"><div class="l">Available credit</div><div class="v pos" id="ccKpiAvailable">0</div></div>
-        <div class="kpi"><div class="l">Utilization</div><div class="v warn" id="ccKpiUtil">0%</div></div>
+        <div class="kpi"><span class="ki card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><div class="kt"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div></div>
+        <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Balance</div><div class="v" id="ccKpiBalance">0</div></div></div>
+        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available credit</div><div class="v pos" id="ccKpiAvailable">0</div></div></div>
+        <div class="kpi"><span class="ki pct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5"/><path d="M12 12l6 6"/></svg></span><div class="kt"><div class="l">Utilization</div><div class="v warn" id="ccKpiUtil">0%</div></div></div>
       </div>
       <div class="card" id="ccDueCard" style="margin-bottom:16px;">
         <h3>Payment due</h3>
@@ -882,10 +947,10 @@
         <h1>Savings overview</h1>
       </div>
       <div class="kpis">
-        <div class="kpi"><div class="l">Balance</div><div class="v pos" id="svKpiBalance">0</div></div>
-        <div class="kpi"><div class="l">Total deposited</div><div class="v" id="svKpiDeposited">0</div></div>
-        <div class="kpi"><div class="l">Total withdrawn</div><div class="v" id="svKpiWithdrawn">0</div></div>
-        <div class="kpi"><div class="l">Net this month</div><div class="v" id="svKpiNet">0</div></div>
+        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Balance</div><div class="v pos" id="svKpiBalance">0</div></div></div>
+        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l">Total deposited</div><div class="v" id="svKpiDeposited">0</div></div></div>
+        <div class="kpi"><span class="ki up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V8"/><path d="M7 13l5-5 5 5"/><path d="M5 4h14"/></svg></span><div class="kt"><div class="l">Total withdrawn</div><div class="v" id="svKpiWithdrawn">0</div></div></div>
+        <div class="kpi"><span class="ki net"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span><div class="kt"><div class="l">Net this month</div><div class="v" id="svKpiNet">0</div></div></div>
       </div>
       <div class="grid3">
         <div class="card">
@@ -2151,34 +2216,66 @@ async function resolveAuthAndBoot() {
    PROFILES (tabs) — each profile is a fully separate budget:
    its own expenses, budget lines, income, pay cycles and categories.
    ============================================================ */
+// The headline number shown on a profile's card: what's available this pay
+// cycle for a budget profile, the balance owed on a credit card, the balance
+// of a savings account. Computed with that profile temporarily active so its
+// own pay cycles and currency apply.
+function profileHeadline(id) {
+  const prev = state.activeProfileId;
+  state.activeProfileId = id;
+  try {
+    const p = state.profiles[id];
+    if (isCredit(p)) return { label: 'Balance owed', value: fmt(creditBalance(p)) };
+    if (isSavings(p)) return { label: 'Balance', value: fmt(savingsBalance(p)) };
+    const m = todayCycleMonth();
+    return { label: 'Available · ' + monthLabel(m).split(' ')[0], value: fmt(monthSummary(m).availableBalance) };
+  } catch (e) {
+    return { label: '', value: '' };
+  } finally {
+    state.activeProfileId = prev;
+  }
+}
+function profileNetworkHtml(p, cls) {
+  if (p.cardType === 'mastercard') return '<div class="profile-card-mc-dots"><span></span><span></span></div>';
+  const label = p.cardType === 'visa' ? 'VISA' : (p.cardType === 'savings' ? 'SAVINGS' : 'CARD');
+  return `<span class="${cls}">${label}</span>`;
+}
 function renderProfileTabs() {
   const el = document.getElementById('profileStrip');
   if (!el) return;
-  const tabs = state.profileOrder.map(id => {
+  el.classList.add('hero-strip');
+  const activeId = state.profiles[state.activeProfileId] ? state.activeProfileId : state.profileOrder[0];
+  const ids = [activeId, ...state.profileOrder.filter(id => id !== activeId && state.profiles[id])];
+  const cardCls = p => ['visa', 'mastercard', 'savings'].includes(p.cardType) ? p.cardType : 'other';
+  const html = ids.map(id => {
     const p = state.profiles[id];
     if (!p) return '';
-    const on = id === state.activeProfileId;
-    const theme = CARD_THEMES[p.cardType] || CARD_THEMES.other;
-    const network = p.cardType === 'mastercard'
-      ? '<div class="profile-card-mc-dots"><span></span><span></span></div>'
-      : `<div class="profile-card-network">${p.cardType === 'visa' ? 'VISA' : (p.cardType === 'savings' ? 'SAVINGS' : 'CARD')}</div>`;
-    return `<div class="profile-tab ${on ? 'on' : ''}" onclick="switchProfile('${id}')">
-      <div class="profile-card ${escapeHtml(p.cardType)}">
-        <button class="profile-edit-btn" onclick="event.stopPropagation(); openProfileModal('${id}')" title="Edit profile">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </button>
-        <div class="profile-card-chip"></div>
-        ${network}
-        <div class="profile-card-digits">${p.cardLast4 ? '•••• ' + escapeHtml(p.cardLast4) : ''}</div>
+    const h = profileHeadline(id);
+    if (id === activeId) {
+      return `<div class="profile-tab on">
+        <div class="hero-card ${cardCls(p)}">
+          <span class="deco1"></span><span class="deco2"></span>
+          <div class="hero-row"><span class="hero-name">${escapeHtml(p.name)}</span>${profileNetworkHtml(p, 'hero-net')}</div>
+          <div><div class="hero-lbl">${escapeHtml(h.label)}</div><div class="hero-val">${escapeHtml(h.value)}</div></div>
+          <div class="hero-row"><span class="hero-chip"></span><span class="hero-digits">${p.cardLast4 ? '•••• ' + escapeHtml(p.cardLast4) : ''}</span></div>
+          <button class="profile-edit-btn" onclick="event.stopPropagation(); openProfileModal('${id}')" title="Edit profile" aria-label="Edit profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+        </div>
+      </div>`;
+    }
+    return `<div class="profile-tab" onclick="switchProfile('${id}')" title="Switch to ${escapeHtml(p.name)}">
+      <div class="peek-card ${cardCls(p)}">
+        <span class="hero-row" style="width:100%;"><span class="peek-name">${escapeHtml(p.name)}</span>${profileNetworkHtml(p, 'peek-net')}</span>
+        <span><span class="peek-lbl">${escapeHtml(h.label)}</span><span class="peek-val">${escapeHtml(h.value)}</span></span>
       </div>
-      <div class="profile-tab-name">${escapeHtml(p.name)}</div>
     </div>`;
   }).join('') + `
-    <div class="profile-tab" onclick="openProfileModal()">
-      <div class="profile-card add-card">+</div>
-      <div class="profile-tab-name">Add profile</div>
+    <div class="profile-tab" onclick="openProfileModal()" title="Add profile">
+      <div class="peek-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</div>
     </div>`;
-  el.innerHTML = tabs;
+  el.innerHTML = html;
+  el.scrollLeft = 0;
 }
 function switchProfile(id) {
   if (!state.profiles[id] || id === state.activeProfileId) { renderProfileTabs(); return; }
@@ -2902,6 +2999,7 @@ function buildTrendChart(months, vals, selectedMonths, currentMonthReal) {
 function renderDashboard() {
   renderDashboardCore();
   syncKpiMirrors();
+  renderProfileTabs();
 }
 function syncKpiMirrors() {
   const src = document.querySelector('#' + dashboardPageId() + ' .kpis');
@@ -2941,6 +3039,7 @@ function renderDashboardCore() {
   const availEl = document.getElementById('kpiAvailable');
   availEl.textContent = fmt(sum.availableBalance);
   availEl.className = 'v ' + (sum.availableBalance >= 0 ? 'warn' : 'neg');
+  availEl.closest('.kpi').classList.toggle('is-neg', sum.availableBalance < 0);
 
   renderBalanceCheck(sum.remaining);
 
@@ -3087,8 +3186,9 @@ function renderCreditDashboard() {
   const availEl = document.getElementById('ccKpiAvailable');
   availEl.textContent = fmt(available);
   availEl.className = 'v ' + (available >= 0 ? 'pos' : 'neg');
+  availEl.closest('.kpi').classList.toggle('is-neg', available < 0);
   const utilEl = document.getElementById('ccKpiUtil');
-  utilEl.textContent = fmt(util) + '%';
+  utilEl.textContent = util.toFixed(1) + '%';
   utilEl.className = 'v ' + (util >= 90 ? 'neg' : util >= 70 ? 'warn' : 'pos');
 
   // ---- Payment due (based on the most recently closed statement) ----
@@ -3191,6 +3291,7 @@ function renderSavingsDashboard() {
   const balEl = document.getElementById('svKpiBalance');
   balEl.textContent = fmt(balance);
   balEl.className = 'v ' + (balance >= 0 ? 'pos' : 'neg');
+  balEl.closest('.kpi').classList.toggle('is-neg', balance < 0);
   document.getElementById('svKpiDeposited').textContent = fmt(deposited);
   document.getElementById('svKpiWithdrawn').textContent = fmt(withdrawn);
 
