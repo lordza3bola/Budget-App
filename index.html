@@ -599,44 +599,44 @@
   #profileCardPreview .profile-card { width: 100%; height: 100px; margin: 0 auto; }
 
   /* ===== Hero card strip: the active profile as a large card, the rest as smaller cards ===== */
-  .profile-strip.hero-strip { align-items: flex-end; gap: 16px; padding: 6px 12px 40px; margin: 0 -12px -18px; }
+  .profile-strip.hero-strip { align-items: flex-end; gap: 12px; padding: 4px 12px 28px; margin: 0 -12px -14px; }
   .profile-strip.hero-strip .profile-tab { width: auto; }
   .hero-card, .peek-card { position: relative; overflow: hidden; color: #fff; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: left; }
-  .hero-card { width: 330px; height: 176px; border-radius: 20px; padding: 18px 20px; box-shadow: 0 18px 34px rgba(26,31,110,.30), 0 4px 10px rgba(26,31,110,.20); cursor: default; }
-  .hero-card.mastercard { box-shadow: 0 18px 34px rgba(0,0,0,.32), 0 4px 10px rgba(0,0,0,.2); }
-  .hero-card.savings { box-shadow: 0 18px 34px rgba(15,92,74,.32), 0 4px 10px rgba(15,92,74,.2); }
-  .peek-card { width: 170px; height: 104px; border-radius: 16px; padding: 12px 14px; opacity: .82; box-shadow: 0 8px 16px rgba(30,35,60,.18); transition: opacity .15s ease, transform .15s ease; }
+  .hero-card { width: 250px; height: 128px; border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 22px rgba(26,31,110,.28), 0 3px 8px rgba(26,31,110,.18); cursor: default; }
+  .hero-card.mastercard { box-shadow: 0 10px 22px rgba(0,0,0,.30), 0 3px 8px rgba(0,0,0,.18); }
+  .hero-card.savings { box-shadow: 0 10px 22px rgba(15,92,74,.30), 0 3px 8px rgba(15,92,74,.18); }
+  .peek-card { width: 150px; height: 72px; border-radius: 12px; padding: 8px 11px; opacity: .82; box-shadow: 0 8px 16px rgba(30,35,60,.18); transition: opacity .15s ease, transform .15s ease; }
   .profile-tab:hover .peek-card { opacity: 1; transform: translateY(-2px); }
   .hero-card.visa, .peek-card.visa { background: linear-gradient(135deg, #1a1f6e 0%, #2c3fa8 55%, #3f5bd9 100%); }
   .hero-card.mastercard, .peek-card.mastercard { background: linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 100%); }
   .hero-card.other, .peek-card.other { background: linear-gradient(135deg, #5b5f6b 0%, #383b42 100%); }
   .hero-card.savings, .peek-card.savings { background: linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%); }
   .hero-card .deco1, .hero-card .deco2 { position: absolute; border-radius: 50%; pointer-events: none; }
-  .hero-card .deco1 { right: -60px; top: -80px; width: 220px; height: 220px; background: rgba(255,255,255,.08); }
-  .hero-card .deco2 { right: 40px; bottom: -110px; width: 200px; height: 200px; background: rgba(255,255,255,.06); }
+  .hero-card .deco1 { right: -46px; top: -60px; width: 160px; height: 160px; background: rgba(255,255,255,.08); }
+  .hero-card .deco2 { right: 30px; bottom: -80px; width: 150px; height: 150px; background: rgba(255,255,255,.06); }
   .hero-row { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .hero-name { font-size: 13px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hero-net { font-size: 15px; font-weight: 800; font-style: italic; letter-spacing: .05em; }
-  .hero-lbl { position: relative; font-size: 11px; font-weight: 600; opacity: .78; }
-  .hero-val { position: relative; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hero-chip { width: 26px; height: 19px; border-radius: 4px; background: linear-gradient(135deg, #e8d68a, #cba84f); }
-  .hero-digits { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .12em; direction: ltr; }
-  .hero-card .profile-edit-btn { position: absolute; top: auto; bottom: 16px; right: 50%; transform: translateX(50%); width: 26px; height: 26px; opacity: .85; }
-  .hero-card .profile-edit-btn svg { width: 13px; height: 13px; }
-  .peek-name { font-size: 11.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-name { font-size: 12px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-net { font-size: 13px; font-weight: 800; font-style: italic; letter-spacing: .05em; }
+  .hero-lbl { position: relative; font-size: 10px; font-weight: 600; opacity: .78; }
+  .hero-val { position: relative; font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero-chip { width: 20px; height: 15px; border-radius: 4px; background: linear-gradient(135deg, #e8d68a, #cba84f); }
+  .hero-digits { font-family: var(--font-display); font-size: 11.5px; font-weight: 700; letter-spacing: .12em; direction: ltr; }
+  .hero-card .profile-edit-btn { position: absolute; top: auto; bottom: 10px; right: 50%; transform: translateX(50%); width: 22px; height: 22px; opacity: .85; }
+  .hero-card .profile-edit-btn svg { width: 11px; height: 11px; }
+  .peek-name { font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .peek-net { font-size: 10px; font-weight: 800; font-style: italic; letter-spacing: .05em; flex-shrink: 0; }
-  .peek-lbl { display: block; font-size: 10px; font-weight: 600; opacity: .78; }
-  .peek-val { display: block; font-family: var(--font-display); font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .peek-card .profile-card-mc-dots span, .hero-card .profile-card-mc-dots span { width: 13px; height: 13px; }
-  .hero-card .profile-card-mc-dots span { width: 18px; height: 18px; }
-  .peek-add { width: 104px; height: 104px; border-radius: 16px; background: var(--card); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; }
+  .peek-lbl { display: block; font-size: 9.5px; font-weight: 600; opacity: .78; }
+  .peek-val { display: block; font-family: var(--font-display); font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .peek-card .profile-card-mc-dots span, .hero-card .profile-card-mc-dots span { width: 11px; height: 11px; }
+  .hero-card .profile-card-mc-dots span { width: 15px; height: 15px; }
+  .peek-add { width: 72px; height: 72px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; }
   .peek-add svg { width: 16px; height: 16px; }
   @media (max-width: 860px) {
-    .profile-strip.hero-strip { padding: 8px 18px 36px; margin: 0 0 -14px; gap: 12px; scroll-snap-type: x mandatory; scroll-padding-left: 18px; }
+    .profile-strip.hero-strip { padding: 6px 18px 26px; margin: 0 0 -12px; gap: 10px; scroll-snap-type: x mandatory; scroll-padding-left: 18px; }
     .profile-strip.hero-strip .profile-tab { scroll-snap-align: start; }
-    .hero-card { width: 300px; height: 166px; }
-    .peek-card { width: 150px; height: 166px; }
-    .peek-add { width: 90px; height: 166px; }
+    .hero-card { width: 230px; height: 120px; }
+    .peek-card { width: 136px; height: 72px; }
+    .peek-add { width: 60px; height: 72px; }
   }
 
   /* ===== Responsive: iPhone-ish ===== */
