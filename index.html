@@ -58,7 +58,10 @@
   button { font-family: inherit; cursor: pointer; }
   input, select, textarea { font-family: inherit; }
 
-  #app { display: flex; min-height: 100vh; max-width: 100vw; overflow-x: hidden; }
+  /* overflow-x: clip (not hidden) so #app doesn't become a scroll container —
+     'hidden' silently breaks every position:sticky inside it (sidebar,
+     frozen page headers, table headers). 'hidden' stays as the fallback. */
+  #app { display: flex; min-height: 100vh; max-width: 100vw; overflow-x: hidden; overflow-x: clip; }
 
   /* ===== Sidebar (desktop) ===== */
   .sidebar {
@@ -68,6 +71,8 @@
     box-shadow: 3px 0 10px #cdd2de;
     padding: 26px 18px;
     display: flex; flex-direction: column;
+    /* Frozen in place: stays put while the page scrolls */
+    position: sticky; top: 0; height: 100vh; overflow-y: auto; align-self: flex-start; z-index: 30;
   }
   .brand { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--txt); margin-bottom: 6px; padding: 0 10px; }
   .brand span { color: var(--blue); }
@@ -108,10 +113,44 @@
   .top h1 { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
   .top .sub { font-size: 13px; color: var(--txt-dim2); }
 
-  .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-bottom: 26px; }
-  .kpi { background: var(--card); border: none; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-out); min-width: 0; }
-  .kpi .l { font-size: 11.5px; color: var(--txt-dim); font-weight: 600; margin-bottom: 8px; }
-  .kpi .v { font-family: var(--font-display); font-size: 21px; font-weight: 700; }
+  .kpis { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 16px; }
+  .kpi { background: var(--card); border: none; border-radius: 14px; padding: 11px 14px; box-shadow: var(--shadow-out-sm); min-width: 0; }
+  .kpi .l { font-size: 11px; color: var(--txt-dim); font-weight: 600; margin-bottom: 4px; }
+  .kpi .v { font-family: var(--font-display); font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .delta { margin-top: 2px; font-size: 10.5px; }
+  /* Copy of the Dashboard's 4 summary cards shown on Expenses/Budget/Installments */
+  .kpis-mirror:empty { display: none; }
+
+  /* Compact dashboard analytics */
+  #page-dashboard .top, #page-dashboard-credit .top, #page-dashboard-savings .top { margin-bottom: 14px; }
+  #page-dashboard .card, #page-dashboard-credit .card, #page-dashboard-savings .card { padding: 13px 16px; border-radius: 14px; box-shadow: var(--shadow-out-sm); }
+  #page-dashboard .card h3, #page-dashboard-credit .card h3, #page-dashboard-savings .card h3 { font-size: 13px; margin-bottom: 9px; }
+  #page-dashboard .grid3, #page-dashboard .grid2 { gap: 14px; }
+  #page-dashboard .grid3.mt, #page-dashboard .grid2 { margin-top: 14px; }
+  #page-dashboard .stat-row { padding: 6px 0; }
+  #page-dashboard .stat-row .v { font-size: 14px; }
+  #page-dashboard .rank-row { padding: 5px 0; }
+  #page-dashboard #balanceCheckCard { margin-bottom: 14px !important; }
+
+  /* Frozen area above the Expenses / Budget tables (desktop). Everything in
+     .freeze-head stays pinned at the top while the rows scroll under it, and
+     the table's column headings pin right below it. --freezeH is measured
+     live by JS so the headings always sit exactly under the frozen block. */
+  @media (min-width: 861px) {
+    .freeze-head {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg);
+      margin: -28px -32px 0; padding: 20px 32px 4px;
+    }
+    .freeze-head .top { margin-bottom: 12px; }
+    .freeze-head .budget-filter { margin-bottom: 10px; }
+    .freeze-page .table-wrap { overflow: visible; }
+    .freeze-page .table thead th {
+      position: sticky; top: var(--freezeH, 0px); z-index: 10;
+      background: var(--bg); border-bottom: none;
+      box-shadow: inset 0 -1px 0 var(--card-b);
+    }
+  }
   .kpi .v.pos { color: var(--green); }
   .kpi .v.warn { color: var(--amber); }
   .kpi .v.neg { color: var(--red); }
@@ -825,7 +864,8 @@
     </div>
 
     <!-- EXPENSES LIST -->
-    <div class="page" id="page-expenses">
+    <div class="page freeze-page" id="page-expenses">
+      <div class="freeze-head">
       <div class="top">
         <h1 id="expensesPageTitle">Expenses</h1>
         <div style="display:flex; gap:10px; align-items:center;">
@@ -837,6 +877,7 @@
           </div>
         </div>
       </div>
+      <div class="kpis kpis-mirror"></div>
       <div id="expTotalLine" style="font-size:13px; color:var(--txt-dim); margin-bottom:10px;"></div>
       <div class="budget-filter" style="flex-wrap:wrap;">
         <input type="text" id="expSearch" placeholder="Search description…" oninput="renderExpensesPage()"
@@ -845,6 +886,7 @@
         <button type="button" class="ms-btn" id="msBtn_expSub" onclick="openMs('expSub', this)">All sub categories</button>
         <button type="button" class="ms-btn" id="msBtn_expDateBar" onclick="openMs('expDateBar', this)">All days</button>
       </div>
+      </div><!-- /freeze-head -->
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th><button type="button" class="th-filter" id="msBtn_expDate" onclick="openMs('expDate', this)" title="Filter by day"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Amount</th><th></th></tr></thead>
@@ -855,7 +897,8 @@
     </div>
 
     <!-- BUDGET -->
-    <div class="page" id="page-budget">
+    <div class="page freeze-page" id="page-budget">
+      <div class="freeze-head">
       <div class="top">
         <h1>Budget</h1>
         <div style="display:flex; gap:10px; align-items:center;">
@@ -867,6 +910,7 @@
           <button class="btn btn-primary" onclick="openBudgetModal()">+ Add budget line</button>
         </div>
       </div>
+      <div class="kpis kpis-mirror"></div>
       <div class="budget-filter">
         <button class="on" data-f="all" onclick="filterBudget('all', this)">All</button>
         <button data-f="done" onclick="filterBudget('done', this)">Closed</button>
@@ -879,6 +923,7 @@
         <button type="button" class="ms-btn" id="msBtn_budgetCat" onclick="openMs('budgetCat', this)">All categories</button>
         <button type="button" class="ms-btn" id="msBtn_budgetSub" onclick="openMs('budgetSub', this)">All sub categories</button>
       </div>
+      </div><!-- /freeze-head -->
       <div class="table-wrap">
         <table class="table">
           <thead><tr><th><button type="button" class="th-filter" id="budgetDateHdrBtn" onclick="event.stopPropagation(); toggleMonthPanel('budget')" title="Filter by month"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
@@ -901,6 +946,7 @@
           <button class="btn btn-primary" onclick="openInstallmentModal()">+ Add installment</button>
         </div>
       </div>
+      <div class="kpis kpis-mirror"></div>
       <div class="kpis">
         <div class="kpi"><div class="l">Installments due</div><div class="v" id="instKpiTotal">0</div></div>
         <div class="kpi"><div class="l">Paid</div><div class="v pos" id="instKpiPaid">0</div></div>
@@ -2755,7 +2801,33 @@ function buildTrendChart(months, vals, selectedMonths, currentMonthReal) {
   return `<div class="trend-chart-wrap">${svg}<div class="trend-legend">${legendItems.join('')}</div></div>`;
 }
 
+// Dashboard + a copy of its summary cards on Expenses / Budget / Installments.
 function renderDashboard() {
+  renderDashboardCore();
+  syncKpiMirrors();
+}
+function syncKpiMirrors() {
+  const src = document.querySelector('#' + dashboardPageId() + ' .kpis');
+  const html = src ? src.innerHTML.replace(/\sid="[^"]*"/g, '') : '';
+  document.querySelectorAll('.kpis-mirror').forEach(el => { el.innerHTML = html; });
+}
+// Keeps the frozen table headings sitting exactly under the frozen block,
+// whatever its height (filters wrapping, KPI row, window resize…).
+function updateFreezeHeights() {
+  document.querySelectorAll('.freeze-page').forEach(pg => {
+    const head = pg.querySelector('.freeze-head');
+    if (!head) return;
+    const h = head.getBoundingClientRect().height;
+    if (h) pg.style.setProperty('--freezeH', Math.round(h) + 'px');
+  });
+}
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(updateFreezeHeights);
+  document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.freeze-head').forEach(h => ro.observe(h)));
+  setTimeout(() => document.querySelectorAll('.freeze-head').forEach(h => ro.observe(h)), 0);
+}
+window.addEventListener('resize', updateFreezeHeights);
+function renderDashboardCore() {
   if (isCredit()) { renderCreditDashboard(); return; }
   if (isSavings()) { renderSavingsDashboard(); return; }
   ensureSelectedMonths();
@@ -3383,6 +3455,8 @@ function allKnownMonths() {
 function renderExpensesPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('exp');
+  if (!renderDashboard._busy) { renderDashboard._busy = true; try { renderDashboard(); } finally { renderDashboard._busy = false; } }
+  requestAnimationFrame(updateFreezeHeights);
   populateCatListDatalist();
   const search = document.getElementById('expSearch').value.trim().toLowerCase();
   const p = activeProfile();
@@ -4018,6 +4092,8 @@ function filterBudget(mode, btn) {
 function renderBudgetPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('budget');
+  if (!renderDashboard._busy) { renderDashboard._busy = true; try { renderDashboard(); } finally { renderDashboard._busy = false; } }
+  requestAnimationFrame(updateFreezeHeights);
   populateCatListDatalist();
   updateMsButtons();
   const search = document.getElementById('budgetSearch').value.trim().toLowerCase();
@@ -4413,6 +4489,8 @@ function filterInstallments(mode, btn) {
 function renderInstallmentsPage() {
   ensureSelectedMonths();
   updateMonthBtnLabel('inst');
+  if (!renderDashboard._busy) { renderDashboard._busy = true; try { renderDashboard(); } finally { renderDashboard._busy = false; } }
+  requestAnimationFrame(updateFreezeHeights);
   const p = activeProfile();
   currentInstallmentPlans = installmentPlans(p);
 
