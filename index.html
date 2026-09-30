@@ -121,6 +121,63 @@
   /* Copy of the Dashboard's 4 summary cards shown on Expenses/Budget/Installments */
   .kpis-mirror:empty { display: none; }
 
+  /* ===== Dashboard layout (v2) ===== */
+  .dash-grid { display: grid; grid-template-columns: minmax(0,1.7fr) minmax(0,1fr); gap: 14px; align-items: start; }
+  .dash-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .dash-lists { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-top: 14px; }
+  .dash-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .dash-card-head h3 { margin: 0 !important; }
+  .dash-tools { display: flex; gap: 6px; }
+  .ms-btn.ms-sm { min-width: 0; max-width: 170px; padding: 5px 24px 5px 9px; font-size: 11.5px; }
+  .h3-sub { font-size: 11px; color: var(--txt-dim2); font-weight: 600; margin-left: auto; margin-right: 0; }
+  .card h3 .h3-sub { margin-left: 8px; margin-right: auto; }
+  .dash-scroll { max-height: 264px; overflow-y: auto; margin-right: -6px; padding-right: 6px; }
+  .bva-head, .bva-row { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr) minmax(150px,auto) 86px; gap: 14px; align-items: center; }
+  .bva-head { font-size: 10.5px; font-weight: 700; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .04em; padding: 4px 0 6px; border-bottom: 1px solid var(--card-b); }
+  .bva-row { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .bva-row:last-child { border-bottom: none; }
+  .bva-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--txt-dim); }
+  .bva-name b { color: var(--txt); font-weight: 700; }
+  .bva-bar { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bva-bar .track { flex: 1; height: 6px; }
+  .bva-pct { font-size: 11px; font-weight: 700; width: 36px; text-align: right; flex-shrink: 0; }
+  .bva-amt { text-align: right; white-space: nowrap; font-weight: 600; }
+  .bva-amt .amt { font-size: 12.5px; }
+  .bva-status { text-align: right; }
+  .status-pill { -webkit-appearance: none; appearance: none; border: none; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; font-family: inherit; }
+  .status-pill.ongoing { background: var(--amber-soft); color: var(--amber); }
+  .status-pill.done { background: var(--green-soft); color: var(--green); }
+  .status-pill.mixed { background: var(--line); color: var(--txt-dim); }
+  #catRows { max-height: 440px; overflow-y: auto; margin-right: -6px; padding-right: 6px; }
+  .bc-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .bc-in { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; box-shadow: var(--shadow-in); padding: 0 10px; height: 36px; }
+  .bc-in span { font-size: 11px; font-weight: 700; color: var(--txt-dim); }
+  .bc-in input { border: none !important; background: transparent !important; box-shadow: none !important; width: 100%; min-width: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--txt); text-align: right; outline: none; padding: 0 !important; }
+  .bc-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+  .bc-stats > div { background: var(--bg); border-radius: 10px; padding: 7px 9px; min-width: 0; }
+  .bc-stats .l { display: block; font-size: 10.5px; color: var(--txt-dim); font-weight: 600; margin-bottom: 2px; }
+  .bc-stats .v { display: block; font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bc-note { font-size: 11.5px; color: var(--txt-dim); margin-top: 8px; line-height: 1.4; }
+  @media (max-width: 1180px) and (min-width: 861px) {
+    .dash-lists { grid-template-columns: 1fr 1fr; }
+    .dash-lists > :last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 860px) {
+    .dash-grid, .dash-lists { grid-template-columns: 1fr; padding: 0 18px; }
+    .bva-head { display: none; }
+    .bva-row { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name amt" "bar status"; row-gap: 6px; column-gap: 10px; padding: 10px 0; }
+    .bva-name { grid-area: name; } .bva-amt { grid-area: amt; } .bva-bar { grid-area: bar; } .bva-status { grid-area: status; }
+    .dash-tools { width: 100%; } .dash-tools .ms-btn { flex: 1; max-width: none; }
+    #catRows, .dash-scroll { max-height: none; }
+    /* iOS needs 16px text on selects (else it zooms in) — shrink the pill visually instead */
+    .status-pill { font-size: 16px !important; transform: scale(.72); transform-origin: right center; padding: 3px 12px; }
+  }
+  /* Dropdown arrow for the category / sub category pickers */
+  .sheet-field select, .modal-sheet .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8fa0' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 34px !important;
+  }
+
   /* Compact dashboard analytics */
   #page-dashboard .top, #page-dashboard-credit .top, #page-dashboard-savings .top { margin-bottom: 14px; }
   #page-dashboard .card, #page-dashboard-credit .card, #page-dashboard-savings .card { padding: 13px 16px; border-radius: 14px; box-shadow: var(--shadow-out-sm); }
@@ -140,7 +197,7 @@
     .freeze-head {
       position: sticky; top: 0; z-index: 20;
       background: var(--bg);
-      margin: -28px -32px 0; padding: 20px 32px 4px;
+      margin: 0 -32px; padding: 8px 32px 4px;
     }
     .freeze-head .top { margin-bottom: 12px; }
     .freeze-head .budget-filter { margin-bottom: 10px; }
@@ -244,6 +301,8 @@
   .th-filter .th-count { background:var(--blue); color:#fff; border-radius:8px; padding:0 6px; font-size:10px; line-height:16px; }
   #msPanel { display:none; position:fixed; z-index:75; background:var(--card); border:1px solid var(--card-b); border-radius:16px; padding:10px; width:250px; max-height:320px; overflow-y:auto; box-shadow:var(--shadow-out); }
   #msPanel .ms-actions { display:flex; gap:8px; margin-bottom:8px; }
+  /* Keep All / Clear pinned at the top of the filter lists while scrolling */
+  .mp-actions, #msPanel .ms-actions { position: sticky; top: -10px; z-index: 2; background: var(--card); margin: -10px -10px 8px; padding: 10px 10px 8px; display: flex; gap: 8px; border-radius: 12px 12px 0 0; box-shadow: 0 1px 0 var(--line); }
   #msPanel .ms-actions button { flex:1; padding:6px; font-size:11.5px; }
   #msPanel label { display:flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; cursor:pointer; }
   #msPanel label .ms-count { margin-left:auto; color:var(--txt-dim2); font-size:11px; }
@@ -737,50 +796,41 @@
         <div class="kpi"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div>
         <div class="kpi"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div>
       </div>
-      <div class="card" id="balanceCheckCard" style="margin-bottom:16px;">
-        <h3>Balance check <span id="balanceCheckBadge"></span></h3>
-        <div id="balanceCheckContent"></div>
-      </div>
-      <div class="grid3">
-        <div class="card">
-          <h3>Budget vs actual by category</h3>
-          <div style="display:flex; gap:8px; margin-bottom:12px;">
-            <button type="button" class="ms-btn" id="msBtn_dashCat" style="flex:1; max-width:none; min-width:0;" onclick="openMs('dashCat', this)">All categories</button>
-            <button type="button" class="ms-btn" id="msBtn_dashSub" style="flex:1; max-width:none; min-width:0;" onclick="openMs('dashSub', this)">All sub categories</button>
+      <div class="dash-grid">
+        <div class="card dash-bva">
+          <div class="dash-card-head">
+            <h3>Budget vs actual</h3>
+            <div class="dash-tools">
+              <button type="button" class="ms-btn ms-sm" id="msBtn_dashCat" onclick="openMs('dashCat', this)">All categories</button>
+              <button type="button" class="ms-btn ms-sm" id="msBtn_dashSub" onclick="openMs('dashSub', this)">All sub categories</button>
+            </div>
           </div>
+          <div class="bva-head"><span>Category</span><span>Progress</span><span style="text-align:right;">Spent / planned</span><span style="text-align:right;">Status</span></div>
           <div id="catRows"><div class="empty-note">No budget lines for this month yet.</div></div>
         </div>
+        <div class="dash-side">
+          <div class="card" id="balanceCheckCard">
+            <h3>Balance check <span id="balanceCheckBadge"></span></h3>
+            <div id="balanceCheckContent"></div>
+          </div>
+          <div class="card">
+            <h3>Spending trend <span class="h3-sub">last 6 months</span></h3>
+            <div id="trendChart"></div>
+          </div>
+        </div>
+      </div>
+      <div class="dash-lists">
         <div class="card">
           <h3>Ongoing <span id="notPaidTotal" class="chip due"></span></h3>
-          <div id="notPaidList"><div class="empty-note">Nothing outstanding.</div></div>
+          <div id="notPaidList" class="dash-scroll"><div class="empty-note">Nothing outstanding.</div></div>
         </div>
         <div class="card">
           <h3 id="comingUpTitle"><span id="comingUpLabel">Coming up</span> <span id="comingUpTotal" class="chip soon"></span></h3>
-          <div id="comingUpList"><div class="empty-note">Nothing added for next month yet.</div></div>
-        </div>
-      </div>
-      <div class="grid3 mt">
-        <div class="card">
-          <h3>This month's pace</h3>
-          <div id="paceStats"></div>
-        </div>
-        <div class="card">
-          <h3>Top categories</h3>
-          <div id="topCatList"></div>
-        </div>
-        <div class="card">
-          <h3>Savings progress</h3>
-          <div id="savingsProgress"></div>
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="card">
-          <h3>Spending trend · last 6 months</h3>
-          <div id="trendChart"></div>
+          <div id="comingUpList" class="dash-scroll"><div class="empty-note">Nothing added for next month yet.</div></div>
         </div>
         <div class="card">
           <h3>Recent transactions</h3>
-          <div id="recentTxns"></div>
+          <div id="recentTxns" class="dash-scroll"></div>
         </div>
       </div>
     </div>
@@ -2672,9 +2722,9 @@ function populateMonthPanel(prefix) {
   const months = allKnownMonths();
   const panel = document.getElementById(prefix + 'MonthFilterPanel');
   panel.innerHTML = `
-    <div style="display:flex; gap:8px; margin-bottom:8px;">
+    <div class="mp-actions">
       <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11.5px;" onclick="setSelectedMonths(allKnownMonths())">All</button>
-      <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11.5px;" onclick="setSelectedMonths([])">Clear</button>
+      <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11.5px;" onclick="setSelectedMonths([todayCycleMonth()])" title="Back to the current month">Clear</button>
     </div>
   ` + months.map(m => `
     <label style="display:flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; cursor:pointer;">
@@ -2749,20 +2799,16 @@ function renderBalanceCheck(remaining) {
     ? `<span class="chip paid">Matches</span>`
     : `<span class="chip due">${diff > 0 ? '+' : ''}${fmt(diff)} off</span>`;
   el.innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
-      <div class="field" style="margin:0;">
-        <label>Cash on hand</label>
-        <input type="number" value="${p.cashBalance||''}" placeholder="0" onchange="setCashBalance(this.value)">
-      </div>
-      <div class="field" style="margin:0;">
-        <label>Bank balance</label>
-        <input type="number" value="${p.bankBalance||''}" placeholder="0" onchange="setBankBalance(this.value)">
-      </div>
+    <div class="bc-inputs">
+      <label class="bc-in"><span>Cash</span><input type="number" inputmode="decimal" value="${p.cashBalance||''}" placeholder="0" onchange="setCashBalance(this.value)"></label>
+      <label class="bc-in"><span>Bank</span><input type="number" inputmode="decimal" value="${p.bankBalance||''}" placeholder="0" onchange="setBankBalance(this.value)"></label>
     </div>
-    <div class="stat-row"><span class="l">Your total (cash + bank)</span><span class="v">${fmt(yours)}</span></div>
-    <div class="stat-row"><span class="l">App's remaining balance</span><span class="v">${fmt(remaining)}</span></div>
-    <div class="stat-row"><span class="l">Difference</span><span class="v" style="color:${closeEnough?'var(--green)':'var(--red)'};">${fmt(diff)}</span></div>
-    ${closeEnough ? '' : `<div class="empty-note" style="padding-top:6px;">${diff > 0 ? "You've got more than the app accounts for — maybe an expense wasn't logged, or income was entered too low." : "The app thinks you have more than you actually do — maybe cash/bank here needs updating, or an expense hasn't been logged yet."}</div>`}
+    <div class="bc-stats">
+      <div><span class="l">You have</span><span class="v">${fmt(yours)}</span></div>
+      <div><span class="l">App says</span><span class="v">${fmt(remaining)}</span></div>
+      <div><span class="l">Difference</span><span class="v" style="color:${closeEnough?'var(--green)':'var(--red)'};">${fmt(diff)}</span></div>
+    </div>
+    ${closeEnough ? '' : `<div class="bc-note">${diff > 0 ? "More than the app accounts for — an expense may be missing, or income is too low." : "Less than the app expects — update cash/bank, or an expense hasn't been logged."}</div>`}
   `;
 }
 function setCashBalance(val) {
@@ -2934,12 +2980,14 @@ function renderDashboardCore() {
           <button class="del-btn save" style="vertical-align:middle;" onclick="savePlannedEdit('${idsCsv}')" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></button>
           <button class="del-btn" style="vertical-align:middle;" onclick="cancelPlannedEdit()" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
         </span>` : `<span class="amt">${fmt(actual)} / <span class="planned-editable" onclick="startPlannedEdit('${idsCsv}')" title="Click to adjust the planned amount">${fmt(planned)}</span></span>`;
-      return `<div class="cat-row">
-        <div class="cat-top"><span class="name">${labelHtml}</span>${amtHtml}</div>
-        <div class="track"><div class="fill" style="width:${pct}%;background:${color};"></div></div>
-        <div style="display:flex;justify-content:flex-end;margin-top:6px;">
-          <select onchange="setDashBudgetStatus('${ids.join(',')}', this.value)"
-            style="background:var(--card);border:1px solid var(--card-b);color:${statusVal==='Done'?'var(--green)':(statusVal==='Not Paid Yet'?'var(--amber)':'var(--txt-dim2)')};padding:4px 9px;border-radius:7px;font-size:11px;font-weight:600;">
+      const rawPct = planned > 0 ? Math.round((actual/planned)*100) : (actual > 0 ? 100 : 0);
+      const stCls = statusVal === 'Done' ? 'done' : (statusVal === 'Not Paid Yet' ? 'ongoing' : 'mixed');
+      return `<div class="bva-row">
+        <div class="bva-name" title="${escapeHtml(category + (subcategory && subcategory !== category ? ' · ' + subcategory : ''))}">${labelHtml}</div>
+        <div class="bva-bar"><div class="track"><div class="fill" style="width:${pct}%;background:${color};"></div></div><span class="bva-pct" style="color:${actual > planned ? 'var(--red)' : 'var(--txt-dim)'};">${rawPct}%</span></div>
+        <div class="bva-amt">${amtHtml}</div>
+        <div class="bva-status">
+          <select class="status-pill ${stCls}" onchange="setDashBudgetStatus('${ids.join(',')}', this.value)">
             ${mixed ? '<option value="" selected disabled hidden>Mixed</option>' : ''}
             <option value="Not Paid Yet" ${statusVal==='Not Paid Yet'?'selected':''}>Ongoing</option>
             <option value="Done" ${statusVal==='Done'?'selected':''}>Closed</option>
@@ -2998,89 +3046,8 @@ function renderDashboardCore() {
     deltaEl.textContent = '';
   }
 
-  // ---- Spending pace ----
-  // Day-by-day pace only makes sense for a single, real, in-progress calendar month;
-  // for a multi-month selection show a per-month average instead.
   const today = new Date();
   const realCurrentMonth = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0');
-  const paceEl = document.getElementById('paceStats');
-  if (selMonths.length === 0) {
-    paceEl.innerHTML = '<div class="empty-note">Select at least one month above.</div>';
-  } else if (selMonths.length === 1) {
-    const singleMonth = selMonths[0];
-    const [py1, pm1] = singleMonth.split('-').map(Number);
-    const daysInMonth = new Date(py1, pm1, 0).getDate();
-    if (singleMonth > realCurrentMonth) {
-      paceEl.innerHTML = '<div class="empty-note">This month hasn\'t started yet.</div>';
-    } else {
-      const daysElapsed = singleMonth === realCurrentMonth ? today.getDate() : daysInMonth;
-      const avgPerDay = daysElapsed > 0 ? sum.totalExpenses / daysElapsed : 0;
-      let html = `<div class="stat-row"><span class="l">Average per day</span><span class="v">${fmt(avgPerDay)}</span></div>`;
-      if (singleMonth === realCurrentMonth) {
-        const projected = avgPerDay * daysInMonth;
-        html += `<div class="stat-row"><span class="l">Projected month total</span><span class="v">${fmt(projected)}</span></div>`;
-        html += `<div class="stat-row"><span class="l">Day</span><span class="v">${daysElapsed} of ${daysInMonth}</span></div>`;
-      } else {
-        html += `<div class="stat-row"><span class="l">Days in month</span><span class="v">${daysInMonth}</span></div>`;
-      }
-      paceEl.innerHTML = html;
-    }
-  } else {
-    const avgPerMonth = sum.totalExpenses / selMonths.length;
-    paceEl.innerHTML = `
-      <div class="stat-row"><span class="l">Months selected</span><span class="v">${selMonths.length}</span></div>
-      <div class="stat-row"><span class="l">Average per month</span><span class="v">${fmt(avgPerMonth)}</span></div>
-      <div class="stat-row"><span class="l">Total spent</span><span class="v">${fmt(sum.totalExpenses)}</span></div>`;
-  }
-
-  // ---- Top spending categories (actual expenses, not just budgeted lines) ----
-  const expByCat = {};
-  selMonths.flatMap(m => expensesForMonth(m)).forEach(e => {
-    expByCat[e.category] = (expByCat[e.category] || 0) + Number(e.value || 0);
-  });
-  const topCats = Object.entries(expByCat).sort((a,b) => b[1] - a[1]).slice(0, 5);
-  const topCatEl = document.getElementById('topCatList');
-  if (!topCats.length) {
-    topCatEl.innerHTML = '<div class="empty-note">No expenses logged yet.</div>';
-  } else {
-    const maxCatVal = topCats[0][1];
-    topCatEl.innerHTML = topCats.map(([cat, val], i) => {
-      const pct = maxCatVal > 0 ? (val / maxCatVal) * 100 : 0;
-      return `<div class="rank-row">
-        <span class="rank-num">${i+1}</span>
-        <div class="rank-bar-wrap">
-          <div class="rank-top"><span class="n">${getCategoryIcon(activeProfile(), cat, null)} ${escapeHtml(cat)}</span><span class="a">${fmt(val)}</span></div>
-          <div class="track"><div class="fill" style="width:${pct}%;background:var(--blue);"></div></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // ---- Savings progress ----
-  const savingsLines = buds.filter(b => b.category === 'Savings & Investment' && b.subcategory === 'Saving Account');
-  const savingsActual = savingsLines.reduce((s,b) => s + actualForBudgetLine(b), 0);
-  const savingsPlanned = sum.plannedSavings;
-  const savEl = document.getElementById('savingsProgress');
-  if (!savingsLines.length && !savingsActual && !savingsPlanned) {
-    savEl.innerHTML = '<div class="empty-note">No savings budget lines yet.</div>';
-  } else {
-    const savPct = savingsPlanned > 0 ? Math.min(100, (savingsActual/savingsPlanned)*100) : (savingsActual > 0 ? 100 : 0);
-    const year = latestSelected.slice(0,4);
-    const monthNum = Number(latestSelected.slice(5,7));
-    let ytd = 0;
-    for (let mo = 1; mo <= monthNum; mo++) {
-      const mm = year + '-' + String(mo).padStart(2,'0');
-      budgetForMonth(mm).filter(b => b.category === 'Savings & Investment' && b.subcategory === 'Saving Account')
-        .forEach(b => { ytd += actualForBudgetLine(b); });
-    }
-    const periodLabel = selMonths.length === 1 ? 'This month' : 'Selected months';
-    savEl.innerHTML = `
-      <div class="cat-row">
-        <div class="cat-top"><span class="name">${periodLabel}</span><span class="amt">${fmt(savingsActual)} / ${fmt(savingsPlanned)}</span></div>
-        <div class="track"><div class="fill" style="width:${savPct}%;background:var(--green);"></div></div>
-      </div>
-      <div class="stat-row"><span class="l">Saved so far in ${year}</span><span class="v">${fmt(ytd)}</span></div>`;
-  }
 
   // ---- Spending trend, 6 months ending at the latest selected month ----
   const trendEl = document.getElementById('trendChart');
@@ -3094,12 +3061,13 @@ function renderDashboardCore() {
   trendEl.innerHTML = buildTrendChart(months6, trendVals, selMonths, realCurrentMonth);
 
   // ---- Recent transactions (latest 5, any month) ----
-  const recent = activeProfile().expenses.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const recent = buildExpenseRows(activeProfile()).filter(r => r.kind === 'expense')
+    .sort((a,b) => b.date.localeCompare(a.date) || expenseDayOrderCmp(a, b)).slice(0, 8);
   const recentEl = document.getElementById('recentTxns');
   recentEl.innerHTML = recent.length ? recent.map(e => `
     <div class="txn-row">
-      <div><div class="txn-desc">${escapeHtml(e.description || e.subcategory)}</div><div class="txn-meta">${getCategoryIcon(activeProfile(), e.category, e.subcategory)} ${escapeHtml(e.category)} · ${e.date}</div></div>
-      <span style="font-weight:700;font-size:13px;">${fmt(e.value)}</span>
+      <div style="min-width:0;"><div class="txn-desc">${escapeHtml(e.description || e.subcategory)}</div><div class="txn-meta">${getCategoryIcon(activeProfile(), e.category, e.subcategory)} ${escapeHtml(e.category)} · ${dayLabel(e.date)}</div></div>
+      <span style="font-weight:700;font-size:13px;white-space:nowrap;${e.value < 0 ? 'color:var(--green);' : ''}">${fmt(e.value)}</span>
     </div>`).join('') : '<div class="empty-note">No expenses logged yet.</div>';
 }
 
@@ -3690,6 +3658,7 @@ function openTxSheet(kind, id) {
       </div>
       <div class="sheet-field"><label for="editDesc_${id}">Description</label><input type="text" id="editDesc_${id}" value="${escapeHtml(e.description || '')}"></div>
       <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('expense','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('expense','${id}')">Save changes</button></div>`);
+    upgradeCatSubPickers('editCat_' + id, 'editSub_' + id);
     syncSheetSign('editVal_' + id);
     return;
   }
@@ -3706,6 +3675,7 @@ function openTxSheet(kind, id) {
     <div class="sheet-field"><label for="editDate_pm_${id}">Date</label><input type="date" id="editDate_pm_${id}" value="${pm.date}"></div>
     <div class="sheet-field"><label for="editDesc_pm_${id}">Note</label><input type="text" id="editDesc_pm_${id}" value="${escapeHtml(pm.note || '')}" placeholder="Note (optional)"></div>
     <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('payment','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('payment','${id}')">Save changes</button></div>`);
+  if (savings) upgradeCatSubPickers('editCat_pm_' + id, 'editSub_pm_' + id);
 }
 let sheetBudgetStatus = null;
 function openBudgetSheet(id) {
@@ -3737,6 +3707,7 @@ function openBudgetSheet(id) {
     <div class="sheet-field"><label for="editBDate_${id}">Date (sets the month)</label><input type="date" id="editBDate_${id}" value="${b.month ? b.month + '-05' : ''}"></div>
     <div class="sheet-field"><label for="editBDesc_${id}">Description</label><input type="text" id="editBDesc_${id}" value="${escapeHtml(b.description || '')}"></div>
     <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('budget','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('budget','${id}')">Save changes</button></div>`);
+  upgradeCatSubPickers('editBCat_' + id, 'editBSub_' + id);
 }
 function pickSheetStatus(btn) {
   sheetBudgetStatus = btn.dataset.st;
@@ -4066,6 +4037,57 @@ function buildEditRow(r, p) {
     </td>
   </tr>`;
 }
+// Swaps a free-text category / sub category input for real dropdowns (same
+// element id, so every existing save function keeps reading .value). The
+// last option, "＋ New…", still lets a brand-new name be typed.
+function buildPickerSelect(id, items, current, placeholder, kind) {
+  const sel = document.createElement('select');
+  sel.id = id;
+  const opts = [];
+  opts.push(`<option value="">${escapeHtml(placeholder)}</option>`);
+  const list = items.slice();
+  if (current && !list.includes(current)) list.unshift(current);
+  list.forEach(v => opts.push(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+  opts.push(`<option value="__new__">＋ New ${kind}…</option>`);
+  sel.innerHTML = opts.join('');
+  sel.value = current || '';
+  sel.dataset.prev = sel.value;
+  return sel;
+}
+function handleNewOption(sel, kind) {
+  if (sel.value !== '__new__') { sel.dataset.prev = sel.value; return false; }
+  const name = (prompt('New ' + kind + ' name') || '').trim();
+  if (!name) { sel.value = sel.dataset.prev || ''; return false; }
+  let opt = [...sel.options].find(o => o.value === name);
+  if (!opt) { opt = document.createElement('option'); opt.value = name; opt.textContent = name; sel.insertBefore(opt, sel.options[sel.options.length - 1]); }
+  sel.value = name; sel.dataset.prev = name;
+  return true;
+}
+function upgradeCatSubPickers(catId, subId) {
+  const catIn = document.getElementById(catId);
+  if (!catIn) return;
+  const p = activeProfile();
+  const cats = Object.keys(p.categories || {});
+  const catSel = buildPickerSelect(catId, cats, catIn.value.trim(), 'Choose category', 'category');
+  catIn.replaceWith(catSel);
+  const subIn = subId ? document.getElementById(subId) : null;
+  let subSel = null;
+  const subsFor = c => (p.categories[c] || []).slice();
+  if (subIn) {
+    subSel = buildPickerSelect(subId, subsFor(catSel.value), subIn.value.trim(), 'Same as category', 'sub category');
+    subIn.replaceWith(subSel);
+    subSel.addEventListener('change', () => handleNewOption(subSel, 'sub category'));
+  }
+  catSel.addEventListener('change', () => {
+    handleNewOption(catSel, 'category');
+    if (!subSel) return;
+    const subs = subsFor(catSel.value);
+    const fresh = buildPickerSelect(subId, subs, subs[0] || '', 'Same as category', 'sub category');
+    subSel.innerHTML = fresh.innerHTML;
+    subSel.value = subs[0] || '';
+    subSel.dataset.prev = subSel.value;
+  });
+}
 function onEditCategoryInput(id) {
   const catVal = document.getElementById('editCat_' + id).value;
   const subs = activeProfile().categories[catVal] || [];
@@ -4359,6 +4381,7 @@ function openBudgetModal() {
   document.getElementById('bStatus').value = 'Not Paid Yet';
   const catList = document.getElementById('catList');
   catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  upgradeCatSubPickers('bCategory', 'bSubCategory');
   document.getElementById('budgetModalBackdrop').classList.add('on');
 }
 function closeBudgetModal() { document.getElementById('budgetModalBackdrop').classList.remove('on'); }
@@ -4432,6 +4455,7 @@ function openInstallmentModal() {
   document.getElementById('iStatus').value = 'Not Paid Yet';
   const catList = document.getElementById('catList');
   catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  upgradeCatSubPickers('iCategory', 'iSubCategory');
   document.getElementById('installmentModalBackdrop').classList.add('on');
 }
 function closeInstallmentModal() { document.getElementById('installmentModalBackdrop').classList.remove('on'); }
@@ -4902,13 +4926,13 @@ function renderSettingsPage() {
 
   // Income grouped by year, compact grid instead of one row per month
   const months = new Set([...Object.keys(activeProfile().income), currentMonth]);
-  const sorted = Array.from(months).sort();
+  const sorted = Array.from(months).sort().reverse(); // newest first
   const byYear = {};
   sorted.forEach(m => {
     const y = m.slice(0,4);
     (byYear[y] = byYear[y] || []).push(m);
   });
-  document.getElementById('incomeList').innerHTML = Object.keys(byYear).sort().map(y => `
+  document.getElementById('incomeList').innerHTML = Object.keys(byYear).sort().reverse().map(y => `
     <div class="income-year-group">
       <div class="income-year-label">${y}</div>
       <div class="income-grid">

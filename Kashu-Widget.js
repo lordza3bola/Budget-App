@@ -190,9 +190,11 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
   const profileId = d1.state && d1.state.activeProfileId;
   if (!profileId) throw new Error('No synced profile found for this account yet — open the app once to sync first.');
 
+  // Backtick-quoted so any profile id is a valid Firestore field path.
   const d2 = await fetchMaskedFields(CONFIG.projectId, docId, idToken, [
-    `state.profiles.${profileId}.incomeCycles`,
-    `state.profiles.${profileId}.currency`
+    `state.profiles.\`${profileId}\`.incomeCycles`,
+    `state.profiles.\`${profileId}\`.currency`,
+    `state.profiles.\`${profileId}\`.name`
   ]);
   const prof = (d2.state && d2.state.profiles && d2.state.profiles[profileId]) || {};
   const incomeCycles = prof.incomeCycles || {};
@@ -210,7 +212,7 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
     value: amount
   };
   await commitAddExpense(CONFIG.projectId, docId, idToken, profileId, expense);
-  return { expense, currencyCode };
+  return { expense, currencyCode, profileName: prof.name || '' };
 }
 // Shortcuts "Run Script" entry point. Accepts a Dictionary (preferred), JSON
 // text, or "amount=50&category=Food" text. Returns a one-line result that the
@@ -224,11 +226,11 @@ async function runFromShortcut(param) {
   p = p || {};
   const amount = Number(String(p.amount ?? p.Amount ?? '').trim().replace(/\s/g, '').replace(',', '.'));
   const category = String(p.category ?? p.Category ?? '').trim();
-  if (!configIsFilledIn()) return 'Error: fill in CONFIG (email/password) at the top of the Kashu script first.';
+  if (!configIsFilledIn()) return 'Error: open the Kashu script in Scriptable and put your email and password into CONFIG at the top (they are blank placeholders).';
   if (!amount || Number.isNaN(amount)) return 'Error: amount must be a nonzero number.';
   if (!category) return 'Error: category is required.';
   try {
-    const { currencyCode } = await addExpenseToCloud({
+    const { currencyCode, profileName } = await addExpenseToCloud({
       amount, category,
       subcategory: String(p.subcategory ?? '').trim(),
       description: String(p.description ?? '').trim(),
@@ -236,7 +238,7 @@ async function runFromShortcut(param) {
       date: String(p.date ?? '').trim(),
       idPrefix: 'e_shortcut_'
     });
-    return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, currencyCode)} → ${category}`;
+    return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, currencyCode)} → ${category}${profileName ? ' (' + profileName + ')' : ''}`;
   } catch (err) {
     return 'Error: ' + err.message;
   }
@@ -372,8 +374,10 @@ async function buildWidget() {
 }
 
 async function main() {
-  if (config.runsWithSiri || args.shortcutParameter !== undefined && args.shortcutParameter !== null) {
-    const msg = await runFromShortcut(args.shortcutParameter);
+  if (config.runsWithSiri || (args.shortcutParameter !== undefined && args.shortcutParameter !== null)) {
+    let msg;
+    try { msg = await runFromShortcut(args.shortcutParameter); }
+    catch (err) { msg = 'Error: ' + (err && err.message ? err.message : String(err)); }
     Script.setShortcutOutput(msg);
     Script.complete();
     return;
