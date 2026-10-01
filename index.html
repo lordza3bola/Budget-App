@@ -21,29 +21,29 @@
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
   :root {
-    --bg: #e6e9f0;
-    --side: #e6e9f0;
-    --card: #e6e9f0;
-    --card-b: #d6dbe6;
-    --line: #dadee8;
-    --txt: #3a3f4d;
-    --txt-dim: #7a8194;
-    --txt-dim2: #9aa1b2;
-    --blue: #6c7bf5;
-    --blue-soft: #e4e7fd;
-    --green: #3fbf8f;
-    --green-soft: #e1f6ee;
-    --amber: #d99a3a;
-    --amber-soft: #f8ecd8;
-    --red: #e0716a;
-    --red-soft: #fbe6e4;
-    --trend-least: #4fa3d9;
-    --trend-filtered: #a46bd9;
+    --bg: #f0ebe1;
+    --side: #f0ebe1;
+    --card: #f0ebe1;
+    --card-b: #ddd4c4;
+    --line: #e3dbcc;
+    --txt: #2f3a33;
+    --txt-dim: #6b7468;
+    --txt-dim2: #8f968a;
+    --blue: #5f7d68;
+    --blue-soft: #dde6d8;
+    --green: #5e8c6a;
+    --green-soft: #e2ebdc;
+    --amber: #b9863b;
+    --amber-soft: #f3e6cf;
+    --red: #c0604b;
+    --red-soft: #f5e1da;
+    --trend-least: #6f8fa6;
+    --trend-filtered: #9b7a9e;
     --radius: 18px;
     --font-display: 'Quicksand', sans-serif;
-    --shadow-out: 7px 7px 14px #c3c8d4, -7px -7px 14px #ffffff;
-    --shadow-out-sm: 4px 4px 9px #c3c8d4, -4px -4px 9px #ffffff;
-    --shadow-in: inset 5px 5px 10px #c3c8d4, inset -5px -5px 10px #ffffff;
+    --shadow-out: 7px 7px 14px #d3cab9, -7px -7px 14px #fffcf5;
+    --shadow-out-sm: 4px 4px 9px #d3cab9, -4px -4px 9px #fffcf5;
+    --shadow-in: inset 5px 5px 10px #d3cab9, inset -5px -5px 10px #fffcf5;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -68,7 +68,7 @@
     width: 224px; flex-shrink: 0;
     background: var(--side);
     border-right: none;
-    box-shadow: 3px 0 10px #cdd2de;
+    box-shadow: 3px 0 10px #ddd4c4;
     padding: 26px 18px;
     display: flex; flex-direction: column;
     /* Frozen in place: stays put while the page scrolls */
@@ -125,16 +125,16 @@
   .kpi .v { font-size: 21px; }
   .kpi .ki { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--line); color: var(--txt-dim); }
   .kpi .ki svg { width: 19px; height: 19px; }
-  .kpi .ki.in { background: #e4e7fd; color: #5563e0; }
-  .kpi .ki.out, .kpi .ki.up { background: #fbe6e4; color: #c4574f; }
-  .kpi .ki.rem, .kpi .ki.net { background: #e1f6ee; color: #2f9e74; }
-  .kpi .ki.card, .kpi .ki.pct { background: #e4e7fd; color: #5563e0; }
-  .kpi .v.pos { color: #2f9e74; }
-  .kpi.hero { background: linear-gradient(135deg, #e2a64c 0%, #c98a2c 100%); box-shadow: 0 12px 22px rgba(201,138,44,.32); }
+  .kpi .ki.in { background: #dde6d8; color: #4f6d58; }
+  .kpi .ki.out, .kpi .ki.up { background: #f5e1da; color: #a9523f; }
+  .kpi .ki.rem, .kpi .ki.net { background: #e2ebdc; color: #4f7d5c; }
+  .kpi .ki.card, .kpi .ki.pct { background: #dde6d8; color: #4f6d58; }
+  .kpi .v.pos { color: #4f7d5c; }
+  .kpi.hero { background: linear-gradient(135deg, #86a589 0%, #5a7863 100%); box-shadow: 0 12px 22px rgba(90,120,99,.32); }
   .kpi.hero .l { color: rgba(255,255,255,.88); }
   .kpi.hero .v, .kpi.hero .v.pos, .kpi.hero .v.warn, .kpi.hero .v.neg { color: #fff; }
   .kpi.hero .ki { background: rgba(255,255,255,.22); color: #fff; }
-  .kpi.hero.is-neg { background: linear-gradient(135deg, #e0716a 0%, #c4574f 100%); box-shadow: 0 12px 22px rgba(196,87,79,.30); }
+  .kpi.hero.is-neg { background: linear-gradient(135deg, #c0604b 0%, #a9523f 100%); box-shadow: 0 12px 22px rgba(169,82,63,.30); }
   @media (max-width: 860px) {
     .kpis { gap: 12px; }
     .kpi { padding: 12px; gap: 10px; }
@@ -156,7 +156,8 @@
   .h3-sub { font-size: 11px; color: var(--txt-dim2); font-weight: 600; margin-left: auto; margin-right: 0; }
   .card h3 .h3-sub { margin-left: 8px; margin-right: auto; }
   .dash-scroll { max-height: 264px; overflow-y: auto; margin-right: -6px; padding-right: 6px; }
-  .bva-head, .bva-row { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr) minmax(150px,auto) 86px; gap: 14px; align-items: center; }
+  .bva-head, .bva-row { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr) 205px 86px; gap: 14px; align-items: center; }
+  .bva-amt { overflow: hidden; text-overflow: ellipsis; }
   .bva-head { font-size: 10.5px; font-weight: 700; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .04em; padding: 4px 0 6px; border-bottom: 1px solid var(--card-b); }
   .bva-row { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .bva-row:last-child { border-bottom: none; }
@@ -339,7 +340,7 @@
   .day-head:first-child { padding-top:2px; }
   .day-head .day-total { text-transform:none; letter-spacing:0; font-size:12px; font-weight:700; }
   .tx-card { border:none; font:inherit; color:inherit; text-align:left; box-sizing:border-box; width:100%; display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--card); border-radius:16px; box-shadow:var(--shadow-out-sm); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:box-shadow .15s ease; }
-  .tx-card:active { box-shadow: inset 3px 3px 7px #c3c8d4, inset -3px -3px 7px #ffffff; }
+  .tx-card:active { box-shadow: inset 3px 3px 7px #d3cab9, inset -3px -3px 7px #fffcf5; }
   .tx-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex:none; }
   .tx-icon.c0 { background:var(--blue-soft); } .tx-icon.c1 { background:var(--green-soft); } .tx-icon.c2 { background:var(--amber-soft); } .tx-icon.c3 { background:var(--red-soft); }
   .tx-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
@@ -349,15 +350,15 @@
   .tx-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex:none; }
   .tx-amt { font-size:14px; font-weight:800; }
   .tx-meta { font-size:11px; color:var(--txt-dim); }
-  .tx-amt.neg, .tx-meta.neg { color:#23835f; }
+  .tx-amt.neg, .tx-meta.neg { color:#4f7d5c; }
   .tx-meta.neg { font-weight:700; }
-  .tx-amt.withdraw { color:#b3483f; }
+  .tx-amt.withdraw { color:#a9523f; }
   .bud-card { flex-direction:column; align-items:stretch; gap:10px; padding:14px; border-radius:18px; }
   .bud-top { display:flex; align-items:center; gap:12px; }
   .status-pill { flex:none; font-size:11px; font-weight:800; padding:4px 10px; border-radius:10px; }
-  .status-pill.ongoing { background:var(--amber-soft); color:#8a5a14; }
-  .status-pill.closed { background:var(--green-soft); color:#23835f; }
-  .bud-bar { display:block; height:8px; border-radius:4px; box-shadow: inset 2px 2px 4px #c3c8d4, inset -2px -2px 4px #ffffff; overflow:hidden; }
+  .status-pill.ongoing { background:var(--amber-soft); color:#7d5a1e; }
+  .status-pill.closed { background:var(--green-soft); color:#4f7d5c; }
+  .bud-bar { display:block; height:8px; border-radius:4px; box-shadow: inset 2px 2px 4px #d3cab9, inset -2px -2px 4px #fffcf5; overflow:hidden; }
   .bud-bar > span { display:block; height:100%; border-radius:4px; background:var(--blue); }
   .bud-bar.over > span { background:var(--red); }
   .bud-bar.done > span { background:var(--green); }
@@ -366,27 +367,27 @@
   .bud-stats > span:last-child { align-items:flex-end; }
   .bud-stats .l { font-size:11px; color:var(--txt-dim); font-weight:600; }
   .bud-stats .v { font-size:13px; font-weight:800; }
-  .bud-stats .v.pos { color:#23835f; } .bud-stats .v.neg { color:#b3483f; }
+  .bud-stats .v.pos { color:#4f7d5c; } .bud-stats .v.neg { color:#a9523f; }
   /* Edit bottom sheet (tap a card) */
-  .sheet-backdrop { position:fixed; inset:0; z-index:60; background:rgba(30,33,44,.38); display:none; align-items:flex-end; justify-content:center; }
+  .sheet-backdrop { position:fixed; inset:0; z-index:60; background:rgba(47,58,51,.38); display:none; align-items:flex-end; justify-content:center; }
   .sheet-backdrop.on { display:flex; }
-  .sheet { width:100%; max-width:560px; box-sizing:border-box; background:var(--bg); border-radius:26px 26px 0 0; padding:10px 20px calc(24px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:14px; max-height:90vh; overflow-y:auto; box-shadow:0 -10px 30px rgba(30,33,44,.18); animation: sheetUp .22s ease; }
+  .sheet { width:100%; max-width:560px; box-sizing:border-box; background:var(--bg); border-radius:26px 26px 0 0; padding:10px 20px calc(24px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:14px; max-height:90vh; overflow-y:auto; box-shadow:0 -10px 30px rgba(47,58,51,.18); animation: sheetUp .22s ease; }
   @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
-  .sheet-handle { width:40px; height:5px; border-radius:3px; background:#c3c8d4; align-self:center; flex:none; }
+  .sheet-handle { width:40px; height:5px; border-radius:3px; background:#d3cab9; align-self:center; flex:none; }
   .sheet-head { display:flex; justify-content:space-between; align-items:center; }
   .sheet-head h2 { margin:0; font-family:var(--font-display); font-size:20px; font-weight:700; }
   .sheet-close { border:none; width:44px; height:44px; border-radius:22px; background:var(--bg); color:var(--txt-dim); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-out-sm); }
   .sheet-close svg { width:18px; height:18px; }
   .sheet-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
   .sheet-field > label { font-size:12px; font-weight:700; color:var(--txt-dim); }
-  .sheet-field input, .sheet-field select { border:none; font:inherit; font-size:16px; font-weight:600; color:var(--txt); padding:0 14px; height:46px; border-radius:14px; background:var(--bg); box-shadow: inset 4px 4px 8px #c3c8d4, inset -4px -4px 8px #ffffff; width:100%; min-width:0; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
+  .sheet-field input, .sheet-field select { border:none; font:inherit; font-size:16px; font-weight:600; color:var(--txt); padding:0 14px; height:46px; border-radius:14px; background:var(--bg); box-shadow: inset 4px 4px 8px #d3cab9, inset -4px -4px 8px #fffcf5; width:100%; min-width:0; box-sizing:border-box; -webkit-appearance:none; appearance:none; }
   .sheet-field input.sheet-amt { font-size:22px; font-weight:800; height:50px; }
   .sheet-row { display:flex; gap:8px; }
   .sheet-row input { flex:1; }
   .sheet-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
   .sheet-sign { border:none; flex:none; font:inherit; font-size:13px; font-weight:800; padding:0 14px; height:50px; border-radius:14px; background:var(--bg); color:var(--txt); box-shadow:var(--shadow-out-sm); white-space:nowrap; }
-  .sheet-sign.neg { color:#23835f; }
-  .sheet-seg { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:4px; padding:4px; border-radius:16px; box-shadow: inset 4px 4px 8px #c3c8d4, inset -4px -4px 8px #ffffff; }
+  .sheet-sign.neg { color:#4f7d5c; }
+  .sheet-seg { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:4px; padding:4px; border-radius:16px; box-shadow: inset 4px 4px 8px #d3cab9, inset -4px -4px 8px #fffcf5; }
   .sheet-seg button { border:none; font:inherit; font-size:13px; font-weight:700; height:40px; border-radius:12px; background:transparent; color:var(--txt-dim); }
   .sheet-seg button.sel { background:var(--bg); color:var(--blue); font-weight:800; box-shadow:var(--shadow-out-sm); }
   .sheet-summary { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; padding:12px 14px; border-radius:16px; box-shadow:var(--shadow-out-sm); }
@@ -394,8 +395,8 @@
   .sheet-summary .l { font-size:11px; color:var(--txt-dim); font-weight:600; }
   .sheet-summary .v { font-size:13.5px; font-weight:800; }
   .sheet-actions { display:flex; gap:12px; margin-top:4px; }
-  .sheet-actions .del { border:none; font:inherit; font-size:14px; font-weight:800; height:50px; padding:0 20px; border-radius:16px; background:var(--bg); color:#b3483f; box-shadow:var(--shadow-out-sm); }
-  .sheet-actions .save { border:none; flex:1; font:inherit; font-size:14px; font-weight:800; height:50px; border-radius:16px; background:var(--blue); color:#fff; box-shadow: 5px 5px 12px #b7bdea, -5px -5px 12px #ffffff; }
+  .sheet-actions .del { border:none; font:inherit; font-size:14px; font-weight:800; height:50px; padding:0 20px; border-radius:16px; background:var(--bg); color:#a9523f; box-shadow:var(--shadow-out-sm); }
+  .sheet-actions .save { border:none; flex:1; font:inherit; font-size:14px; font-weight:800; height:50px; border-radius:16px; background:var(--blue); color:#fff; box-shadow: 5px 5px 12px #c2cdb9, -5px -5px 12px #fffcf5; }
   .table .amt-cell.amt-deposit { color: var(--green); }
   .table .amt-cell.amt-withdraw { color: var(--red); }
   .table .amt-cell { text-align: right; font-weight: 700; }
@@ -404,7 +405,7 @@
 
   /* ===== Row drag-and-drop (Expenses / Budget tables) ===== */
   .table tbody tr[data-drag-id] { -webkit-touch-callout: none; }
-  .table tbody tr[data-drag-id]:hover > td { background: rgba(108,123,255,.035); }
+  .table tbody tr[data-drag-id]:hover > td { background: rgba(95,125,104,.035); }
   .table tbody tr[data-drag-id]:hover > td.editable:hover { background: var(--line); }
   .table tbody tr[data-drag-id] > td:first-child { position: relative; }
   .drag-handle {
@@ -421,12 +422,12 @@
   body.row-dragging .table tbody tr:hover > td { background: transparent; }
   body.row-dragging .table td.editable:hover { background: transparent; }
   /* The row's original slot while it's lifted: same height, contents hidden */
-  .table tbody tr.drag-placeholder > td { background: rgba(108,123,255,.07) !important; color: transparent !important; border-bottom-color: transparent; box-shadow: inset 0 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
+  .table tbody tr.drag-placeholder > td { background: rgba(95,125,104,.07) !important; color: transparent !important; border-bottom-color: transparent; box-shadow: inset 0 1px 0 rgba(95,125,104,.25), inset 0 -1px 0 rgba(95,125,104,.25); }
   .table tbody tr.drag-placeholder > td > * { visibility: hidden; }
-  .table tbody tr.drag-placeholder > td:first-child { border-radius: 10px 0 0 10px; box-shadow: inset 1px 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
-  .table tbody tr.drag-placeholder > td:last-child { border-radius: 0 10px 10px 0; box-shadow: inset -1px 1px 0 rgba(108,123,255,.25), inset 0 -1px 0 rgba(108,123,255,.25); }
+  .table tbody tr.drag-placeholder > td:first-child { border-radius: 10px 0 0 10px; box-shadow: inset 1px 1px 0 rgba(95,125,104,.25), inset 0 -1px 0 rgba(95,125,104,.25); }
+  .table tbody tr.drag-placeholder > td:last-child { border-radius: 0 10px 10px 0; box-shadow: inset -1px 1px 0 rgba(95,125,104,.25), inset 0 -1px 0 rgba(95,125,104,.25); }
   /* Rows of the day/month the row may be dropped into */
-  body.row-dragging .table tbody tr.drop-zone:not(.drag-placeholder) > td { background: rgba(108,123,255,.03); }
+  body.row-dragging .table tbody tr.drop-zone:not(.drag-placeholder) > td { background: rgba(95,125,104,.03); }
   body.row-dragging .table tbody tr.drop-zone-off:not(.drag-placeholder) > td { background: transparent; }
   /* Floating copy of the row */
   .drag-float-wrap { position: fixed; z-index: 1000; pointer-events: none; will-change: transform; }
@@ -435,16 +436,16 @@
   .table.drag-float {
     table-layout: fixed; border-collapse: separate; border-spacing: 0;
     background: var(--card); border-radius: 12px; overflow: hidden;
-    box-shadow: 0 1px 2px rgba(30,35,60,.08);
+    box-shadow: 0 1px 2px rgba(60,52,38,.08);
     transform-origin: center center;
     transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, opacity .18s ease, outline-color .15s ease;
     outline: 1.5px solid transparent; outline-offset: -1.5px;
   }
   .table.drag-float td { border-bottom: none !important; overflow: hidden; text-overflow: ellipsis; background: transparent !important; }
   .table.drag-float .drag-handle { display: none; }
-  .drag-float-wrap.lifted .table.drag-float { transform: scale(1.02); box-shadow: 0 14px 30px rgba(30,35,60,.16), 0 3px 8px rgba(30,35,60,.10); }
-  .drag-float-wrap.invalid .table.drag-float { outline-color: rgba(224,82,79,.55); }
-  .drag-float-wrap.settling .table.drag-float, .drag-float-wrap.returning .table.drag-float { transform: scale(1); box-shadow: 0 1px 2px rgba(30,35,60,.06); outline-color: transparent; opacity: 1; }
+  .drag-float-wrap.lifted .table.drag-float { transform: scale(1.02); box-shadow: 0 14px 30px rgba(60,52,38,.16), 0 3px 8px rgba(60,52,38,.10); }
+  .drag-float-wrap.invalid .table.drag-float { outline-color: rgba(192,96,75,.55); }
+  .drag-float-wrap.settling .table.drag-float, .drag-float-wrap.returning .table.drag-float { transform: scale(1); box-shadow: 0 1px 2px rgba(60,52,38,.06); outline-color: transparent; opacity: 1; }
   .drag-float-hint {
     position: absolute; right: 10px; top: -24px; font-size: 11px; font-weight: 700;
     color: var(--red); background: var(--card); padding: 3px 9px; border-radius: 8px;
@@ -467,7 +468,7 @@
 
   /* Buttons */
   .btn { border: none; border-radius: 14px; padding: 10px 16px; font-size: 13.5px; font-weight: 700; }
-  .btn-primary { background: var(--blue); color: #fff; box-shadow: 5px 5px 12px #b7bdea, -5px -5px 12px #ffffff; }
+  .btn-primary { background: var(--blue); color: #fff; box-shadow: 5px 5px 12px #c2cdb9, -5px -5px 12px #fffcf5; }
   .btn-ghost { background: var(--card); color: var(--txt); border: none; box-shadow: var(--shadow-out-sm); }
   .btn-danger { background: var(--card); color: var(--red); box-shadow: var(--shadow-out-sm); }
   .btn-row { display:flex; gap:10px; margin-top: 6px; flex-wrap: wrap; }
@@ -488,14 +489,14 @@
     padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
     box-shadow: var(--shadow-out-sm);
   }
-  .chip-btn.sel { background: var(--blue); color: #fff; box-shadow: inset 3px 3px 7px #4c5bd6, inset -3px -3px 7px #8c9bff; }
+  .chip-btn.sel { background: var(--blue); color: #fff; box-shadow: inset 3px 3px 7px #4a6553, inset -3px -3px 7px #7a9a84; }
   .form-panel { max-width: 480px; }
   .amount-display { font-family: var(--font-display); font-size: 40px; font-weight: 700; text-align:center; padding: 18px 0; color: var(--blue); }
 
   /* Modal (mobile quick add) */
-  .modal-backdrop { position: fixed; inset:0; background: rgba(58,63,77,.4); display:none; align-items:flex-end; justify-content:center; z-index: 50; }
+  .modal-backdrop { position: fixed; inset:0; background: rgba(47,58,51,.4); display:none; align-items:flex-end; justify-content:center; z-index: 50; }
   .modal-backdrop.on { display:flex; }
-  .modal-sheet { background: var(--bg); width: 100%; max-width: 480px; border-radius: 26px 26px 0 0; padding: 22px 20px 28px; max-height: 88vh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(58,63,77,.25); }
+  .modal-sheet { background: var(--bg); width: 100%; max-width: 480px; border-radius: 26px 26px 0 0; padding: 22px 20px 28px; max-height: 88vh; overflow-y:auto; box-shadow: 0 -8px 30px rgba(47,58,51,.25); }
   .modal-sheet.desktop-center { border-radius: 22px; margin-bottom: auto; margin-top: 6vh; box-shadow: var(--shadow-out); }
   .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; }
   .modal-head h2 { font-family: var(--font-display); font-size:17px; font-weight:700; }
@@ -559,7 +560,7 @@
   /* Budget list page */
   .budget-filter { display:flex; gap:8px; margin-bottom:16px; flex-wrap: wrap; }
   .budget-filter button { background: var(--card); border:none; color:var(--txt-dim); padding:8px 14px; border-radius:20px; font-size:12.5px; font-weight:700; box-shadow: var(--shadow-out-sm); }
-  .budget-filter button.on { color: var(--blue); box-shadow: inset 3px 3px 7px #c3c8d4, inset -3px -3px 7px #ffffff; }
+  .budget-filter button.on { color: var(--blue); box-shadow: inset 3px 3px 7px #d3cab9, inset -3px -3px 7px #fffcf5; }
 
   /* ===== Profile tabs (credit-card style) ===== */
   .profile-strip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 2px 16px; margin-bottom: 6px; }
@@ -571,10 +572,10 @@
     transition: transform .12s ease, box-shadow .12s ease;
   }
   .profile-tab.on .profile-card { box-shadow: 0 0 0 2px var(--blue), var(--shadow-out-sm); transform: translateY(-2px); }
-  .profile-card.visa { background: linear-gradient(135deg, #1a1f6e 0%, #2c3fa8 55%, #3f5bd9 100%); }
-  .profile-card.mastercard { background: linear-gradient(135deg, #2b2b2b 0%, #1a1a1a 100%); }
-  .profile-card.other { background: linear-gradient(135deg, #5b5f6b 0%, #383b42 100%); }
-  .profile-card.savings { background: linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%); }
+  .profile-card.visa { background: linear-gradient(135deg, #3f5a49 0%, #5f7d68 55%, #86a589 100%); }
+  .profile-card.mastercard { background: linear-gradient(135deg, #2f3631 0%, #1c221e 100%); }
+  .profile-card.other { background: linear-gradient(135deg, #7b7468 0%, #55504a 100%); }
+  .profile-card.savings { background: linear-gradient(135deg, #7d6f58 0%, #9c8e76 55%, #b9ac96 100%); }
   .profile-card.add-card {
     background: var(--card); color: var(--txt-dim); box-shadow: var(--shadow-in);
     align-items: center; justify-content: center; font-size: 26px; font-weight: 700;
@@ -602,15 +603,15 @@
   .profile-strip.hero-strip { align-items: flex-end; gap: 12px; padding: 4px 12px 28px; margin: 0 -12px -14px; }
   .profile-strip.hero-strip .profile-tab { width: auto; }
   .hero-card, .peek-card { position: relative; overflow: hidden; color: #fff; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; text-align: left; }
-  .hero-card { width: 250px; height: 128px; border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 22px rgba(26,31,110,.28), 0 3px 8px rgba(26,31,110,.18); cursor: default; }
+  .hero-card { width: 250px; height: 128px; border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 22px rgba(63,90,73,.28), 0 3px 8px rgba(63,90,73,.18); cursor: default; }
   .hero-card.mastercard { box-shadow: 0 10px 22px rgba(0,0,0,.30), 0 3px 8px rgba(0,0,0,.18); }
-  .hero-card.savings { box-shadow: 0 10px 22px rgba(15,92,74,.30), 0 3px 8px rgba(15,92,74,.18); }
-  .peek-card { width: 150px; height: 72px; border-radius: 12px; padding: 8px 11px; opacity: .82; box-shadow: 0 8px 16px rgba(30,35,60,.18); transition: opacity .15s ease, transform .15s ease; }
+  .hero-card.savings { box-shadow: 0 10px 22px rgba(125,111,88,.30), 0 3px 8px rgba(125,111,88,.18); }
+  .peek-card { width: 150px; height: 72px; border-radius: 12px; padding: 8px 11px; opacity: .82; box-shadow: 0 8px 16px rgba(60,52,38,.18); transition: opacity .15s ease, transform .15s ease; }
   .profile-tab:hover .peek-card { opacity: 1; transform: translateY(-2px); }
-  .hero-card.visa, .peek-card.visa { background: linear-gradient(135deg, #1a1f6e 0%, #2c3fa8 55%, #3f5bd9 100%); }
-  .hero-card.mastercard, .peek-card.mastercard { background: linear-gradient(135deg, #3a3a3a 0%, #1a1a1a 100%); }
-  .hero-card.other, .peek-card.other { background: linear-gradient(135deg, #5b5f6b 0%, #383b42 100%); }
-  .hero-card.savings, .peek-card.savings { background: linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%); }
+  .hero-card.visa, .peek-card.visa { background: linear-gradient(135deg, #3f5a49 0%, #5f7d68 55%, #86a589 100%); }
+  .hero-card.mastercard, .peek-card.mastercard { background: linear-gradient(135deg, #2f3631 0%, #1c221e 100%); }
+  .hero-card.other, .peek-card.other { background: linear-gradient(135deg, #7b7468 0%, #55504a 100%); }
+  .hero-card.savings, .peek-card.savings { background: linear-gradient(135deg, #7d6f58 0%, #9c8e76 55%, #b9ac96 100%); }
   .hero-card .deco1, .hero-card .deco2 { position: absolute; border-radius: 50%; pointer-events: none; }
   .hero-card .deco1 { right: -46px; top: -60px; width: 160px; height: 160px; background: rgba(255,255,255,.08); }
   .hero-card .deco2 { right: 30px; bottom: -80px; width: 150px; height: 150px; background: rgba(255,255,255,.06); }
@@ -637,6 +638,47 @@
     .hero-card { width: 230px; height: 120px; }
     .peek-card { width: 136px; height: 72px; }
     .peek-add { width: 60px; height: 72px; }
+  }
+
+
+  /* ===== Soft-groove scrollbars (app-wide): a pressed-in track with a raised handle ===== */
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track { background: var(--bg); border-radius: 6px; box-shadow: inset 2px 2px 4px #d3cab9, inset -2px -2px 4px #fffcf5; margin: 4px; }
+  ::-webkit-scrollbar-thumb { border-radius: 6px; border: 2px solid transparent; background: linear-gradient(145deg, #fbf8f1, #e4dbcb) padding-box; box-shadow: inset 0 0 0 1px rgba(95,125,104,.28), 1px 1px 2px rgba(60,52,38,.18); }
+  ::-webkit-scrollbar-thumb:hover { background: linear-gradient(145deg, #e9efe5, #c9d6c6) padding-box; }
+  ::-webkit-scrollbar-thumb:active { background: linear-gradient(145deg, #c9d6c6, #a9bfa8) padding-box; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  @supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: #b9ac96 #e3dbcc; } }
+
+  /* ===== Top band: account cards on the left, brand + pay-cycle tracker on the right ===== */
+  .top-band { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .top-band .profile-strip { flex: 1 1 auto; min-width: 0; }
+  .top-right { flex: none; width: 300px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding-top: 2px; margin-bottom: 14px; }
+  .tr-brand { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .tr-brand svg { width: 34px; height: 34px; flex: none; }
+  .tr-brand span { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--txt); }
+  .tr-brand span b { color: var(--blue); }
+  .tr-cycle { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 16px; background: var(--card); box-shadow: var(--shadow-out-sm); }
+  .tr-ring { flex: none; width: 62px; height: 62px; }
+  .tr-ring .n { font-family: var(--font-display); font-size: 17px; font-weight: 700; fill: var(--txt); }
+  .tr-ring .u { font-size: 8px; font-weight: 700; fill: var(--txt-dim); }
+  .tr-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .tr-k { font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .05em; }
+  .tr-range { font-size: 12px; font-weight: 600; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-l { font-size: 11.5px; color: var(--txt-dim); margin-top: 3px; }
+  .tr-v { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tr-v.neg { color: var(--red); }
+  .tr-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--txt-dim); }
+  .tr-sync { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .tr-sync.ok { background: var(--green-soft); color: #4f7d5c; }
+  .tr-sync.busy { background: var(--amber-soft); color: #7d5a1e; }
+  .tr-sync.err { background: var(--red-soft); color: #a9523f; }
+  .tr-sync.off { background: var(--line); color: var(--txt-dim); }
+  @media (max-width: 860px) {
+    .top-band { flex-direction: column; align-items: stretch; gap: 0; }
+    .top-right { order: -1; width: auto; padding: 16px 18px 0; margin-bottom: 10px; }
+    .tr-brand { justify-content: flex-start; }
+    .tr-meta { justify-content: flex-start; }
   }
 
   /* ===== Responsive: iPhone-ish ===== */
@@ -682,7 +724,7 @@
       display:flex; justify-content:space-around; align-items:center;
       position: fixed; bottom:0; left:0; right:0;
       background: var(--side); border-top: none;
-      box-shadow: 0 -4px 14px #cdd2de;
+      box-shadow: 0 -4px 14px #ddd4c4;
       padding: 10px 0 calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 40;
     }
     /* 6 buttons now sit in the bar (Calendar added) — trim gap/font slightly so it stays uncrowded */
@@ -695,13 +737,13 @@
       display:flex; position: fixed; right: 18px; bottom: calc(84px + env(safe-area-inset-bottom, 0px));
       width: 56px; height:56px; border-radius:50%; background: var(--blue);
       align-items:center; justify-content:center; color:#fff; font-size:27px;
-      box-shadow: 6px 6px 14px #b7bdea, -6px -6px 14px #ffffff; z-index: 41; border:none;
+      box-shadow: 6px 6px 14px #c2cdb9, -6px -6px 14px #fffcf5; z-index: 41; border:none;
     }
   }
   @media (min-width: 861px) {
     .fab-desktop { display:flex; position:fixed; right:32px; bottom:32px; width:56px;height:56px;border-radius:50%;
       background: var(--blue); align-items:center;justify-content:center;color:#fff;font-size:27px;
-      box-shadow: 6px 6px 14px #b7bdea, -6px -6px 14px #ffffff; border:none; }
+      box-shadow: 6px 6px 14px #c2cdb9, -6px -6px 14px #fffcf5; border:none; }
   }
   /* Dropdown/filter panels rendered by JS (month pickers) get the same soft treatment */
   #dashMonthFilterPanel, #budgetMonthFilterPanel, #expMonthFilterPanel, #instMonthFilterPanel {
@@ -834,7 +876,6 @@
       <a data-page="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</a>
       <a data-page="installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</a>
       <a data-page="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>Calendar</a>
-      <a data-page="yearly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 2v6M16 2v6"/></svg>Yearly</a>
       <a data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</a>
     </div>
   </div>
@@ -843,7 +884,10 @@
   <div class="main">
 
     <!-- PROFILE TABS -->
-    <div class="profile-strip" id="profileStrip"></div>
+    <div class="top-band">
+      <div class="profile-strip" id="profileStrip"></div>
+      <div class="top-right" id="topRight" aria-live="polite"></div>
+    </div>
 
     <!-- DASHBOARD -->
     <div class="page on" id="page-dashboard">
@@ -1163,27 +1207,6 @@
       </div>
     </div>
 
-    <!-- YEARLY -->
-    <div class="page" id="page-yearly">
-      <div class="top">
-        <h1>Yearly overview</h1>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <button class="btn btn-ghost" style="padding:6px 11px;" onclick="shiftYear(-1)">‹</button>
-          <div class="sub" id="yearLabel">—</div>
-          <button class="btn btn-ghost" style="padding:6px 11px;" onclick="shiftYear(1)">›</button>
-        </div>
-      </div>
-      <div class="kpis">
-        <div class="kpi"><div class="l">Total income</div><div class="v" id="yIncome">0</div></div>
-        <div class="kpi"><div class="l">Total spent</div><div class="v" id="ySpent">0</div></div>
-        <div class="kpi"><div class="l">Total saved</div><div class="v pos" id="ySaved">0</div></div>
-        <div class="kpi"><div class="l">Best month</div><div class="v" id="yBest" style="font-size:15px;">—</div></div>
-      </div>
-      <div class="card">
-        <h3>Monthly breakdown</h3>
-        <div id="yearlyBars"></div>
-      </div>
-    </div>
 
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
@@ -1502,10 +1525,10 @@ const DEFAULT_CATEGORY_ICONS = {
 };
 
 const CARD_THEMES = {
-  visa:       { label: 'Visa',       gradient: 'linear-gradient(135deg, #1a1f6e 0%, #2c3fa8 55%, #3f5bd9 100%)' },
-  mastercard: { label: 'Mastercard', gradient: 'linear-gradient(135deg, #2b2b2b 0%, #1a1a1a 100%)' },
-  other:      { label: 'Other',      gradient: 'linear-gradient(135deg, #5b5f6b 0%, #383b42 100%)' },
-  savings:    { label: 'Savings',    gradient: 'linear-gradient(135deg, #0f5c4a 0%, #1c8f6e 55%, #2bb88f 100%)' }
+  visa:       { label: 'Visa',       gradient: 'linear-gradient(135deg, #3f5a49 0%, #5f7d68 55%, #86a589 100%)' },
+  mastercard: { label: 'Mastercard', gradient: 'linear-gradient(135deg, #2f3631 0%, #1c221e 100%)' },
+  other:      { label: 'Other',      gradient: 'linear-gradient(135deg, #7b7468 0%, #55504a 100%)' },
+  savings:    { label: 'Savings',    gradient: 'linear-gradient(135deg, #7d6f58 0%, #9c8e76 55%, #b9ac96 100%)' }
 };
 
 /* ============================================================
@@ -1737,6 +1760,7 @@ function setSyncStatus(status) {
   fbState.status = status;
   renderSyncStatusBadge();
   renderUserGreeting();
+  renderTopRight();
   if (document.getElementById('page-settings').classList.contains('on')) renderCloudSyncPanel();
 }
 function renderSyncStatusBadge() {
@@ -2546,11 +2570,6 @@ function shiftMonth(delta) {
   currentMonth = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   renderAll();
 }
-function shiftYear(delta) {
-  const [y, mo] = currentMonth.split('-').map(Number);
-  currentMonth = (y + delta) + '-' + String(mo).padStart(2,'0');
-  renderYearlyPage();
-}
 function nextMonthOf(m) {
   const [y,mo] = m.split('-').map(Number);
   const d = new Date(y, mo, 1);
@@ -2671,7 +2690,7 @@ function syncPageForProfileChange() {
 // Left-to-right order the tab bar and sidebar actually present pages in —
 // used only to pick a swipe direction for the page-change animation, so a
 // page this doesn't know about (e.g. 'add') just gets the plain fade below.
-const NAV_ORDER = ['dashboard','expenses','budget','installments','calendar','yearly','settings'];
+const NAV_ORDER = ['dashboard','expenses','budget','installments','calendar','settings'];
 function goPage(name) {
   if ((name === 'budget' || name === 'installments') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments tab
   const prevPageEl = document.querySelector('.page.on');
@@ -2693,7 +2712,6 @@ function goPage(name) {
   if (name === 'budget') renderBudgetPage();
   if (name === 'installments') renderInstallmentsPage();
   if (name === 'calendar') renderCalendarPage();
-  if (name === 'yearly') renderYearlyPage();
   if (name === 'settings') renderSettingsPage();
   if (name === 'add') renderAddExpensePage();
   window.scrollTo(0,0);
@@ -3000,7 +3018,84 @@ function renderDashboard() {
   renderDashboardCore();
   syncKpiMirrors();
   renderProfileTabs();
+  renderTopRight();
 }
+/* ============================================================
+   TOP-RIGHT BLOCK — app logo, a pay-cycle tracker (days left and
+   what's safe to spend per day), then today's date and sync status.
+   ============================================================ */
+const TR_LOGO = '<svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="trLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#trLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg>';
+function trDays(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
+function trShort(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+function trRing(left, total) {
+  const r = 25, c = 2 * Math.PI * r;
+  const done = total > 0 ? Math.min(1, Math.max(0, (total - left) / total)) : 0;
+  return `<svg class="tr-ring" viewBox="0 0 62 62" aria-hidden="true">
+    <circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--card-b)" stroke-width="6"/>
+    <circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--blue)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c * done).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 31 31)"/>
+    <text class="n" x="31" y="31" text-anchor="middle">${left}</text>
+    <text class="u" x="31" y="43" text-anchor="middle">${left === 1 ? 'day left' : 'days left'}</text>
+  </svg>`;
+}
+function trCycleHtml() {
+  const p = activeProfile();
+  const today = localIso(new Date());
+  if (isSavings(p)) return '';
+  if (isCredit(p)) {
+    const close = lastStatementClose(p);
+    const day = clampDay(p.statementDay);
+    const nextClose = new Date(close.getFullYear(), close.getMonth() + 1, day);
+    const due = statementDueDate(p, close);
+    const owed = statementBalanceAsOf(p, close);
+    if (owed > 0 && isoDate(due) >= today) {
+      const total = Math.max(1, trDays(isoDate(close), isoDate(due)));
+      const left = Math.max(0, trDays(today, isoDate(due)));
+      return `<div class="tr-cycle">${trRing(left, total)}<div class="tr-text">
+        <span class="tr-k">Card payment</span><span class="tr-range">Due ${escapeHtml(trShort(isoDate(due)))}</span>
+        <span class="tr-l">Amount due</span><span class="tr-v neg">${fmt(owed)}</span></div></div>`;
+    }
+    const total = Math.max(1, trDays(isoDate(close), isoDate(nextClose)));
+    const left = Math.max(0, trDays(today, isoDate(nextClose)));
+    return `<div class="tr-cycle">${trRing(left, total)}<div class="tr-text">
+      <span class="tr-k">Statement cycle</span><span class="tr-range">Closes ${escapeHtml(trShort(isoDate(nextClose)))}</span>
+      <span class="tr-l">Balance owed</span><span class="tr-v">${fmt(creditBalance(p))}</span></div></div>`;
+  }
+  // Budget profile: the pay cycle today falls in (Settings → Income → From/To),
+  // or the calendar month when no cycle is set for it.
+  const m = monthForDate(today, p);
+  const cyc = (p.incomeCycles || {})[m];
+  let start, end;
+  if (cyc && cyc.start && cyc.end) { start = cyc.start; end = cyc.end; }
+  else { const d = new Date(); start = localIso(new Date(d.getFullYear(), d.getMonth(), 1)); end = localIso(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  const total = trDays(start, end) + 1;
+  const left = Math.max(1, trDays(today, end) + 1);
+  const dayNo = Math.min(total, Math.max(1, total - left + 1));
+  const avail = monthSummary(m).availableBalance;
+  const perDay = avail / left;
+  return `<div class="tr-cycle">${trRing(left, total)}<div class="tr-text">
+    <span class="tr-k">${escapeHtml(monthLabel(m).split(' ')[0])} pay cycle</span>
+    <span class="tr-range">${escapeHtml(trShort(start))} – ${escapeHtml(trShort(end))} · day ${dayNo} of ${total}</span>
+    <span class="tr-l">Safe to spend per day</span>
+    <span class="tr-v${perDay < 0 ? ' neg' : ''}">${fmt(perDay)}</span></div></div>`;
+}
+function trSyncHtml() {
+  const st = fbState.status;
+  if (st === 'connected') return `<span class="tr-sync ok">● Synced${fbState.lastSyncedAt ? ' ' + fbState.lastSyncedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''}</span>`;
+  if (st === 'syncing') return '<span class="tr-sync busy">● Syncing…</span>';
+  if (st === 'connecting') return '<span class="tr-sync busy">● Connecting…</span>';
+  if (st === 'error') return '<span class="tr-sync err">● Sync error</span>';
+  return '<span class="tr-sync off">● This device only</span>';
+}
+function renderTopRight() {
+  const el = document.getElementById('topRight');
+  if (!el) return;
+  let cyc = '';
+  try { cyc = trCycleHtml(); } catch (e) { console.error('pay-cycle tracker', e); }
+  const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b></span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}</div>`;
+}
+setInterval(renderTopRight, 60000); // keeps the date, days left and sync time fresh
+
 function syncKpiMirrors() {
   const src = document.querySelector('#' + dashboardPageId() + ' .kpis');
   const html = src ? src.innerHTML.replace(/\sid="[^"]*"/g, '') : '';
@@ -3794,7 +3889,7 @@ function openBudgetSheet(id) {
     <div class="sheet-summary">
       <span><span class="l">Planned</span><span class="v">${fmt(planned)}</span></span>
       <span><span class="l">Actual</span><span class="v">${fmt(actual)}</span></span>
-      <span><span class="l">${remaining < 0 ? 'Over by' : 'Remaining'}</span><span class="v" style="color:${remaining < 0 ? '#b3483f' : '#23835f'};">${fmt(Math.abs(remaining))}</span></span>
+      <span><span class="l">${remaining < 0 ? 'Over by' : 'Remaining'}</span><span class="v" style="color:${remaining < 0 ? '#a9523f' : '#4f7d5c'};">${fmt(Math.abs(remaining))}</span></span>
     </div>
     <div class="sheet-field"><label>Status</label><div class="sheet-seg" id="sheetStatusSeg">
       <button type="button" data-st="Not Paid Yet" onclick="pickSheetStatus(this)" class="${sheetBudgetStatus !== 'Done' ? 'sel' : ''}">Ongoing</button>
@@ -4806,43 +4901,6 @@ function deleteInstallmentPlan(idx) {
 }
 
 /* ============================================================
-   YEARLY PAGE
-   ============================================================ */
-function renderYearlyPage() {
-  const year = Number(currentMonth.slice(0,4));
-  document.getElementById('yearLabel').textContent = year;
-  let totalIncome=0, totalSpent=0, best=null;
-  const bars = [];
-  for (let mo=1; mo<=12; mo++) {
-    const m = year + '-' + String(mo).padStart(2,'0');
-    const s = monthSummary(m);
-    totalIncome += s.totalSalary;
-    totalSpent += s.totalExpenses;
-    if (s.totalSalary || s.totalExpenses) {
-      if (best === null || s.remaining > best.remaining) best = {m, remaining: s.remaining};
-    }
-    bars.push({m, ...s});
-  }
-  document.getElementById('yIncome').textContent = fmt(totalIncome);
-  document.getElementById('ySpent').textContent = fmt(totalSpent);
-  document.getElementById('ySaved').textContent = fmt(totalIncome-totalSpent);
-  document.getElementById('yBest').textContent = best ? monthLabel(best.m) : '—';
-
-  const maxVal = Math.max(1, ...bars.map(b=>Math.max(b.totalSalary,b.totalExpenses)));
-  document.getElementById('yearlyBars').innerHTML = bars.map(b => `
-    <div style="margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt-dim);margin-bottom:4px;">
-        <span>${monthLabel(b.m).split(' ')[0]}</span><span>${fmt(b.totalExpenses)} / ${fmt(b.totalSalary)}</span>
-      </div>
-      <div style="display:flex; gap:3px; height:8px;">
-        <div style="flex:${b.totalSalary||0.001}; background:var(--card-b); border-radius:4px; position:relative; overflow:hidden;">
-          <div style="width:${b.totalSalary? Math.min(100,(b.totalExpenses/b.totalSalary)*100):0}%; height:100%; background:${b.totalExpenses>b.totalSalary?'var(--red)':'var(--blue)'};"></div>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-/* ============================================================
    CALENDAR
    A month grid of actual due dates. Every budget line already carries
    a real startDate (set when it's created — see saveBudgetLine /
@@ -5734,7 +5792,6 @@ function renderAll() {
   if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
   if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
   if (document.getElementById('page-calendar').classList.contains('on')) renderCalendarPage();
-  if (document.getElementById('page-yearly').classList.contains('on')) renderYearlyPage();
   if (document.getElementById('page-settings').classList.contains('on')) renderSettingsPage();
 }
 
