@@ -142,6 +142,17 @@
     .kpi .ki svg { width: 17px; height: 17px; }
     .kpi .v { font-size: 17px; }
   }
+  /* Income tile: total income, salary underneath, "+ extra" badge for additional income */
+  .kpi { position: relative; }
+  .kpi .kpi-sub { font-size: 11px; font-weight: 600; color: var(--txt-dim2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpi .kpi-extra { position: absolute; top: 10px; right: 12px; font-size: 10.5px; font-weight: 800; color: #4f7d5c; background: var(--green-soft); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .kpi .kpi-extra[hidden] { display: none; }
+  .kpi .kpi-phone { display: none; }
+  @media (max-width: 860px) { .kpi .kpi-phone { display: inline; } }
+  @media (max-width: 860px) {
+    .kpi .kpi-extra { top: -9px; right: 10px; font-size: 9.5px; padding: 3px 7px; box-shadow: 2px 2px 5px #d3cab9; }
+    .kpi .kpi-desk { display: none; }
+  }
   /* Copy of the Dashboard's 4 summary cards shown on Expenses/Budget/Installments */
   .kpis-mirror:empty { display: none; }
 
@@ -681,6 +692,42 @@
     .tr-meta { justify-content: flex-start; }
   }
 
+
+  /* ===== Settings → Income: compact table ===== */
+  .inc-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .inc-sum > div { padding: 10px 14px; border-radius: 14px; box-shadow: var(--shadow-out-sm); min-width: 0; }
+  .inc-sum span { display: block; font-size: 11px; font-weight: 700; color: var(--txt-dim); }
+  .inc-sum b { display: block; font-family: var(--font-display); font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inc-sum b.pos, .inc-x.pos { color: #4f7d5c; }
+  .inc-table { border-radius: 18px; box-shadow: var(--shadow-out); overflow: hidden; }
+  .inc-head, .inc-row { display: grid; grid-template-columns: 62px 116px minmax(0, 1fr) 92px 28px; gap: 10px; align-items: center; padding: 9px 14px; }
+  .inc-head { font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .05em; }
+  .inc-row { border-top: 1px solid var(--line); font-size: 13px; }
+  .inc-row.open { background: rgba(95,125,104,.05); }
+  .inc-year { border-top: 1px solid var(--line); padding: 8px 14px 2px; font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); letter-spacing: .05em; }
+  .inc-m { font-weight: 800; white-space: nowrap; }
+  .inc-m span { color: var(--txt-dim2); font-weight: 600; }
+  .inc-sal { width: 100%; min-width: 0; box-sizing: border-box; border: none; border-bottom: 1px dashed var(--txt-dim2); background: transparent; font: inherit; font-size: 13px; font-weight: 800; color: var(--txt); padding: 4px 2px; border-radius: 0; }
+  .inc-sal:focus { outline: none; border-bottom: 1px solid var(--blue); background: var(--card); box-shadow: var(--shadow-in); border-radius: 8px; padding: 4px 6px; }
+  .inc-cyc { border: none; background: none; padding: 4px 0; font: inherit; font-size: 12.5px; color: var(--txt-dim); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .inc-cyc:hover { color: var(--blue); }
+  .inc-d { color: var(--txt-dim2); font-size: 11.5px; }
+  .inc-x { text-align: right; font-weight: 700; color: var(--txt-dim2); white-space: nowrap; }
+  .inc-del { border: none; background: none; color: var(--txt-dim2); padding: 0; display: flex; cursor: pointer; }
+  .inc-del:hover { color: var(--red); }
+  .inc-del svg { width: 15px; height: 15px; }
+  .inc-edit { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; padding: 4px 0 4px; }
+  .inc-edit label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: var(--txt-dim); flex: 1 1 140px; }
+  .inc-edit input { border: none; height: 38px; padding: 0 10px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-in); font: inherit; font-size: 13px; font-weight: 600; color: var(--txt); }
+  .inc-edit .link-btn { padding-bottom: 10px; }
+  @media (max-width: 860px) {
+    .inc-sum b { font-size: 15px; }
+    .inc-sum > div { padding: 9px 10px; }
+    .inc-head { display: none; }
+    .inc-row { grid-template-columns: 52px minmax(0, 1fr) auto 24px; grid-template-areas: "m sal x del" "m cyc cyc cyc"; row-gap: 2px; padding: 10px 12px; }
+    .inc-m { grid-area: m; align-self: start; padding-top: 5px; }
+    .inc-sal { grid-area: sal; } .inc-x { grid-area: x; } .inc-del { grid-area: del; } .inc-cyc { grid-area: cyc; }
+  }
   /* ===== Responsive: iPhone-ish ===== */
   @media (max-width: 860px) {
     /* iOS Safari zooms the whole page in when a focused input's font-size is
@@ -900,7 +947,7 @@
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l">Income</div><div class="v" id="kpiIncome">0</div></div></div>
+        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l"><span class="kpi-desk">Total i</span><span class="kpi-phone">I</span>ncome</div><div class="v" id="kpiIncome">0</div><div class="kpi-sub" id="kpiSalarySub"></div></div><span class="kpi-extra" id="kpiExtraBadge" hidden></span></div>
         <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Spent</div><div class="v" id="kpiSpent">0</div><div class="delta" id="kpiSpentDelta"></div></div></div>
         <div class="kpi"><span class="ki rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg></span><div class="kt"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div></div>
         <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div></div>
@@ -2783,17 +2830,21 @@ function effectivePlanned(line) {
 function monthSummary(m) {
   const exps = expensesForMonth(m);
   const buds = budgetForMonth(m);
-  const totalExpenses = exps.reduce((s,e)=>s+Number(e.value||0),0);
+  // Negative expense rows are additional income (the "− Income" toggle / Shortcut):
+  // they count toward income, and Spent counts only real spending.
+  const totalExpenses = exps.reduce((s,e)=>s+Math.max(0, Number(e.value||0)),0);
+  const extraIncome = exps.reduce((s,e)=>s+Math.max(0, -Number(e.value||0)),0);
   const totalSalary = Number(activeProfile().income[m] || 0);
+  const totalIncome = totalSalary + extraIncome;
   const plannedSavings = buds.filter(b => b.category === 'Savings & Investment' && b.subcategory === 'Saving Account')
     .reduce((s,b)=>s+effectivePlanned(b),0);
   const plannedTotal = buds.reduce((s,b)=>s+effectivePlanned(b),0) - plannedSavings;
-  const remaining = totalSalary - totalExpenses;
+  const remaining = totalIncome - totalExpenses;
   const doneActual = buds.filter(b=>b.status==='Done').reduce((s,b)=>s+actualForBudgetLine(b),0);
   const notPaidPlanned = buds.filter(b=>b.status==='Not Paid Yet').reduce((s,b)=>s+effectivePlanned(b),0);
   const allActual = buds.reduce((s,b)=>s+actualForBudgetLine(b),0);
   const availableBalance = remaining - (doneActual + notPaidPlanned - allActual);
-  return { totalExpenses, totalSalary, plannedTotal, remaining, plannedSavings, availableBalance };
+  return { totalExpenses, totalSalary, extraIncome, totalIncome, plannedTotal, remaining, plannedSavings, availableBalance };
 }
 
 /* ============================================================
@@ -2805,11 +2856,13 @@ function ensureSelectedMonths() {
 }
 
 function monthSummaryMulti(months) {
-  const totals = { totalExpenses:0, totalSalary:0, plannedTotal:0, remaining:0, plannedSavings:0, availableBalance:0 };
+  const totals = { totalExpenses:0, totalSalary:0, extraIncome:0, totalIncome:0, plannedTotal:0, remaining:0, plannedSavings:0, availableBalance:0 };
   months.forEach(m => {
     const s = monthSummary(m);
     totals.totalExpenses += s.totalExpenses;
     totals.totalSalary += s.totalSalary;
+    totals.extraIncome += s.extraIncome;
+    totals.totalIncome += s.totalIncome;
     totals.plannedTotal += s.plannedTotal;
     totals.remaining += s.remaining;
     totals.plannedSavings += s.plannedSavings;
@@ -3126,7 +3179,12 @@ function renderDashboardCore() {
   const latestSelected = selMonths.length ? selMonths[selMonths.length - 1] : currentMonth;
 
   const sum = monthSummaryMulti(selMonths);
-  document.getElementById('kpiIncome').textContent = fmt(sum.totalSalary);
+  document.getElementById('kpiIncome').textContent = fmt(sum.totalIncome);
+  document.getElementById('kpiSalarySub').textContent = 'Salary ' + fmtRaw(sum.totalSalary);
+  const extraEl = document.getElementById('kpiExtraBadge');
+  extraEl.textContent = '+' + fmtRaw(sum.extraIncome) + ' extra';
+  extraEl.title = 'Additional income — entries logged as a negative amount';
+  extraEl.hidden = !(sum.extraIncome > 0.004);
   document.getElementById('kpiSpent').textContent = fmt(sum.totalExpenses);
   const remEl = document.getElementById('kpiRemaining');
   remEl.textContent = fmt(sum.remaining);
@@ -3992,8 +4050,24 @@ function msKind(key) { return key.endsWith('Cat') ? 'cats' : key.endsWith('Sub')
 function msPairs(key) {
   const p = activeProfile();
   if (key.startsWith('dash')) { ensureSelectedMonths(); return selectedMonths.flatMap(m => budgetForMonth(m)).map(b => [b.category, b.subcategory]); }
-  if (key.startsWith('budget')) return p.budget.map(b => [b.category, b.subcategory]);
-  return buildExpenseRows(p).map(r => [r.category, r.subcategory]);
+  // Offer only what's showing in the table right now — the selected months, the
+  // search box, the Budget status switch and the Expenses day filter — but not
+  // the category / sub category picks themselves, so other categories can still be added.
+  ensureSelectedMonths();
+  if (key.startsWith('budget')) {
+    const search = (document.getElementById('budgetSearch').value || '').trim().toLowerCase();
+    return selectedMonths.flatMap(m => budgetForMonth(m))
+      .filter(b => budgetFilterMode === 'done' ? b.status === 'Done' : budgetFilterMode === 'notpaid' ? b.status === 'Not Paid Yet' : true)
+      .filter(b => !search || (b.description||'').toLowerCase().includes(search) || (b.category||'').toLowerCase().includes(search) || (b.subcategory||'').toLowerCase().includes(search))
+      .map(b => [b.category, b.subcategory]);
+  }
+  const search = (document.getElementById('expSearch').value || '').trim().toLowerCase();
+  const days = sf().dates;
+  return buildExpenseRows(p)
+    .filter(r => selectedMonths.includes(r.month))
+    .filter(r => !days.length || days.includes(r.date))
+    .filter(r => !search || (r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search))
+    .map(r => [r.category, r.subcategory]);
 }
 let msOpenKey = null, msOptionsCache = [];
 function msOptions(key) {
@@ -5083,40 +5157,72 @@ function renderSettingsPage() {
     document.getElementById('ccDueDayInput').value = clampDay(p.dueDay);
   }
 
-  // Income grouped by year, compact grid instead of one row per month
-  const months = new Set([...Object.keys(activeProfile().income), currentMonth]);
-  const sorted = Array.from(months).sort().reverse(); // newest first
-  const byYear = {};
-  sorted.forEach(m => {
-    const y = m.slice(0,4);
-    (byYear[y] = byYear[y] || []).push(m);
-  });
-  document.getElementById('incomeList').innerHTML = Object.keys(byYear).sort().reverse().map(y => `
-    <div class="income-year-group">
-      <div class="income-year-label">${y}</div>
-      <div class="income-grid">
-        ${byYear[y].map(m => { const cyc = (activeProfile().incomeCycles && activeProfile().incomeCycles[m]) || {}; return `
-          <div class="income-cell">
-            <div class="m">${monthLabel(m).split(' ')[0]}</div>
-            <div class="row">
-              <input type="number" value="${activeProfile().income[m]||''}" placeholder="0" onchange="setIncome('${m}', this.value)">
-              <button class="bin-btn" onclick="deleteIncomeMonth('${m}')" title="Remove this month's income">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-              </button>
-            </div>
-            <div class="cycle-row">
-              <span class="lbl">From</span>
-              <input type="date" value="${cyc.start||''}" onchange="setIncomeCycle('${m}','start',this.value)" title="Pay cycle start date">
-            </div>
-            <div class="cycle-row" style="border-top:none; padding-top:0; margin-top:5px;">
-              <span class="lbl">To</span>
-              <input type="date" value="${cyc.end||''}" onchange="setIncomeCycle('${m}','end',this.value)" title="Pay cycle end date">
-            </div>
-          </div>`; }).join('')}
-      </div>
-    </div>`).join('');
+  renderIncomeList();
 
   renderCategoryManager();
+}
+
+/* ============================================================
+   SETTINGS → INCOME (compact table): totals for the year on top,
+   then one row per month — salary (edit in place), pay cycle (tap
+   to edit its From/To dates), additional income, delete.
+   ============================================================ */
+let incomeCycleEditing = null;
+function incShort(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+function incCycleDays(c) { return (c && c.start && c.end) ? Math.round((new Date(c.end + 'T00:00:00') - new Date(c.start + 'T00:00:00')) / 86400000) + 1 : null; }
+function toggleIncomeCycleEdit(m) { incomeCycleEditing = incomeCycleEditing === m ? null : m; renderIncomeList(); }
+function onIncomeCycleChange(m, which, val) { setIncomeCycle(m, which, val); renderIncomeList(); }
+function onIncomeSalaryChange(m, val) { setIncome(m, val); renderIncomeList(); }
+function renderIncomeList() {
+  const el = document.getElementById('incomeList');
+  if (!el) return;
+  const p = activeProfile();
+  const cycles = p.incomeCycles || {};
+  const months = Array.from(new Set([...Object.keys(p.income), currentMonth])).sort().reverse();
+  const year = (months[0] || currentMonth).slice(0, 4);
+  const inYear = months.filter(m => m.startsWith(year));
+  const extraOf = m => { try { return monthSummary(m).extraIncome || 0; } catch (e) { return 0; } };
+  const yearSalary = inYear.reduce((s, m) => s + Number(p.income[m] || 0), 0);
+  const yearExtra = inYear.reduce((s, m) => s + extraOf(m), 0);
+  const lens = inYear.map(m => incCycleDays(cycles[m])).filter(Boolean);
+  const avg = lens.length ? Math.round(lens.reduce((a, b) => a + b, 0) / lens.length) + ' days' : '—';
+  let lastYear = null;
+  const rows = months.map(m => {
+    const c = cycles[m] || {};
+    const days = incCycleDays(c);
+    const extra = extraOf(m);
+    const y = m.slice(0, 4);
+    const yearRow = (y !== lastYear && months.some(x => x.slice(0, 4) !== months[0].slice(0, 4))) ? `<div class="inc-year">${y}</div>` : '';
+    lastYear = y;
+    const cycleText = (c.start && c.end)
+      ? `${escapeHtml(incShort(c.start))} → ${escapeHtml(incShort(c.end))} <span class="inc-d">· ${days} d</span>`
+      : (c.start ? `From ${escapeHtml(incShort(c.start))} <span class="inc-d">· set end</span>` : (c.end ? `To ${escapeHtml(incShort(c.end))} <span class="inc-d">· set start</span>` : '<span class="inc-d">Calendar month · set dates</span>'));
+    const open = incomeCycleEditing === m;
+    return `${yearRow}<div class="inc-row${open ? ' open' : ''}">
+      <b class="inc-m">${escapeHtml(monthLabel(m).slice(0, 3))} <span>${y.slice(2)}</span></b>
+      <input class="inc-sal" type="number" inputmode="decimal" value="${p.income[m] || ''}" placeholder="0" aria-label="Salary for ${escapeHtml(monthLabel(m))}" onchange="onIncomeSalaryChange('${m}', this.value)">
+      <button type="button" class="inc-cyc" onclick="toggleIncomeCycleEdit('${m}')" aria-expanded="${open}" title="Edit pay cycle dates">${cycleText}</button>
+      <span class="inc-x${extra > 0.004 ? ' pos' : ''}">${extra > 0.004 ? '+' + fmtRaw(extra) : '—'}</span>
+      <button type="button" class="inc-del" onclick="deleteIncomeMonth('${m}')" aria-label="Remove ${escapeHtml(monthLabel(m))}" title="Remove this month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+      ${open ? `<div class="inc-edit">
+        <label>Pay cycle from<input type="date" value="${c.start || ''}" onchange="onIncomeCycleChange('${m}','start',this.value)"></label>
+        <label>to<input type="date" value="${c.end || ''}" onchange="onIncomeCycleChange('${m}','end',this.value)"></label>
+        <button type="button" class="link-btn" onclick="toggleIncomeCycleEdit('${m}')">Done</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="inc-sum">
+      <div><span>${year} salary</span><b>${fmtRaw(yearSalary)}</b></div>
+      <div><span>Additional</span><b class="pos">+${fmtRaw(yearExtra)}</b></div>
+      <div><span>Avg. cycle</span><b>${avg}</b></div>
+    </div>
+    <div class="inc-table">
+      <div class="inc-head"><span>Month</span><span>Salary</span><span>Pay cycle</span><span style="text-align:right;">Extra</span><span></span></div>
+      ${rows}
+    </div>`;
 }
 function setCreditLimit(val) {
   activeProfile().creditLimit = Number(val)||0;
@@ -5733,11 +5839,13 @@ function exportReportPDF() {
     const cur = currencyOf(p);
     const money = n => (cur.position === 'prefix' ? (cur.symbol + fmtRaw(n)) : (fmtRaw(n) + ' ' + cur.symbol));
     const exp = p.expenses.filter(e => inRange(e.date));
-    const totalExpense = exp.reduce((s,e) => s + Number(e.value||0), 0);
+    const totalExpense = exp.reduce((s,e) => s + Math.max(0, Number(e.value||0)), 0);
+    const extraIncome = exp.reduce((s,e) => s + Math.max(0, -Number(e.value||0)), 0);
     const months = Object.keys(p.income || {}).filter(m => inRange(m + '-01'));
-    const totalIncome = months.reduce((s,m) => s + Number(p.income[m]||0), 0);
+    const salary = months.reduce((s,m) => s + Number(p.income[m]||0), 0);
+    const totalIncome = salary + extraIncome;
     const byCat = {};
-    exp.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.value||0); });
+    exp.filter(e => Number(e.value||0) > 0).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.value||0); });
     const catRows = Object.keys(byCat).sort((a,b) => byCat[b]-byCat[a])
       .map(c => `<tr><td>${escapeHtml(c)}</td><td style="text-align:right;">${money(byCat[c])}</td></tr>`).join('');
     const txRows = exp.slice().sort((a,b) => a.date.localeCompare(b.date))
@@ -5745,7 +5853,7 @@ function exportReportPDF() {
     sectionsHtml += `
       <h2>${escapeHtml(p.name)}</h2>
       <table class="rep-summary">
-        <tr><td>Income</td><td style="text-align:right;">${money(totalIncome)}</td></tr>
+        <tr><td>Income <span class="muted">(salary ${money(salary)}${extraIncome > 0 ? ' + additional ' + money(extraIncome) : ''})</span></td><td style="text-align:right;">${money(totalIncome)}</td></tr>
         <tr><td>Expenses</td><td style="text-align:right;">${money(totalExpense)}</td></tr>
         <tr><td><strong>Net / Savings</strong></td><td style="text-align:right;"><strong>${money(totalIncome-totalExpense)}</strong></td></tr>
       </table>
@@ -5756,12 +5864,19 @@ function exportReportPDF() {
   });
 
   const rangeLabel = (fromVal || toVal) ? `${fromVal || 'Start'} to ${toVal || 'Today'}` : 'All time';
+  const personName = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
+  const reportLogo = '<svg width="46" height="46" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="repLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#repLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg>';
   const win = window.open('', '_blank');
   if (!win) { alert('Your browser blocked the report popup — allow popups for this site and try again.'); return; }
-  win.document.write(`<!DOCTYPE html><html><head><title>Budget report</title><meta charset="utf-8"><style>
-    body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;color:#1a1a1a;padding:30px;max-width:800px;margin:0 auto;}
-    h1{font-size:20px;margin-bottom:2px;} .sub{color:#666;font-size:12px;margin-bottom:24px;}
-    h2{font-size:16px;margin-top:28px;border-bottom:2px solid #333;padding-bottom:4px;}
+  win.document.write(`<!DOCTYPE html><html><head><title>Kashu budget report${personName ? ' — ' + escapeHtml(personName) : ''}</title><meta charset="utf-8"><style>
+    body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;color:#2f3a33;padding:30px;max-width:800px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .rep-head{display:flex;justify-content:space-between;align-items:center;gap:20px;padding-bottom:16px;border-bottom:3px solid #5f7d68;margin-bottom:22px;}
+    .rep-brand{display:flex;align-items:center;gap:12px;}
+    .rep-brand b{font-size:24px;font-weight:700;letter-spacing:.01em;} .rep-brand b span{color:#5f7d68;}
+    .rep-meta{text-align:right;}
+    h1{font-size:18px;margin:0 0 3px;} .sub{color:#6b7468;font-size:12px;line-height:1.5;}
+    .muted{color:#8f968a;font-size:11px;}
+    h2{font-size:16px;margin-top:28px;border-bottom:2px solid #5f7d68;padding-bottom:4px;color:#2f3a33;}
     h3{font-size:13px;margin-top:16px;color:#444;}
     table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
     .rep-table td, .rep-table th{padding:5px 8px;border-bottom:1px solid #eee;}
@@ -5769,8 +5884,13 @@ function exportReportPDF() {
     .rep-summary td{padding:4px 8px;}
     @media print { body{padding:0;} }
   </style></head><body>
-    <h1>Budget report</h1>
-    <div class="sub">${escapeHtml(rangeLabel)} · Generated ${new Date().toLocaleDateString()}</div>
+    <div class="rep-head">
+      <div class="rep-brand">${reportLogo}<b>Kashu<span>.</span></b></div>
+      <div class="rep-meta">
+        <h1>Budget report</h1>
+        <div class="sub">${personName ? 'Prepared for <strong>' + escapeHtml(personName) + '</strong><br>' : ''}${escapeHtml(rangeLabel)} · Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      </div>
+    </div>
     ${sectionsHtml}
   </body></html>`);
   win.document.close();
