@@ -29,7 +29,10 @@
 //      and switch "Run In App" OFF so it runs in the background.
 //   3. Show Notification → the Run Script output ("Added 50 E£ → Food").
 // Writes straight to your synced Firestore data under the app's active
-// profile. A negative amount = income. (There is no "+" add widget —
+// profile. A negative amount = income.
+//   To fill a "Choose from List" with your categories, run this script with
+//   the text "categories": it returns a Dictionary with "categories" (list)
+//   and "subs" (each category's sub categories). (There is no "+" add widget —
 // adding happens only through the Shortcut.)
 //
 // SECURITY NOTE: your password is only ever sent straight to Google's own
@@ -216,6 +219,32 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
   };
   await commitAddExpense(CONFIG.projectId, docId, idToken, profileId, expense);
   return { expense, currencyCode, profileName: prof.name || '' };
+}
+// Shortcuts "categories" mode: Run Script with the text "categories" returns a
+// Dictionary the Shortcut can pick from:
+//   { categories: ["Housing", "Bills", …],
+//     subs: { "Housing": ["Electricity", …], "Bills": [ … ], … } }
+// Taken from the profile currently active in the app, in the app's own order.
+// On a problem it still returns a Dictionary, with the message as the only
+// "category", so the Shortcut shows it instead of failing.
+async function categoriesForShortcut() {
+  try {
+    if (!configIsFilledIn()) throw new Error('Put your email and password into CONFIG in the Kashu script.');
+    const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
+    const d1 = await fetchMaskedFields(CONFIG.projectId, uid, idToken, ['state.activeProfileId']);
+    const profileId = d1.state && d1.state.activeProfileId;
+    if (!profileId) throw new Error('No synced profile yet — open the app once to sync.');
+    const d2 = await fetchMaskedFields(CONFIG.projectId, uid, idToken, [`state.profiles.\`${profileId}\`.categories`]);
+    const cats = (d2.state && d2.state.profiles && d2.state.profiles[profileId] && d2.state.profiles[profileId].categories) || {};
+    const names = Object.keys(cats);
+    if (!names.length) throw new Error('No categories found in the active profile.');
+    const subs = {};
+    names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
+    return { categories: names, subs };
+  } catch (err) {
+    const msg = '⚠️ ' + (err && err.message ? err.message : String(err));
+    return { categories: [msg], subs: { [msg]: [msg] }, error: msg };
+  }
 }
 // Shortcuts "Run Script" entry point. Accepts a Dictionary (preferred), JSON
 // text, or "amount=50&category=Food" text. Returns a one-line result that the
@@ -508,6 +537,13 @@ async function buildWidget() {
 
 async function main() {
   if (config.runsWithSiri || (args.shortcutParameter !== undefined && args.shortcutParameter !== null)) {
+    const sp = args.shortcutParameter;
+    const mode = typeof sp === 'string' ? sp.trim().toLowerCase() : (sp && typeof sp === 'object' && sp.mode ? String(sp.mode).toLowerCase() : '');
+    if (mode === 'categories') {
+      Script.setShortcutOutput(await categoriesForShortcut());
+      Script.complete();
+      return;
+    }
     let msg;
     try { msg = await runFromShortcut(args.shortcutParameter); }
     catch (err) { msg = 'Error: ' + (err && err.message ? err.message : String(err)); }
