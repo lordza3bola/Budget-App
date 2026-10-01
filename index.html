@@ -128,7 +128,7 @@
   .kpi .ki.in { background: #dde6d8; color: #4f6d58; }
   .kpi .ki.out, .kpi .ki.up { background: #f5e1da; color: #a9523f; }
   .kpi .ki.rem, .kpi .ki.net { background: #e2ebdc; color: #4f7d5c; }
-  .kpi .ki.card, .kpi .ki.pct { background: #dde6d8; color: #4f6d58; }
+  .kpi .ki.cc, .kpi .ki.pct { background: #dde6d8; color: #4f6d58; }
   .kpi .v.pos { color: #4f7d5c; }
   .kpi.hero { background: linear-gradient(135deg, #86a589 0%, #5a7863 100%); box-shadow: 0 12px 22px rgba(90,120,99,.32); }
   .kpi.hero .l { color: rgba(255,255,255,.88); }
@@ -734,6 +734,40 @@
     .inc-m { grid-area: m; align-self: start; padding-top: 5px; }
     .inc-sal { grid-area: sal; } .inc-x { grid-area: x; } .inc-del { grid-area: del; } .inc-cyc { grid-area: cyc; }
   }
+
+  /* ===== Review fixes (V60) ===== */
+  .due-chip.over { background: var(--red-soft); color: #a9523f; }
+  .due-chip.soonish { background: var(--amber-soft); color: #7d5a1e; }
+  .due-chip.later { background: var(--blue-soft); color: #4f6d58; }
+  .kpis-inst { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .kpis-inst .kpi { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .kpis-inst .kpi .v { max-width: 100%; }
+  .inst-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 12.5px; color: var(--txt-dim); margin-top: 8px; }
+  .inst-g { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .inst-meta input { background: var(--card); border: none; box-shadow: var(--shadow-in); border-radius: 8px; padding: 4px 6px; font: inherit; font-size: 12.5px; color: var(--txt); }
+  .inst-meta input[type=number] { width: 46px; text-align: center; }
+  .modal-sheet .field select { -webkit-appearance: none; appearance: none; }
+  .page#page-add.on ~ .fab, body.on-add .fab, body.on-add .fab-desktop { display: none !important; }
+  @media (max-width: 860px) {
+    #ccDueCard { margin: 0 18px 16px !important; }
+    .kpis.kpis-inst { grid-template-columns: repeat(3, minmax(0,1fr)); padding: 0 18px; gap: 8px; }
+    .kpis-inst .kpi { padding: 10px 12px; }
+    .kpis-inst .kpi .l { font-size: 10.5px; }
+    .kpis-inst .kpi .v { font-size: 13.5px; }
+    #installmentPlansList { padding: 0 18px; }
+    #installmentPlansList + .card { margin: 0 18px; }
+    /* Bigger tap areas on the phone (Apple's guideline is ~44pt; 32px+ here keeps rows compact) */
+    .del-btn, .inc-del { min-width: 34px; min-height: 34px; justify-content: center; align-items: center; }
+    .inc-cyc { padding: 8px 0; }
+    .ms-btn.ms-sm { padding: 9px 24px 9px 10px; }
+    .mp-actions .btn, #msPanel .ms-actions button { padding: 10px 6px !important; }
+    #page-calendar .top .btn { padding: 9px 14px !important; }
+    .icon-trigger { width: 34px; height: 34px; }
+    /* Filter rows: search on its own line, the pickers share the next */
+    #page-expenses .freeze-head .budget-filter:last-child, #page-budget .freeze-head .budget-filter:last-child { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    #expSearch, #budgetSearch { grid-column: 1 / -1; min-width: 0 !important; width: 100%; box-sizing: border-box; padding: 10px 12px !important; }
+    #page-expenses .ms-btn, #page-budget .ms-btn { max-width: none; min-width: 0; width: 100%; padding-top: 10px; padding-bottom: 10px; }
+  }
   /* ===== Responsive: iPhone-ish ===== */
   @media (max-width: 860px) {
     /* iOS Safari zooms the whole page in when a focused input's font-size is
@@ -1003,7 +1037,7 @@
         <h1>Card overview</h1>
       </div>
       <div class="kpis">
-        <div class="kpi"><span class="ki card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><div class="kt"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div></div>
+        <div class="kpi"><span class="ki cc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><div class="kt"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div></div>
         <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Balance</div><div class="v" id="ccKpiBalance">0</div></div></div>
         <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available credit</div><div class="v pos" id="ccKpiAvailable">0</div></div></div>
         <div class="kpi"><span class="ki pct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5"/><path d="M12 12l6 6"/></svg></span><div class="kt"><div class="l">Utilization</div><div class="v warn" id="ccKpiUtil">0%</div></div></div>
@@ -1189,7 +1223,7 @@
       </div><!-- /freeze-head -->
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th><button type="button" class="th-filter" id="budgetDateHdrBtn" onclick="event.stopPropagation(); toggleMonthPanel('budget')" title="Filter by month"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Actual</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th><button type="button" class="th-filter" id="budgetDateHdrBtn" onclick="event.stopPropagation(); toggleMonthPanel('budget')" title="Filter by month"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg> Date <span class="th-caret">▾</span></button></th><th>Category</th><th>Sub Category</th><th>Description</th><th style="text-align:right;">Planned</th><th style="text-align:right;">Spent</th><th style="text-align:right;">Remaining</th><th>Status</th><th></th></tr></thead>
           <tbody id="budgetTableBody"></tbody>
         </table>
       </div>
@@ -1210,7 +1244,7 @@
         </div>
       </div>
       <div class="kpis kpis-mirror"></div>
-      <div class="kpis">
+      <div class="kpis kpis-inst">
         <div class="kpi"><div class="l">Installments due</div><div class="v" id="instKpiTotal">0</div></div>
         <div class="kpi"><div class="l">Paid</div><div class="v pos" id="instKpiPaid">0</div></div>
         <div class="kpi"><div class="l">Remaining</div><div class="v warn" id="instKpiRemaining">0</div></div>
@@ -2758,6 +2792,7 @@ function goPage(name) {
     target.classList.add(toIdx > fromIdx ? 'dir-right' : 'dir-left');
   }
   target.classList.add('on');
+  document.body.classList.toggle('on-add', name === 'add');
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   if (name === 'dashboard') renderDashboard();
@@ -3085,7 +3120,9 @@ function renderDashboard() {
    ============================================================ */
 const TR_LOGO = '<svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="trLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#trLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg>';
 function trDays(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000); }
-function trShort(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function shortDayMonth(iso) { const d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + SHORT_MONTHS[d.getMonth()]; }
+function trShort(iso) { return shortDayMonth(iso); }
 function trRing(left, total) {
   const r = 25, c = 2 * Math.PI * r;
   const done = total > 0 ? Math.min(1, Math.max(0, (total - left) / total)) : 0;
@@ -3106,6 +3143,11 @@ function trCycleHtml() {
     const nextClose = new Date(close.getFullYear(), close.getMonth() + 1, day);
     const due = statementDueDate(p, close);
     const owed = statementBalanceAsOf(p, close);
+    if (owed > 0 && isoDate(due) < today) {
+      return `<div class="tr-cycle">${trRing(0, 1)}<div class="tr-text">
+        <span class="tr-k">Card payment overdue</span><span class="tr-range">Was due ${escapeHtml(trShort(isoDate(due)))}</span>
+        <span class="tr-l">Amount due</span><span class="tr-v neg">${fmt(owed)}</span></div></div>`;
+    }
     if (owed > 0 && isoDate(due) >= today) {
       const total = Math.max(1, trDays(isoDate(close), isoDate(due)));
       const left = Math.max(0, trDays(today, isoDate(due)));
@@ -3364,7 +3406,7 @@ function renderCreditDashboard() {
   } else {
     const overdue = daysLeft < 0;
     const soon = daysLeft >= 0 && daysLeft <= 5;
-    const color = overdue ? 'var(--red)' : soon ? 'var(--amber)' : 'var(--blue)';
+    const chipCls = overdue ? 'over' : soon ? 'soonish' : 'later';
     const label = overdue ? `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft)===1?'':'s'}` : (daysLeft===0 ? 'Due today' : `Due in ${daysLeft} day${daysLeft===1?'':'s'}`);
     dueEl.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
@@ -3372,7 +3414,7 @@ function renderCreditDashboard() {
           <div style="font-family:var(--font-display); font-size:24px; font-weight:700;">${fmt(owed)}</div>
           <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">Statement closed ${isoDate(close)} · due ${isoDate(due)}</div>
         </div>
-        <span class="chip" style="background:${color}22; color:${color};">${label}</span>
+        <span class="chip due-chip ${chipCls}">${label}</span>
       </div>
       <button class="btn btn-primary" onclick="openPaymentModal(${owed})">Record payment</button>`;
   }
@@ -3772,7 +3814,9 @@ function renderExpensesPage() {
   } else if (paymentSum > 0) {
     totalText = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)}`;
   } else {
-    totalText = `${rows.length} expense${rows.length===1?'':'s'} · Total ${fmt(chargeSum)}`;
+    const spentOnly = rows.filter(r=>r.kind==='expense' && r.value > 0).reduce((s,r)=>s+r.value,0);
+    const incomeOnly = rows.filter(r=>r.kind==='expense' && r.value < 0).reduce((s,r)=>s-r.value,0);
+    totalText = `${rows.length} entr${rows.length===1?'y':'ies'} · Spent ${fmt(spentOnly)}` + (incomeOnly > 0 ? ` · Income ${fmt(incomeOnly)}` : '');
   }
   let totalHtml = escapeHtml(totalText);
   if (f.dates.length) totalHtml += ` · <span class="filter-clear" onclick="clearSharedFilter('dates')">${f.dates.length === 1 ? escapeHtml(dayLabel(f.dates[0])) : f.dates.length + ' days'} ✕</span>`;
@@ -3953,7 +3997,7 @@ function openBudgetSheet(id) {
   openSheet(sheetHead('Edit budget line') + `
     <div class="sheet-summary">
       <span><span class="l">Planned</span><span class="v">${fmt(planned)}</span></span>
-      <span><span class="l">Actual</span><span class="v">${fmt(actual)}</span></span>
+      <span><span class="l">Spent</span><span class="v">${fmt(actual)}</span></span>
       <span><span class="l">${remaining < 0 ? 'Over by' : 'Remaining'}</span><span class="v" style="color:${remaining < 0 ? '#a9523f' : '#4f7d5c'};">${fmt(Math.abs(remaining))}</span></span>
     </div>
     <div class="sheet-field"><label>Status</label><div class="sheet-seg" id="sheetStatusSeg">
@@ -4554,7 +4598,7 @@ function renderBudgetCards(rows, p, instIds) {
       <span class="bud-bar ${over ? 'over' : (closed ? 'done' : '')}"><span style="width:${pct.toFixed(1)}%;"></span></span>
       <span class="bud-stats">
         <span><span class="l">Planned</span><span class="v">${fmtRaw(planned)}</span></span>
-        <span><span class="l">Actual</span><span class="v">${fmtRaw(actual)}</span></span>
+        <span><span class="l">Spent</span><span class="v">${fmtRaw(actual)}</span></span>
         <span><span class="l">${over ? 'Over by' : 'Remaining'}</span><span class="v ${over ? 'neg' : (remaining > 0 ? 'pos' : '')}">${fmtRaw(Math.abs(remaining))}</span></span>
       </span>
     </button>`;
@@ -4701,6 +4745,7 @@ function saveBudgetLine() {
   } else {
     p.budget.push({
       id: 'b' + Date.now(),
+      oneTime: true,
       month: monthForDate(startDate, p),
       category, subcategory, description,
       startDate,
@@ -4807,7 +4852,8 @@ function installmentPlanGroups(p) {
   });
   const candidates = {};
   p.budget.forEach(b => {
-    if (taggedIds.has(b.id) || b.recurringGroupId) return;
+    // Not an installment: recurring bills, one-time lines added in the app ('b' + timestamp ids, or oneTime) and demo lines.
+    if (taggedIds.has(b.id) || b.recurringGroupId || b.oneTime || /^b\d/.test(b.id || '') || String(b.id || '').startsWith('demo_b_')) return;
     const key = 'legacy|' + b.category + '|' + b.subcategory + '|' + (b.description||'');
     if (!candidates[key]) candidates[key] = [];
     candidates[key].push(b);
@@ -4888,7 +4934,7 @@ function renderInstallmentsPage() {
         <div>
           <div style="font-weight:600;font-size:14.5px;">${getCategoryIcon(p, plan.category, plan.subcategory)} ${escapeHtml(plan.category)} <span style="font-weight:400;color:var(--txt-dim);">— ${escapeHtml(plan.subcategory)}</span></div>
           ${plan.description ? `<div style="font-size:12.5px;color:var(--txt-dim);margin-top:2px;">${escapeHtml(plan.description)}</div>` : ''}
-          <div style="font-size:12.5px;color:var(--txt-dim);margin-top:6px;">${fmt(plan.monthly)} / month &nbsp;•&nbsp; <input type="date" value="${plan.startDate}" onchange="setInstallmentStartDate(${idx}, this.value)" style="background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 5px;font-size:12px;color:var(--txt);"> → ${monthLabel(plan.finishDate.slice(0,7))} &nbsp;•&nbsp; <input type="number" min="0" max="${plan.total}" value="${plan.paidCount}" onchange="setInstallmentPaidCount(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> of <input type="number" min="1" max="240" value="${plan.total}" onchange="setInstallmentTotal(${idx}, this.value)" style="width:44px;background:var(--card);border:none;box-shadow:var(--shadow-in);border-radius:6px;padding:2px 4px;font-size:12.5px;text-align:center;color:var(--txt);"> paid</div>
+          <div class="inst-meta"><span class="inst-g">${fmt(plan.monthly)} / month</span><span class="inst-g"><input type="date" value="${plan.startDate}" aria-label="Start date" onchange="setInstallmentStartDate(${idx}, this.value)"> → ${monthLabel(plan.finishDate.slice(0,7))}</span><span class="inst-g"><input type="number" min="0" max="${plan.total}" value="${plan.paidCount}" aria-label="Installments paid" onchange="setInstallmentPaidCount(${idx}, this.value)"> of <input type="number" min="1" max="240" value="${plan.total}" aria-label="Total installments" onchange="setInstallmentTotal(${idx}, this.value)"> paid</span></div>
         </div>
         <button class="del-btn" onclick="deleteInstallmentPlan(${idx})" title="Delete plan">✕</button>
       </div>
@@ -5175,7 +5221,7 @@ function renderSettingsPage() {
    to edit its From/To dates), additional income, delete.
    ============================================================ */
 let incomeCycleEditing = null;
-function incShort(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+function incShort(iso) { return shortDayMonth(iso); }
 function incCycleDays(c) { return (c && c.start && c.end) ? Math.round((new Date(c.end + 'T00:00:00') - new Date(c.start + 'T00:00:00')) / 86400000) + 1 : null; }
 function toggleIncomeCycleEdit(m) { incomeCycleEditing = incomeCycleEditing === m ? null : m; renderIncomeList(); }
 function onIncomeCycleChange(m, which, val) { setIncomeCycle(m, which, val); renderIncomeList(); }
