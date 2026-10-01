@@ -167,8 +167,12 @@
   .h3-sub { font-size: 11px; color: var(--txt-dim2); font-weight: 600; margin-left: auto; margin-right: 0; }
   .card h3 .h3-sub { margin-left: 8px; margin-right: auto; }
   .dash-scroll { max-height: 264px; overflow-y: auto; margin-right: -6px; padding-right: 6px; }
-  .bva-head, .bva-row { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr) 205px 86px; gap: 14px; align-items: center; }
-  .bva-amt { overflow: hidden; text-overflow: ellipsis; }
+  .bva-head, .bva-row { display: grid; grid-template-columns: minmax(0,1fr) 122px 122px 122px 86px; gap: 12px; align-items: center; }
+  .bva-num { text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+  .bva-spent { color: var(--txt-dim); }
+  .bva-rem.pos { color: #4f7d5c; } .bva-rem.neg { color: var(--red); }
+  .bva-edit { display: inline-flex; align-items: center; gap: 2px; }
+  .bva-edit input { width: 82px; background: var(--card); border: none; box-shadow: var(--shadow-in); border-radius: 7px; padding: 3px 6px; font: inherit; font-size: 12px; color: var(--txt); text-align: right; }
   .bva-head { font-size: 10.5px; font-weight: 700; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .04em; padding: 4px 0 6px; border-bottom: 1px solid var(--card-b); }
   .bva-row { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .bva-row:last-child { border-bottom: none; }
@@ -201,8 +205,10 @@
   @media (max-width: 860px) {
     .dash-grid, .dash-lists { grid-template-columns: 1fr; padding: 0 18px; }
     .bva-head { display: none; }
-    .bva-row { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name amt" "bar status"; row-gap: 6px; column-gap: 10px; padding: 10px 0; }
-    .bva-name { grid-area: name; } .bva-amt { grid-area: amt; } .bva-bar { grid-area: bar; } .bva-status { grid-area: status; }
+    .bva-row { grid-template-columns: repeat(3, minmax(0,1fr)) auto; grid-template-areas: "name name name status" "plan spent rem rem"; row-gap: 6px; column-gap: 10px; padding: 10px 0; }
+    .bva-name { grid-area: name; } .bva-plan { grid-area: plan; } .bva-spent { grid-area: spent; } .bva-rem { grid-area: rem; } .bva-status { grid-area: status; }
+    .bva-num { text-align: left; font-size: 12.5px; }
+    .bva-num::before { content: attr(data-l); display: block; font-size: 10.5px; font-weight: 700; color: var(--txt-dim2); margin-bottom: 1px; }
     .dash-tools { width: 100%; } .dash-tools .ms-btn { flex: 1; max-width: none; }
     #catRows, .dash-scroll { max-height: none; }
     /* iOS needs 16px text on selects (else it zooms in) — shrink the pill visually instead */
@@ -961,7 +967,7 @@
               <button type="button" class="ms-btn ms-sm" id="msBtn_dashSub" onclick="openMs('dashSub', this)">All sub categories</button>
             </div>
           </div>
-          <div class="bva-head"><span>Category</span><span>Progress</span><span style="text-align:right;">Spent / planned</span><span style="text-align:right;">Status</span></div>
+          <div class="bva-head"><span>Category</span><span style="text-align:right;">Planned</span><span style="text-align:right;">Spent</span><span style="text-align:right;">Remaining</span><span style="text-align:right;">Status</span></div>
           <div id="catRows"><div class="empty-note">No budget lines for this month yet.</div></div>
         </div>
         <div class="dash-side">
@@ -3226,18 +3232,19 @@ function renderDashboardCore() {
         : `${getCategoryIcon(activeProfile(), category, null)} <b>${escapeHtml(category)}</b>`;
       const mixed = statuses.size > 1;
       const statusVal = mixed ? '' : [...statuses][0];
-      const amtHtml = idsCsv === editingPlannedIds ? `<span class="amt">
-          ${fmt(actual)} /
-          <input type="number" id="plannedEditInput_${ids[0]}" value="${planned}" style="width:74px; display:inline-block; background:var(--card); border:none; box-shadow:var(--shadow-in); border-radius:7px; padding:3px 6px; font-size:12px; color:var(--txt); text-align:right;" onkeydown="if(event.key==='Enter')savePlannedEdit('${idsCsv}'); if(event.key==='Escape')cancelPlannedEdit();">
-          <button class="del-btn save" style="vertical-align:middle;" onclick="savePlannedEdit('${idsCsv}')" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></button>
-          <button class="del-btn" style="vertical-align:middle;" onclick="cancelPlannedEdit()" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-        </span>` : `<span class="amt">${fmt(actual)} / <span class="planned-editable" onclick="startPlannedEdit('${idsCsv}')" title="Click to adjust the planned amount">${fmt(planned)}</span></span>`;
+      const planHtml = idsCsv === editingPlannedIds ? `<span class="bva-edit">
+          <input type="number" id="plannedEditInput_${ids[0]}" value="${planned}" aria-label="Planned amount" onkeydown="if(event.key==='Enter')savePlannedEdit('${idsCsv}'); if(event.key==='Escape')cancelPlannedEdit();">
+          <button class="del-btn save" onclick="savePlannedEdit('${idsCsv}')" title="Save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></button>
+          <button class="del-btn" onclick="cancelPlannedEdit()" title="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+        </span>` : `<span class="planned-editable" onclick="startPlannedEdit('${idsCsv}')" title="Click to adjust the planned amount">${fmt(planned)}</span>`;
+      const remaining = planned - actual;
       const rawPct = planned > 0 ? Math.round((actual/planned)*100) : (actual > 0 ? 100 : 0);
       const stCls = statusVal === 'Done' ? 'done' : (statusVal === 'Not Paid Yet' ? 'ongoing' : 'mixed');
       return `<div class="bva-row">
         <div class="bva-name" title="${escapeHtml(category + (subcategory && subcategory !== category ? ' · ' + subcategory : ''))}">${labelHtml}</div>
-        <div class="bva-bar"><div class="track"><div class="fill" style="width:${pct}%;background:${color};"></div></div><span class="bva-pct" style="color:${actual > planned ? 'var(--red)' : 'var(--txt-dim)'};">${rawPct}%</span></div>
-        <div class="bva-amt">${amtHtml}</div>
+        <div class="bva-num bva-plan" data-l="Planned">${planHtml}</div>
+        <div class="bva-num bva-spent" data-l="Spent">${fmt(actual)}</div>
+        <div class="bva-num bva-rem ${remaining < -0.004 ? 'neg' : (remaining > 0.004 ? 'pos' : '')}" data-l="${remaining < -0.004 ? 'Over by' : 'Remaining'}">${remaining < -0.004 ? '−' + fmt(-remaining) : fmt(remaining)}</div>
         <div class="bva-status">
           <select class="status-pill ${stCls}" onchange="setDashBudgetStatus('${ids.join(',')}', this.value)">
             ${mixed ? '<option value="" selected disabled hidden>Mixed</option>' : ''}
