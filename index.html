@@ -103,6 +103,46 @@
   }
   .month-switch button { background: none; border: none; color: var(--txt-dim); font-size: 15px; padding: 0 6px; }
 
+
+  /* ===== Floating dock (computer) =====
+     The side menu is a soft pill floating at the left edge, vertically centred.
+     It takes no column: the page runs underneath, with just enough left padding
+     to clear the collapsed pill. Hover it (or tap the logo) and it grows labels
+     in place, over the page. Tapping the logo pins it open; that's remembered. */
+  @media (min-width: 861px) {
+    .sidebar {
+      position: fixed; left: 16px; top: 50%; transform: translateY(-50%);
+      width: auto; height: auto; max-height: calc(100vh - 32px); align-self: auto;
+      padding: 10px 8px; border-radius: 30px;
+      background: var(--bg); box-shadow: var(--shadow-out);
+      z-index: 60; overflow: hidden;
+      transition: box-shadow .2s ease, padding .2s ease;
+    }
+    #app > .main { padding-left: 104px; transition: padding-left .2s ease; }
+    #app:has(.sidebar.open) > .main { padding-left: 272px; }
+    .side-brand { padding: 0; margin: 0 0 8px; gap: 10px; justify-content: flex-start; }
+    .side-logo { border: none; padding: 0; width: 42px; height: 42px; border-radius: 13px; background: none; overflow: hidden; cursor: pointer; }
+    .side-logo:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+    .side-brand-text, .nav .nl { display: none; white-space: nowrap; }
+    .nav { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .nav a { margin: 0; width: 42px; height: 42px; padding: 0; justify-content: center; gap: 10px; border-radius: 21px; box-sizing: border-box; }
+    .nav a svg { width: 19px; height: 19px; }
+    .nav a.on { background: var(--blue); color: #fff; box-shadow: 3px 3px 8px rgba(79,109,88,.35); }
+    .nav a:hover:not(.on) { color: var(--txt); background: var(--card); box-shadow: var(--shadow-out-sm); }
+    .nav a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    /* open: on hover, or pinned with the logo */
+    .sidebar:hover, .sidebar.open { padding: 12px 10px; box-shadow: 14px 14px 30px #cfc5b3, -8px -8px 20px #fffcf5; }
+    .sidebar:hover .side-brand-text, .sidebar.open .side-brand-text { display: block; padding-right: 8px; }
+    .sidebar:hover .nav .nl, .sidebar.open .nav .nl { display: inline; animation: dockLbl .18s ease; }
+    .sidebar:hover .nav a, .sidebar.open .nav a { width: 100%; min-width: 150px; justify-content: flex-start; padding: 0 16px 0 11px; }
+    .sidebar.open .side-logo { box-shadow: var(--shadow-in); }
+    @keyframes dockLbl { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+    .side-brand .brand { font-size: 17px; }
+  }
+  @media (min-width: 861px) and (max-height: 520px) {
+    .sidebar { overflow-y: auto; }
+  }
+
   /* ===== Main ===== */
   .main { flex: 1; min-width: 0; padding: 28px 32px 100px; position: relative; }
   .page { display: none; }
@@ -1012,21 +1052,21 @@
 
 <div id="app">
   <!-- Sidebar -->
-  <div class="sidebar">
+  <div class="sidebar" id="dock">
     <div class="side-brand">
-      <span class="side-logo"><svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="sideLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#sideLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg></span>
+      <button type="button" class="side-logo" id="dockToggle" onclick="toggleDock()" aria-label="Open menu" aria-expanded="false" title="Menu"><svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="sideLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#sideLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg></button>
       <div class="side-brand-text">
         <div class="brand">Kashu<span>.</span></div>
         <div id="userGreeting" class="user-greeting"></div>
       </div>
     </div>
     <div class="nav" id="nav">
-      <a data-page="dashboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
-      <a data-page="expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="navExpensesLabel">Expenses</span></a>
-      <a data-page="budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</a>
-      <a data-page="installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</a>
-      <a data-page="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>Calendar</a>
-      <a data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</a>
+      <a data-page="dashboard" class="on" href="#dashboard" title="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nl">Dashboard</span></a>
+      <a data-page="expenses" href="#expenses" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span class="nl" id="navExpensesLabel">Expenses</span></a>
+      <a data-page="budget" href="#budget" title="Budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span class="nl">Budget</span></a>
+      <a data-page="installments" href="#installments" title="Installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg><span class="nl">Installments</span></a>
+      <a data-page="calendar" href="#calendar" title="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg><span class="nl">Calendar</span></a>
+      <a data-page="settings" href="#settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg><span class="nl">Settings</span></a>
     </div>
   </div>
 
@@ -2417,6 +2457,17 @@ function renderProfileTabs() {
 }
 let showHiddenProfiles = false;
 function toggleHiddenProfiles() { showHiddenProfiles = !showHiddenProfiles; renderProfileTabs(); }
+// Floating dock: the logo pins it open / closed; remembered on this computer.
+function toggleDock(force) {
+  const d = document.getElementById('dock');
+  const open = typeof force === 'boolean' ? force : !d.classList.contains('open');
+  d.classList.toggle('open', open);
+  const b = document.getElementById('dockToggle');
+  b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  b.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  try { localStorage.setItem('kashu_dock_open', open ? '1' : '0'); } catch (e) {}
+}
+try { if (localStorage.getItem('kashu_dock_open') === '1') document.addEventListener('DOMContentLoaded', () => toggleDock(true)); } catch (e) {}
 function switchProfile(id) {
   if (!state.profiles[id] || id === state.activeProfileId) { renderProfileTabs(); return; }
   state.activeProfileId = id;
@@ -2850,7 +2901,7 @@ function goPage(name) {
 }
 document.getElementById('nav').addEventListener('click', (e) => {
   const a = e.target.closest('a[data-page]');
-  if (a) goPage(a.dataset.page);
+  if (a) { e.preventDefault(); goPage(a.dataset.page); }
 });
 // Swipe left/right on the main content to move between adjacent tabs, like a
 // native app's tab bar. Mobile-only (matches the tab bar's own breakpoint);
