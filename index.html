@@ -77,6 +77,14 @@
   .brand { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--txt); margin-bottom: 6px; padding: 0 10px; }
   .brand span { color: var(--blue); }
   .user-greeting { font-size: 12.5px; font-weight: 600; color: var(--txt-dim); padding: 0 10px; margin-bottom: 24px; min-height: 16px; }
+  /* Sidebar brand: logo, app name and the signed-in person's name together */
+  .side-brand { display: flex; align-items: center; gap: 11px; padding: 0 6px; margin-bottom: 26px; }
+  .side-logo { flex: none; width: 42px; height: 42px; border-radius: 12px; box-shadow: var(--shadow-out-sm); display: flex; }
+  .side-logo svg { width: 42px; height: 42px; }
+  .side-brand-text { min-width: 0; }
+  .side-brand .brand { padding: 0; margin: 0; font-size: 20px; line-height: 1.15; }
+  .side-brand .user-greeting { padding: 0; margin: 2px 0 0; min-height: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .side-brand .user-greeting:empty { display: none; }
   .nav a {
     display: flex; align-items: center; gap: 11px;
     color: var(--txt-dim); text-decoration: none;
@@ -649,6 +657,12 @@
   .hero-card .profile-card-mc-dots span { width: 15px; height: 15px; }
   .peek-add { width: 72px; height: 72px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 700; }
   .peek-add svg { width: 16px; height: 16px; }
+  .peek-hidden { width: auto; min-width: 72px; padding: 0 12px; white-space: nowrap; font-size: 11px; }
+  .peek-hidden.on { color: var(--blue); box-shadow: var(--shadow-in); }
+  .profile-tab.is-hidden .peek-card { opacity: .45; filter: grayscale(.5); outline: 1.5px dashed rgba(255,255,255,.55); outline-offset: -5px; }
+  .hidden-badge { display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.22); vertical-align: 1px; }
+  .pf-hide { display: flex !important; align-items: center; gap: 9px; cursor: pointer; font-size: 13px !important; color: var(--txt) !important; }
+  .pf-hide input { width: 18px; height: 18px; accent-color: var(--blue); }
   @media (max-width: 860px) {
     .profile-strip.hero-strip { padding: 6px 18px 26px; margin: 0 0 -12px; gap: 10px; scroll-snap-type: x mandatory; scroll-padding-left: 18px; }
     .profile-strip.hero-strip .profile-tab { scroll-snap-align: start; }
@@ -671,7 +685,8 @@
   .top-band { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
   .top-band .profile-strip { flex: 1 1 auto; min-width: 0; }
   .top-right { flex: none; width: 300px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding-top: 2px; margin-bottom: 14px; }
-  .tr-brand { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .tr-brand { display: none; align-items: center; justify-content: flex-end; gap: 10px; }
+  .tr-brand .tr-who { display: block; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--txt-dim); }
   .tr-brand svg { width: 34px; height: 34px; flex: none; }
   .tr-brand span { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--txt); }
   .tr-brand span b { color: var(--blue); }
@@ -694,7 +709,7 @@
   @media (max-width: 860px) {
     .top-band { flex-direction: column; align-items: stretch; gap: 0; }
     .top-right { order: -1; width: auto; padding: 16px 18px 0; margin-bottom: 10px; }
-    .tr-brand { justify-content: flex-start; }
+    .tr-brand { display: flex; justify-content: flex-start; }
     .tr-meta { justify-content: flex-start; }
   }
 
@@ -733,6 +748,49 @@
     .inc-row { grid-template-columns: 52px minmax(0, 1fr) auto 24px; grid-template-areas: "m sal x del" "m cyc cyc cyc"; row-gap: 2px; padding: 10px 12px; }
     .inc-m { grid-area: m; align-self: start; padding-top: 5px; }
     .inc-sal { grid-area: sal; } .inc-x { grid-area: x; } .inc-del { grid-area: del; } .inc-cyc { grid-area: cyc; }
+  }
+
+  /* ===== Settings → Import & export (action list) ===== */
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .io-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border-radius: 16px; box-shadow: var(--shadow-in); margin-bottom: 12px; }
+  .io-k { font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .05em; padding: 0 6px; }
+  .io-pick { position: relative; flex: 1 1 150px; min-width: 0; }
+  .io-pick select { width: 100%; border: none; height: 36px; padding: 0 30px 0 12px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-out-sm); font: inherit; font-size: 13px; font-weight: 700; color: var(--txt); -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8fa0' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; }
+  .io-custom { display: flex; gap: 10px; margin: -2px 0 12px; }
+  .io-custom[hidden] { display: none; }
+  .io-custom label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; color: var(--txt-dim); }
+  .io-custom input { border: none; height: 38px; padding: 0 10px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-in); font: inherit; font-size: 13px; color: var(--txt); min-width: 0; }
+  .io-list { border-radius: 18px; box-shadow: var(--shadow-out); overflow: hidden; }
+  .io-sec { padding: 9px 16px; font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .05em; }
+  .io-sec + .io-row, .io-row + .io-row, #importStatus + .io-sec, .io-row + .io-sec { border-top: 1px solid var(--line); }
+  .io-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .io-ic { flex: none; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+  .io-ic svg { width: 16px; height: 16px; }
+  .io-ic.in { background: var(--blue-soft); color: #4f6d58; }
+  .io-ic.x { background: var(--green-soft); color: #4f7d5c; }
+  .io-ic.c { background: var(--amber-soft); color: #7d5a1e; }
+  .io-ic.p { background: var(--red-soft); color: #a9523f; }
+  .io-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .io-txt b { font-size: 13.5px; font-weight: 800; }
+  .io-txt span { font-size: 11.5px; color: var(--txt-dim); }
+  .io-btn { flex: none; border: none; height: 36px; padding: 0 14px; border-radius: 11px; background: var(--card); box-shadow: var(--shadow-out-sm); font: inherit; font-size: 12.5px; font-weight: 800; color: var(--txt); display: inline-flex; align-items: center; cursor: pointer; white-space: nowrap; }
+  .io-btn.primary { background: var(--blue); color: #fff; box-shadow: 4px 4px 10px #c2cdb9, -4px -4px 10px #fffcf5; }
+  #importStatus .status-msg { margin: 0 16px 12px; }
+  @media (max-width: 860px) {
+    .io-row { padding: 12px 14px; gap: 10px; }
+    .io-btn { height: 40px; }
+  }
+
+  /* ===== Custom cursor: origami arrow (computer only; touch screens have no pointer) =====
+     Cream folded-paper arrow made from the logo's pieces; solid sage over anything
+     clickable, and folded a little smaller while pressed. Text fields keep the I-beam. */
+  @media (hover: hover) and (pointer: fine) {
+    html, body { cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='31' viewBox='0 0 40 48'><polygon points='3,3 32,22 17,25 9,42' fill='%23f8f4ec' stroke='%234f6d58' stroke-width='2.2' stroke-linejoin='round'/><polygon points='3,3 17,25 9,42' fill='%23e1d7c3'/><polygon points='17,25 32,22 21,28' fill='%23b9ac96'/></svg>") 1 1, auto; }
+    body:not(.row-dragging) :is(button, a, label, select, summary, [onclick], [role="button"], input[type=checkbox], input[type=radio], input[type=file], .profile-tab, .tx-card, .editable, .chip-btn, .cal-cell, .planned-editable, .ms-btn, .th-filter, .link-btn, .nav a, .tab, .icon-trigger, .user-greeting[title]) { cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='26' height='31' viewBox='0 0 40 48'><polygon points='3,3 32,22 17,25 9,42' fill='%235f7d68' stroke='%233f5a49' stroke-width='2.2' stroke-linejoin='round'/><polygon points='3,3 17,25 9,42' fill='%2386a589'/><polygon points='17,25 32,22 21,28' fill='%233f5a49'/></svg>") 1 1, pointer !important; }
+    body:not(.row-dragging) :is(button, a, label, select, summary, [onclick], .profile-tab, .tx-card, .editable, .chip-btn, .cal-cell, .ms-btn, .th-filter, .link-btn, .nav a, .tab):active { cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='23' height='27' viewBox='0 0 40 48'><polygon points='3,3 32,22 17,25 9,42' fill='%234f6d58' stroke='%232f4638' stroke-width='2.2' stroke-linejoin='round'/><polygon points='3,3 17,25 9,42' fill='%236f8d78'/><polygon points='17,25 32,22 21,28' fill='%232f4638'/></svg>") 1 1, pointer !important; }
+    body:not(.row-dragging) :is(input[type=text], input[type=number], input[type=email], input[type=password], input[type=date], textarea) { cursor: text !important; }
+    body:not(.row-dragging) .drag-handle { cursor: grab !important; }
   }
 
   /* ===== Review fixes (V60) ===== */
@@ -955,8 +1013,13 @@
 <div id="app">
   <!-- Sidebar -->
   <div class="sidebar">
-    <div class="brand">Kashu<span>.</span></div>
-    <div id="userGreeting" class="user-greeting"></div>
+    <div class="side-brand">
+      <span class="side-logo"><svg viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="sideLogoGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94b295"/><stop offset="100%" stop-color="#6f8d78"/></linearGradient></defs><rect width="512" height="512" rx="110" fill="url(#sideLogoGrad)"/><polygon points="226,133 233,183 206,222 188,360 180,300 180,152" fill="#f0ebe1"/><polygon points="246,150 352,190 262,268 233,183" fill="#e1d7c3"/><polygon points="262,270 369,317 289,305 235,336" fill="#b9ac96"/></svg></span>
+      <div class="side-brand-text">
+        <div class="brand">Kashu<span>.</span></div>
+        <div id="userGreeting" class="user-greeting"></div>
+      </div>
+    </div>
     <div class="nav" id="nav">
       <a data-page="dashboard" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
       <a data-page="expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="navExpensesLabel">Expenses</span></a>
@@ -1127,7 +1190,7 @@
             <button type="button" class="btn btn-ghost" id="expSignBtn" onclick="toggleAmountSign()" title="Switch between a normal expense and a negative amount (income / refund)" style="flex:none; padding:0 14px; font-size:13px; font-weight:800; white-space:nowrap;">+ Expense</button>
             <input type="number" id="expAmount" placeholder="0" inputmode="decimal" style="flex:1; min-width:0;" oninput="onExpAmountInput()">
           </div>
-          <div id="expSignHint" style="font-size:11.5px; color:var(--txt-dim); margin-top:6px;">Tap the button to log a negative amount (income / refund) — it reduces the spent total.</div>
+          <div id="expSignHint" style="font-size:11.5px; color:var(--txt-dim); margin-top:6px;">Negative amounts count as income only under the <b>Income</b> category; in any other category they're a refund and reduce what you spent.</div>
         </div>
         <div class="field">
           <label>Category</label>
@@ -1302,7 +1365,7 @@
         <button class="on" data-t="income" onclick="setSettingsTab('income', this)">Income</button>
         <button data-t="card" onclick="setSettingsTab('card', this)" style="display:none;">Card</button>
         <button data-t="categories" onclick="setSettingsTab('categories', this)">Categories</button>
-        <button data-t="sync" onclick="setSettingsTab('sync', this)">Excel sync</button>
+        <button data-t="sync" onclick="setSettingsTab('sync', this)">Import &amp; export</button>
         <button data-t="cloud" onclick="setSettingsTab('cloud', this)">Cloud Sync</button>
         <button data-t="data" onclick="setSettingsTab('data', this)">Data</button>
       </div>
@@ -1348,45 +1411,45 @@
         </div>
 
         <div class="settings-panel" id="settingsPanel-sync">
-          <h3>Excel sync</h3>
-          <div class="file-drop">
-            Import replaces the chosen profile's expenses, budget lines and income with what's in the file (that profile's categories are kept) — export first if you want a backup of anything entered only in the app.
+          <div class="io-bar">
+            <span class="io-k">Applies to</span>
+            <label class="io-pick"><span class="sr">Profile</span><select id="reportProfileSelect" onchange="onIoProfileChange()"></select></label>
+            <label class="io-pick"><span class="sr">Date range</span><select id="ioRange" onchange="onIoRangeChange()">
+              <option value="all">All time</option>
+              <option value="cycle">This month</option>
+              <option value="last3">Last 3 months</option>
+              <option value="year">This year</option>
+              <option value="custom">Custom dates…</option>
+            </select></label>
           </div>
-          <div class="field" style="margin-top:14px;">
-            <label>Import into</label>
-            <select id="importTargetProfile" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);color:var(--txt);padding:10px 12px;border-radius:12px;font-size:14px;"></select>
+          <div class="io-custom" id="ioCustom" hidden>
+            <label>From<input type="date" id="reportFromDate"></label>
+            <label>To<input type="date" id="reportToDate"></label>
           </div>
-          <div class="btn-row">
-            <label class="btn btn-primary" style="display:inline-block;">
-              Import from Excel
-              <input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="handleImport(event)">
-            </label>
-          </div>
-          <div id="importStatus"></div>
-
-          <h3 style="margin-top:24px;">Export to Excel</h3>
-          <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:12px;">Leave both dates blank to export everything, or set one or both to export just that range.</p>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-            <div class="field" style="margin:0;"><label>From (optional)</label><input type="date" id="exportFromDate"></div>
-            <div class="field" style="margin:0;"><label>To (optional)</label><input type="date" id="exportToDate"></div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-ghost" onclick="exportExcel()">Export current profile to Excel</button>
-          </div>
-
-          <h3 style="margin-top:24px;">Report (CSV / printable PDF)</h3>
-          <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:12px;">A monthly-style summary — income, expenses, savings and a category breakdown — for one profile or all of them, over any date range. The PDF opens as a print preview; choose "Save as PDF" in the print dialog.</p>
-          <div class="field" style="margin-bottom:10px;">
-            <label>Profile</label>
-            <select id="reportProfileSelect" style="width:100%;background:var(--card);border:none;box-shadow:var(--shadow-in);color:var(--txt);padding:10px 12px;border-radius:12px;font-size:14px;"></select>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
-            <div class="field" style="margin:0;"><label>From (optional)</label><input type="date" id="reportFromDate"></div>
-            <div class="field" style="margin:0;"><label>To (optional)</label><input type="date" id="reportToDate"></div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-ghost" onclick="exportReportCSV()">Export CSV</button>
-            <button class="btn btn-primary" onclick="exportReportPDF()">Open printable PDF report</button>
+          <div class="io-list">
+            <div class="io-sec">Bring data in</div>
+            <div class="io-row">
+              <span class="io-ic in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+              <div class="io-txt"><b>Import Excel workbook</b><span id="ioImportNote">Replaces this profile's expenses, budget and income · categories are kept</span></div>
+              <label class="io-btn primary">Choose file<input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="handleImport(event)"></label>
+            </div>
+            <div id="importStatus"></div>
+            <div class="io-sec">Take data out</div>
+            <div class="io-row">
+              <span class="io-ic x">XLSX</span>
+              <div class="io-txt"><b>Excel workbook</b><span>Same shape as your spreadsheet · can be imported back</span></div>
+              <button type="button" class="io-btn" onclick="exportExcel()">Export</button>
+            </div>
+            <div class="io-row">
+              <span class="io-ic c">CSV</span>
+              <div class="io-txt"><b>Transactions CSV</b><span>A flat list for any other app</span></div>
+              <button type="button" class="io-btn" onclick="exportReportCSV()">Export</button>
+            </div>
+            <div class="io-row">
+              <span class="io-ic p">PDF</span>
+              <div class="io-txt"><b>Printable report</b><span>Income, spending and categories · Save as PDF in the print window</span></div>
+              <button type="button" class="io-btn" onclick="exportReportPDF()">Open</button>
+            </div>
           </div>
         </div>
 
@@ -1506,6 +1569,10 @@
       <div style="font-size:11px;color:var(--txt-dim2);margin-top:6px;">Changes the symbol shown for this profile's amounts only — no conversion between currencies.</div>
     </div>
     <div class="field">
+      <label class="pf-hide"><input type="checkbox" id="pfHidden"> Hide this account</label>
+      <div style="font-size:11px;color:var(--txt-dim2);margin-top:6px;">Hidden accounts leave the card strip but keep all their data and keep syncing. Bring them back from the "Hidden" tile at the end of the strip.</div>
+    </div>
+    <div class="field">
       <label>Preview</label>
       <div id="profileCardPreview"></div>
     </div>
@@ -1563,7 +1630,8 @@ const DEFAULT_CATEGORIES = {
   "Vacation": ["Vacation"],
   "Personnal Care": ["Personnal Care"],
   "Credit Card": ["Credit Card"],
-  "Miscellaneous": ["Other"]
+  "Miscellaneous": ["Other"],
+  "Income": ["Other income"]
 };
 
 // Small curated emoji set used as the app's icon library — no external assets,
@@ -1608,7 +1676,8 @@ const DEFAULT_CATEGORY_ICONS = {
   "Vacation": "🏖️",
   "Personnal Care": "🧴",
   "Credit Card": "💳",
-  "Miscellaneous": "📦"
+  "Miscellaneous": "📦",
+  "Income": "💰"
 };
 
 const CARD_THEMES = {
@@ -1675,6 +1744,13 @@ function ensureProfileDefaults(p) {
   if (p.bankBalance === undefined) p.bankBalance = 0;
   if (!p.categoryIcons) p.categoryIcons = {};
   if (!p.currency || !CURRENCIES[p.currency]) p.currency = 'EGP';
+  // Budget profiles need an "Income" category: it's the only one whose
+  // entries count as additional income (see splitIncome).
+  if (p.categories && p.cardType !== 'mastercard' && p.cardType !== 'savings' &&
+      !Object.keys(p.categories).some(c => String(c).trim().toLowerCase() === 'income')) {
+    p.categories['Income'] = ['Other income'];
+    if (!p.categoryIcons['Income']) p.categoryIcons['Income'] = '💰';
+  }
   return p;
 }
 // A category's icon is keyed by its own name; a sub category's icon is keyed
@@ -2021,50 +2097,6 @@ async function pushStateToCloud() {
   }
 }
 
-/* ============================================================
-   ONE-TIME MIGRATION — pulls data forward from the old PIN-based
-   sync scheme (/budgetApps/{sha256(pin)}) into the current signed-in
-   account (/users/{uid}). Needs a temporary Firestore rule granting
-   read access to /budgetApps/** (see the Settings panel for the exact
-   text) since the new rules alone don't reach that old collection —
-   remove that temporary rule again afterward.
-   ============================================================ */
-async function hashPinForMigration(pin) {
-  if (!window.crypto || !window.crypto.subtle) throw new Error('This needs to be loaded over https:// to work.');
-  const enc = new TextEncoder().encode('ledger-sync-v1:' + pin);
-  const digest = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-async function submitMigrateOldPin() {
-  const statusEl = document.getElementById('migrateStatus');
-  statusEl.innerHTML = '';
-  const pin = document.getElementById('migratePinInput').value.trim();
-  if (!pin) { statusEl.innerHTML = `<div class="status-msg err">Enter the old PIN first.</div>`; return; }
-  if (!fbState.db) { statusEl.innerHTML = `<div class="status-msg err">Not connected — sign in first.</div>`; return; }
-  try {
-    const hash = await hashPinForMigration(pin);
-    const snap = await fbState.db.collection('budgetApps').doc(hash).get();
-    if (!snap.exists || !snap.data() || !snap.data().state) {
-      statusEl.innerHTML = `<div class="status-msg err">No data found for that PIN. Double-check it, and that the temporary Firestore rule for /budgetApps is published.</div>`;
-      return;
-    }
-    const oldState = snap.data().state;
-    const profileNames = (oldState.profileOrder || []).map(id => (oldState.profiles[id]||{}).name).filter(Boolean).join(', ') || 'unnamed profiles';
-    if (!confirm(`Found: ${profileNames}\n\nImport this and REPLACE everything currently in this account (${fbState.email})? This can't be undone.`)) return;
-    state = oldState;
-    localStorage.setItem('ledger_state', JSON.stringify(state));
-    if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
-    selectedMonths = null;
-    renderProfileTabs();
-    updateNavVisibility();
-    renderAll();
-    await pushStateToCloud();
-    statusEl.innerHTML = `<div class="status-msg ok">Imported and synced to ${escapeHtml(fbState.email || 'this account')}. You can now remove the temporary /budgetApps read rule and delete that old document in the Firebase console.</div>`;
-  } catch(e) {
-    console.error(e);
-    statusEl.innerHTML = `<div class="status-msg err">${escapeHtml(e.message)}</div>`;
-  }
-}
 function disconnectSync() {
   if (!confirm('Log out and stop syncing on this device? Your data stays in the cloud under your account — sign back in any time with your email and password.')) return;
   if (fbState.unsubscribe) fbState.unsubscribe();
@@ -2246,16 +2278,7 @@ function renderCloudSyncPanel() {
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
       <div class="btn-row" style="margin-top:10px;">
         <button class="btn btn-danger" onclick="disconnectSync()">Log out on this device</button>
-      </div>
-      <details style="margin-top:18px;">
-        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--blue);">Migrate data from an old PIN-synced account</summary>
-        <p style="font-size:12px;color:var(--txt-dim);margin:10px 0 12px;">Pulls data forward from the old shared-PIN sync scheme into this account. Needs a temporary Firestore rule — in the console's Rules tab, add this alongside your existing rule, then Publish:<br><code style="font-size:11px;">match /budgetApps/{'{'}doc{'}'} { allow read: if request.auth != null; }</code><br>Remove it again once the import below finishes.</p>
-        <div class="field" style="margin-bottom:10px;"><label>Old PIN</label><input type="text" id="migratePinInput" placeholder="e.g. 123456"></div>
-        <div class="btn-row">
-          <button class="btn btn-primary" onclick="submitMigrateOldPin()">Fetch &amp; import</button>
-        </div>
-        <div id="migrateStatus"></div>
-      </details>`;
+      </div>`;
   } else {
     el.innerHTML = `
       <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:10px;">This app signs in with the Firebase project built into it by default, so syncing works with no setup. You only need to touch this if you want to point the app at a different Firebase project of your own.</p>
@@ -2356,7 +2379,8 @@ function renderProfileTabs() {
   if (!el) return;
   el.classList.add('hero-strip');
   const activeId = state.profiles[state.activeProfileId] ? state.activeProfileId : state.profileOrder[0];
-  const ids = [activeId, ...state.profileOrder.filter(id => id !== activeId && state.profiles[id])];
+  const hiddenIds = state.profileOrder.filter(id => id !== activeId && state.profiles[id] && state.profiles[id].hidden);
+  const ids = [activeId, ...state.profileOrder.filter(id => id !== activeId && state.profiles[id] && (!state.profiles[id].hidden || showHiddenProfiles))];
   const cardCls = p => ['visa', 'mastercard', 'savings'].includes(p.cardType) ? p.cardType : 'other';
   const html = ids.map(id => {
     const p = state.profiles[id];
@@ -2366,7 +2390,7 @@ function renderProfileTabs() {
       return `<div class="profile-tab on">
         <div class="hero-card ${cardCls(p)}">
           <span class="deco1"></span><span class="deco2"></span>
-          <div class="hero-row"><span class="hero-name">${escapeHtml(p.name)}</span>${profileNetworkHtml(p, 'hero-net')}</div>
+          <div class="hero-row"><span class="hero-name">${p.hidden ? '<span class="hidden-badge">Hidden</span> ' : ''}${escapeHtml(p.name)}</span>${profileNetworkHtml(p, 'hero-net')}</div>
           <div><div class="hero-lbl">${escapeHtml(h.label)}</div><div class="hero-val">${escapeHtml(h.value)}</div></div>
           <div class="hero-row"><span class="hero-chip"></span><span class="hero-digits">${p.cardLast4 ? '•••• ' + escapeHtml(p.cardLast4) : ''}</span></div>
           <button class="profile-edit-btn" onclick="event.stopPropagation(); openProfileModal('${id}')" title="Edit profile" aria-label="Edit profile">
@@ -2375,19 +2399,24 @@ function renderProfileTabs() {
         </div>
       </div>`;
     }
-    return `<div class="profile-tab" onclick="switchProfile('${id}')" title="Switch to ${escapeHtml(p.name)}">
+    return `<div class="profile-tab${p.hidden ? ' is-hidden' : ''}" onclick="switchProfile('${id}')" title="Switch to ${escapeHtml(p.name)}${p.hidden ? ' (hidden)' : ''}">
       <div class="peek-card ${cardCls(p)}">
         <span class="hero-row" style="width:100%;"><span class="peek-name">${escapeHtml(p.name)}</span>${profileNetworkHtml(p, 'peek-net')}</span>
         <span><span class="peek-lbl">${escapeHtml(h.label)}</span><span class="peek-val">${escapeHtml(h.value)}</span></span>
       </div>
     </div>`;
-  }).join('') + `
+  }).join('') + (hiddenIds.length ? `
+    <div class="profile-tab" onclick="toggleHiddenProfiles()" title="${showHiddenProfiles ? 'Put hidden accounts away' : 'Show hidden accounts'}">
+      <div class="peek-add peek-hidden${showHiddenProfiles ? ' on' : ''}">${showHiddenProfiles ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 002.8 2.8"/><path d="M9.9 5.1A10 10 0 0112 5c5 0 9 4.5 10 7a12.7 12.7 0 01-3.1 4.2M6.6 6.6A12.6 12.6 0 002 12c1 2.5 5 7 10 7a9.8 9.8 0 004.4-1"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7S3 14.5 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'}${showHiddenProfiles ? 'Hide' : 'Hidden · ' + hiddenIds.length}</div>
+    </div>` : '') + `
     <div class="profile-tab" onclick="openProfileModal()" title="Add profile">
       <div class="peek-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add</div>
     </div>`;
   el.innerHTML = html;
   el.scrollLeft = 0;
 }
+let showHiddenProfiles = false;
+function toggleHiddenProfiles() { showHiddenProfiles = !showHiddenProfiles; renderProfileTabs(); }
 function switchProfile(id) {
   if (!state.profiles[id] || id === state.activeProfileId) { renderProfileTabs(); return; }
   state.activeProfileId = id;
@@ -2432,6 +2461,7 @@ function openProfileModal(editId) {
   const curSel = document.getElementById('pfCurrency');
   curSel.innerHTML = Object.values(CURRENCIES).map(c => `<option value="${c.code}">${escapeHtml(c.label)}</option>`).join('');
   curSel.value = p ? (p.currency || 'EGP') : 'EGP';
+  document.getElementById('pfHidden').checked = !!(p && p.hidden);
   pfSelectedCardType = p ? p.cardType : 'visa';
   document.querySelectorAll('#profileModalBackdrop .chip-btn[data-card]').forEach(b =>
     b.classList.toggle('sel', b.dataset.card === pfSelectedCardType));
@@ -2446,8 +2476,15 @@ function saveProfile() {
   if (!name) { alert('Give this profile a name.'); return; }
   const last4 = document.getElementById('pfLast4').value.trim();
   const currency = document.getElementById('pfCurrency').value || 'EGP';
-  if (profileModalEditingId && state.profiles[profileModalEditingId]) {
-    const p = state.profiles[profileModalEditingId];
+  const hide = document.getElementById('pfHidden').checked;
+  const editId = profileModalEditingId && state.profiles[profileModalEditingId] ? profileModalEditingId : null;
+  if (hide && !state.profileOrder.some(id => id !== editId && state.profiles[id] && !state.profiles[id].hidden)) {
+    alert("At least one account has to stay visible — show another account before hiding this one.");
+    return;
+  }
+  if (editId) {
+    const p = state.profiles[editId];
+    p.hidden = hide;
     p.name = name;
     p.cardType = pfSelectedCardType;
     p.cardLast4 = last4;
@@ -2455,10 +2492,17 @@ function saveProfile() {
   } else {
     const p = blankProfile(name, pfSelectedCardType, last4);
     p.currency = currency;
+    p.hidden = hide;
     state.profiles[p.id] = p;
     state.profileOrder.push(p.id);
-    state.activeProfileId = p.id;
+    if (!hide) { state.activeProfileId = p.id; selectedMonths = null; }
+  }
+  // Hiding the account on screen moves you to the first visible one.
+  const act = state.profiles[state.activeProfileId];
+  if (act && act.hidden) {
+    state.activeProfileId = state.profileOrder.find(id => state.profiles[id] && !state.profiles[id].hidden) || state.activeProfileId;
     selectedMonths = null;
+    showHiddenProfiles = false;
   }
   saveState();
   closeProfileModal();
@@ -2868,13 +2912,23 @@ function effectivePlanned(line) {
   return planned;
 }
 
+function isIncomeCategory(cat) { return String(cat || '').trim().toLowerCase() === 'income'; }
+// Splits expense rows into real spending (refunds net against it) and income
+// (rows whose category is "Income", whatever sign they were typed with).
+function splitIncome(rows) {
+  let spent = 0, income = 0;
+  rows.forEach(e => {
+    const v = Number(e.value || 0);
+    if (isIncomeCategory(e.category)) income += Math.abs(v); else spent += v;
+  });
+  return { spent, income };
+}
 function monthSummary(m) {
   const exps = expensesForMonth(m);
   const buds = budgetForMonth(m);
-  // Negative expense rows are additional income (the "− Income" toggle / Shortcut):
-  // they count toward income, and Spent counts only real spending.
-  const totalExpenses = exps.reduce((s,e)=>s+Math.max(0, Number(e.value||0)),0);
-  const extraIncome = exps.reduce((s,e)=>s+Math.max(0, -Number(e.value||0)),0);
+  // Only rows in the "Income" category count as additional income. A negative
+  // amount in any other category is a refund: it just reduces Spent.
+  const { spent: totalExpenses, income: extraIncome } = splitIncome(exps);
   const totalSalary = Number(activeProfile().income[m] || 0);
   const totalIncome = totalSalary + extraIncome;
   const plannedSavings = buds.filter(b => b.category === 'Savings & Investment' && b.subcategory === 'Saving Account')
@@ -2918,6 +2972,7 @@ function toggleMonthPanel(prefix) {
   const opening = panel.style.display === 'none';
   if (opening) populateMonthPanel(prefix);
   panel.style.display = opening ? 'block' : 'none';
+  if (opening) scrollPanelToChecked(panel);
 }
 document.addEventListener('click', (e) => {
   ['dash','exp','budget','inst'].forEach(prefix => {
@@ -2927,9 +2982,18 @@ document.addEventListener('click', (e) => {
     if (!panel.contains(e.target) && e.target !== btn) panel.style.display = 'none';
   });
 });
+// Opens a filter list centred on what's already ticked, so the months/days
+// either side of the current selection are one tap away instead of a long scroll.
+function scrollPanelToChecked(panel) {
+  const first = panel.querySelector('input[type=checkbox]:checked');
+  if (!first) return;
+  const row = first.closest('label') || first;
+  panel.scrollTop = Math.max(0, row.offsetTop - panel.clientHeight / 2 + row.offsetHeight / 2);
+}
 function populateMonthPanel(prefix) {
   const months = allKnownMonths();
   const panel = document.getElementById(prefix + 'MonthFilterPanel');
+  const keepScroll = panel.scrollTop; // re-rendering after a tick shouldn't jump back to the top
   panel.innerHTML = `
     <div class="mp-actions">
       <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11.5px;" onclick="setSelectedMonths(allKnownMonths())">All</button>
@@ -2940,6 +3004,7 @@ function populateMonthPanel(prefix) {
       <input type="checkbox" value="${m}" ${selectedMonths.includes(m) ? 'checked' : ''} onchange="onMonthCheck('${m}', this.checked)">
       ${escapeHtml(monthLabel(m))}
     </label>`).join('');
+  panel.scrollTop = keepScroll;
 }
 // Changing the month filter anywhere updates all three pickers (and whichever
 // of their pages are currently rendered) together, so switching tabs never
@@ -3193,7 +3258,10 @@ function renderTopRight() {
   let cyc = '';
   try { cyc = trCycleHtml(); } catch (e) { console.error('pay-cycle tracker', e); }
   const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b></span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}</div>`;
+  // The logo + name block only shows on the phone, where there is no sidebar.
+  const who = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
+  const signedIn = fbState.status === 'connected' || fbState.status === 'syncing';
+  el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b>${signedIn && who ? `<span class="tr-who">Hi, ${escapeHtml(who)}</span>` : ''}</span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}</div>`;
 }
 setInterval(renderTopRight, 60000); // keeps the date, days left and sync time fresh
 
@@ -3769,7 +3837,8 @@ function allKnownMonths() {
     ...p.budget.map(b => b.month),
     ...Object.keys(p.income),
     ...p.payments.map(pm => monthForDate(pm.date, p)),
-    currentMonth
+    currentMonth,
+    nextMonthOf(todayCycleMonth())
   ]);
   return Array.from(s).sort().reverse();
 }
@@ -3814,8 +3883,7 @@ function renderExpensesPage() {
   } else if (paymentSum > 0) {
     totalText = `${rows.length} transaction${rows.length===1?'':'s'} · Charges ${fmt(chargeSum)} · Payments ${fmt(paymentSum)}`;
   } else {
-    const spentOnly = rows.filter(r=>r.kind==='expense' && r.value > 0).reduce((s,r)=>s+r.value,0);
-    const incomeOnly = rows.filter(r=>r.kind==='expense' && r.value < 0).reduce((s,r)=>s-r.value,0);
+    const { spent: spentOnly, income: incomeOnly } = splitIncome(rows.filter(r=>r.kind==='expense'));
     totalText = `${rows.length} entr${rows.length===1?'y':'ies'} · Spent ${fmt(spentOnly)}` + (incomeOnly > 0 ? ` · Income ${fmt(incomeOnly)}` : '');
   }
   let totalHtml = escapeHtml(totalText);
@@ -3897,7 +3965,8 @@ function renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel) {
     let amtCls = '', meta = '', metaCls = '';
     if (savings) { amtCls = ai.signed >= 0 ? 'neg' : 'withdraw'; meta = isPayment ? 'Deposit' : 'Withdrawal'; metaCls = ai.signed >= 0 ? 'neg' : ''; }
     else if (isPayment) { amtCls = 'neg'; meta = secondaryLabel; metaCls = 'neg'; }
-    else if (ai.signed < 0) { amtCls = 'neg'; meta = 'Income'; metaCls = 'neg'; }
+    else if (isIncomeCategory(r.category)) { amtCls = 'neg'; meta = 'Income'; metaCls = 'neg'; }
+    else if (ai.signed < 0) { amtCls = 'neg'; meta = 'Refund'; metaCls = 'neg'; }
     else meta = r.method || '';
     const icon = plainPayment ? '💳' : getCategoryIcon(p, r.category, r.subcategory);
     html += `<button type="button" class="tx-card" onclick="openTxSheet('${r.kind}','${r.id}')">
@@ -4155,6 +4224,7 @@ function openMs(key, anchor) {
   const panel = document.getElementById('msPanel');
   if (msOpenKey === key && panel.style.display === 'block') { closeMs(); return; }
   msOpenKey = key;
+  panel.scrollTop = 0;
   renderMsPanel();
   panel.style.display = 'block';
   const r = anchor.getBoundingClientRect();
@@ -4166,6 +4236,7 @@ function openMs(key, anchor) {
   const h = panel.offsetHeight || 320;
   if (top + h > window.innerHeight - 8 && r.top - h - 6 > 8) top = r.top - h - 6;
   panel.style.top = top + 'px';
+  scrollPanelToChecked(panel);
 }
 function closeMs() {
   document.getElementById('msPanel').style.display = 'none';
@@ -4189,7 +4260,10 @@ function renderMsPanel() {
       <span>${escapeHtml(o.label)}${o.hint ? ` <span class="ms-hint">· ${escapeHtml(o.hint)}</span>` : ''}</span>
       ${o.count != null ? `<span class="ms-count">${o.count}</span>` : ''}
     </label>`).join('') : `<div class="ms-empty">Nothing to filter here yet.</div>`;
-  document.getElementById('msPanel').innerHTML = `<div class="ms-actions">${actions}</div>${list}`;
+  const msEl = document.getElementById('msPanel');
+  const keepScroll = msEl.scrollTop;
+  msEl.innerHTML = `<div class="ms-actions">${actions}</div>${list}`;
+  msEl.scrollTop = keepScroll;
 }
 function msToggle(i, checked) {
   const o = msOptionsCache[i];
@@ -5182,15 +5256,6 @@ function renderSettingsPage() {
   document.getElementById('dataProfileName').textContent = activeName;
   document.getElementById('dataProfileName2').textContent = activeName;
 
-  // Which profile an Excel import should land in — defaults to whichever is active
-  const importSel = document.getElementById('importTargetProfile');
-  const prevImportTarget = importSel.value || state.activeProfileId;
-  importSel.innerHTML = state.profileOrder.map(id => {
-    const p = state.profiles[id];
-    return p ? `<option value="${id}">${escapeHtml(p.name)}</option>` : '';
-  }).join('');
-  importSel.value = state.profiles[prevImportTarget] ? prevImportTarget : state.activeProfileId;
-
   // Which profile(s) a Report (CSV/PDF) export covers — defaults to the active one
   const reportSel = document.getElementById('reportProfileSelect');
   if (reportSel) {
@@ -5200,6 +5265,7 @@ function renderSettingsPage() {
       return p ? `<option value="${id}">${escapeHtml(p.name)}</option>` : '';
     }).join('');
     reportSel.value = (prevReportTarget === '__all__' || state.profiles[prevReportTarget]) ? prevReportTarget : state.activeProfileId;
+    onIoProfileChange();
   }
 
   // Credit card settings (limit, billing days)
@@ -5664,9 +5730,9 @@ function handleImport(evt) {
   if (!file) return;
   const statusEl = document.getElementById('importStatus');
   statusEl.innerHTML = '';
-  const targetId = document.getElementById('importTargetProfile').value;
+  const targetId = document.getElementById('reportProfileSelect').value;
   const target = state.profiles[targetId];
-  if (!target) { statusEl.innerHTML = `<div class="status-msg err">Pick a profile to import into first.</div>`; evt.target.value = ''; return; }
+  if (!target) { statusEl.innerHTML = `<div class="status-msg err">Pick one profile under "Applies to" to import into — not "All profiles".</div>`; evt.target.value = ''; return; }
   if (target.expenses.length || target.budget.length) {
     if (!confirm(`Importing replaces all expenses, budget lines and income currently in "${target.name}" with what's in this file (its categories are kept). Continue?`)) {
       evt.target.value = '';
@@ -5806,9 +5872,18 @@ function handleImport(evt) {
 /* ============================================================
    EXCEL EXPORT
    ============================================================ */
+// Excel export of the profile chosen under "Applies to" (run with that profile
+// active, so its own pay cycles, budget and currency apply).
 function exportExcel() {
-  const fromVal = document.getElementById('exportFromDate').value;
-  const toVal = document.getElementById('exportToDate').value;
+  const id = document.getElementById('reportProfileSelect').value;
+  if (!state.profiles[id]) { alert('Pick one profile under "Applies to" for an Excel export — the workbook holds a single profile.'); return; }
+  const prev = state.activeProfileId;
+  state.activeProfileId = id;
+  try { exportExcelActive(); } finally { state.activeProfileId = prev; }
+}
+function exportExcelActive() {
+  const fromVal = document.getElementById('reportFromDate').value;
+  const toVal = document.getElementById('reportToDate').value;
   const inRange = (dateStr) => (!fromVal || dateStr >= fromVal) && (!toVal || dateStr <= toVal);
 
   const expRows = [['Month','Date','Category','Sub Category','Method of payment','Description','Value']];
@@ -5842,6 +5917,29 @@ function exportExcel() {
    Separate from the raw Excel export above: this is meant for
    sharing/printing rather than round-tripping data back in.
    ============================================================ */
+/* Settings → Import & export: one profile + date range for every action. */
+function onIoProfileChange() {
+  const sel = document.getElementById('reportProfileSelect');
+  const note = document.getElementById('ioImportNote');
+  if (!sel || !note) return;
+  const p = state.profiles[sel.value];
+  note.textContent = p ? `Replaces ${p.name}'s expenses, budget and income · categories are kept` : 'Pick one profile above to import into';
+}
+function onIoRangeChange() {
+  const v = document.getElementById('ioRange').value;
+  const from = document.getElementById('reportFromDate'), to = document.getElementById('reportToDate');
+  document.getElementById('ioCustom').hidden = v !== 'custom';
+  if (v === 'custom') return;
+  const d = new Date();
+  let f = '', t = '';
+  if (v === 'cycle') {
+    const m = todayCycleMonth(); const c = (activeProfile().incomeCycles || {})[m];
+    if (c && c.start && c.end) { f = c.start; t = c.end; }
+    else { f = localIso(new Date(d.getFullYear(), d.getMonth(), 1)); t = localIso(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  } else if (v === 'last3') { f = localIso(new Date(d.getFullYear(), d.getMonth() - 2, 1)); t = localIso(d); }
+  else if (v === 'year') { f = d.getFullYear() + '-01-01'; t = d.getFullYear() + '-12-31'; }
+  from.value = f; to.value = t;
+}
 function reportSelectedProfileIds() {
   const sel = (document.getElementById('reportProfileSelect') || {}).value || state.activeProfileId;
   return sel === '__all__' ? state.profileOrder.slice() : [sel];
@@ -5892,13 +5990,12 @@ function exportReportPDF() {
     const cur = currencyOf(p);
     const money = n => (cur.position === 'prefix' ? (cur.symbol + fmtRaw(n)) : (fmtRaw(n) + ' ' + cur.symbol));
     const exp = p.expenses.filter(e => inRange(e.date));
-    const totalExpense = exp.reduce((s,e) => s + Math.max(0, Number(e.value||0)), 0);
-    const extraIncome = exp.reduce((s,e) => s + Math.max(0, -Number(e.value||0)), 0);
+    const { spent: totalExpense, income: extraIncome } = splitIncome(exp);
     const months = Object.keys(p.income || {}).filter(m => inRange(m + '-01'));
     const salary = months.reduce((s,m) => s + Number(p.income[m]||0), 0);
     const totalIncome = salary + extraIncome;
     const byCat = {};
-    exp.filter(e => Number(e.value||0) > 0).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.value||0); });
+    exp.filter(e => !isIncomeCategory(e.category)).forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.value||0); });
     const catRows = Object.keys(byCat).sort((a,b) => byCat[b]-byCat[a])
       .map(c => `<tr><td>${escapeHtml(c)}</td><td style="text-align:right;">${money(byCat[c])}</td></tr>`).join('');
     const txRows = exp.slice().sort((a,b) => a.date.localeCompare(b.date))
