@@ -444,10 +444,23 @@ function addBalanceColumn(col, d, small) {
   top.addSpacer(6);
   addText(top, small ? 'Kashu' : 'Kashu · ' + d.monthName, Font.semiboldRoundedSystemFont(11), COL.dim);
   if (small) { top.addSpacer(); addText(top, d.monthName.slice(0, 3), Font.semiboldRoundedSystemFont(10), COL.dim2); }
+  // Three blocks spread over the full height: header on top, the balance in
+  // the middle, the days-left line at the bottom — no empty band in between.
   col.addSpacer();
-  addText(col, 'Available', Font.semiboldRoundedSystemFont(11.5), COL.dim);
-  addAmount(col, d.available, d.code, 25);
-  col.addSpacer(6);
+  addText(col, 'Available', Font.semiboldRoundedSystemFont(small ? 12 : 11.5), COL.dim);
+  addAmount(col, d.available, d.code, small ? 30 : 27);
+  if (small) {
+    // Spent vs income under the balance (the medium size shows this on its right side).
+    col.addSpacer(8);
+    const sr = col.addStack(); sr.bottomAlignContent();
+    addText(sr, 'Spent', Font.semiboldRoundedSystemFont(10), COL.dim);
+    sr.addSpacer();
+    addText(sr, shortNum(d.spent) + ' / ' + shortNum(d.income), Font.semiboldRoundedSystemFont(10), COL.dim, { scale: 0.7 });
+    col.addSpacer(4);
+    const bar = col.addImage(barImage(120, d.income > 0 ? d.spent / d.income : 0));
+    bar.imageSize = new Size(120, 6);
+  }
+  col.addSpacer();
   const line = col.addStack(); line.bottomAlignContent();
   const f = Font.semiboldRoundedSystemFont(10.5);
   addText(line, d.daysLeft + (d.daysLeft === 1 ? ' day left' : ' days left'), f, COL.dim, { scale: 0.7 });
