@@ -35,6 +35,20 @@
 //   and "subs" (each category's sub categories). (There is no "+" add widget —
 // adding happens only through the Shortcut.)
 //
+// BANK MESSAGES (automatic categories — set up in the app: Settings → Vendors):
+// Automation "When I get a message containing 19700":
+//   1. Dictionary { mode: message, message: [Shortcut Input] }
+//   2. Run Script (this script, Parameter = Dictionary, Run In App OFF)
+//   3. If [status] is "ask":
+//        Choose from List [categories]  (prompt = [prompt])
+//        Choose from List [subs → chosen category]
+//        Dictionary { mode: resolve, message: [message], category, subcategory }
+//        Run Script (this script, Parameter = that Dictionary)
+//        Show Notification [notification]
+//      Otherwise: Show Notification [notification]
+// Known vendors are added silently; unknown ones are asked once and then
+// remembered; IPN transfers are always asked; declined messages are ignored.
+//
 // SECURITY NOTE: your password is only ever sent straight to Google's own
 // Firebase Auth endpoint (identitytoolkit.googleapis.com) to get a fresh
 // sign-in token each time the widget runs — the same thing the app itself
@@ -275,6 +289,171 @@ async function runFromShortcut(param) {
     return 'Error: ' + err.message;
   }
 }
+
+// ============================================================
+// BANK MESSAGES → automatic categories (vendor rules)
+// The Shortcut passes the whole bank SMS. The script reads the amount,
+// card and vendor, then looks the vendor up in the rules from the app's
+// Settings → Vendors:
+//   • known vendor → adds it silently, returns status "added"
+//   • unknown vendor, a rule set to "Always ask", or any IPN transfer
+//     → returns status "ask" plus your categories, so the Shortcut can
+//       show its two Choose-from-List steps and call back with mode
+//       "resolve". An unknown vendor is then remembered as a new rule
+//       (IPN transfers never are).
+//   • declined transaction → nothing added, status "skipped"
+// Messages are filed under the profile set for that card in
+// Settings → Vendors → Cards (e.g. **6065 → Main), else the open profile.
+// ============================================================
+// ---- Bank message parsing (identical copy in the app and in Kashu-Widget.js) ----
+// Reads one bank SMS: amount, currency, card last 4, vendor, and whether it's
+// an IPN transfer, money coming in, or a declined transaction.
+function parseBankMessage(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const out = {
+    text: t, amount: null, currency: '', vendor: '', last4: '',
+    isIPN: /\bIPN\b/i.test(t),
+    declined: /\b(declined|unsuccessful|failed|rejected|insufficient)\b/i.test(t),
+    incoming: /\b(received|credited|deposited|refund(?:ed)?|reversal|reversed)\b/i.test(t) && !/\bdebited\b/i.test(t)
+  };
+  const card = t.match(/\*{2,}\s?(\d{4})\b/) || t.match(/\b(?:card|account|acc)\b[^0-9]{0,20}(\d{4})\b/i);
+  if (card) out.last4 = card[1];
+  const CUR = '(EGP|USD|EUR|GBP|SAR|AED|KWD|JPY|LE)';
+  let m = t.match(new RegExp('\\b' + CUR + '\\s?([\\d,]+(?:\\.\\d+)?)', 'i'));
+  if (m) { out.currency = m[1].toUpperCase(); out.amount = Number(m[2].replace(/,/g, '')); }
+  else if ((m = t.match(new RegExp('([\\d,]+(?:\\.\\d+)?)\\s?' + CUR + '\\b', 'i')))) { out.currency = m[2].toUpperCase(); out.amount = Number(m[1].replace(/,/g, '')); }
+  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(/\bat\s+([^,]+?)\s*(?:,|$)/i) || t.match(/\b(?:to|from)\s+([^,]+?)\s*(?:,|$)/i);
+  if (v) out.vendor = v[1].trim();
+  return out;
+}
+// "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
+// (drops the payment-gateway prefix so the remembered rule matches every gateway).
+function vendorKey(vendor) {
+  return String(vendor || '').replace(/^[^*]{0,20}\*\s*/, '').trim();
+}
+// The rule whose text appears in the vendor (or in the whole message when no
+// vendor could be read). The longest match wins, so "Uber Eats" beats "Uber".
+function matchVendorRule(rules, parsed) {
+  const hay = String(parsed.vendor || parsed.text || '').toLowerCase();
+  let best = null;
+  (rules || []).forEach(r => {
+    const k = String((r && r.match) || '').trim().toLowerCase();
+    if (k && hay.includes(k) && (!best || k.length > String(best.match).trim().length)) best = r;
+  });
+  return best;
+}
+
+// One small read: the rules, card routes and open profile.
+async function loadSmsContext() {
+  const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
+  const d = await fetchMaskedFields(CONFIG.projectId, uid, idToken, ['state.activeProfileId', 'state.vendorRules', 'state.cardRoutes']);
+  const st = d.state || {};
+  return { idToken, uid, activeProfileId: st.activeProfileId, rules: Array.isArray(st.vendorRules) ? st.vendorRules : [], routes: st.cardRoutes || {} };
+}
+// The profile this card's messages go to, with the fields needed to file them.
+async function loadTargetProfile(ctx, last4, withCategories) {
+  const tryIds = [];
+  if (last4 && ctx.routes[last4]) tryIds.push(ctx.routes[last4]);
+  if (ctx.activeProfileId) tryIds.push(ctx.activeProfileId);
+  for (const pid of tryIds) {
+    const fields = ['incomeCycles', 'currency', 'name', 'cardType'].concat(withCategories ? ['categories'] : []);
+    const d = await fetchMaskedFields(CONFIG.projectId, ctx.uid, ctx.idToken, fields.map(f => `state.profiles.\`${pid}\`.${f}`));
+    const prof = d.state && d.state.profiles && d.state.profiles[pid];
+    if (prof && prof.name !== undefined) return { id: pid, prof };
+  }
+  throw new Error('No synced profile found — open the app once to sync first.');
+}
+async function commitAppendRule(ctx, rule) {
+  const url = `https://firestore.googleapis.com/v1/projects/${CONFIG.projectId}/databases/(default)/documents:commit`;
+  const req = new Request(url);
+  req.method = 'POST';
+  req.headers = { 'Authorization': `Bearer ${ctx.idToken}`, 'Content-Type': 'application/json' };
+  req.body = JSON.stringify({ writes: [{ transform: {
+    document: `projects/${CONFIG.projectId}/databases/(default)/documents/users/${ctx.uid}`,
+    fieldTransforms: [{ fieldPath: 'state.vendorRules', appendMissingElements: { values: [encodeFirestoreValue(rule)] } }]
+  } }] });
+  const res = await req.loadJSON();
+  if (res.error) throw new Error(res.error.message || 'Saving the vendor rule failed.');
+}
+async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
+  const day = isoDateToday();
+  const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount);
+  const expense = {
+    id: 'e_sms_' + Date.now(),
+    month: monthForDateOffline(day, target.prof.incomeCycles || {}),
+    date: day,
+    category,
+    subcategory: subcategory || category,
+    method: parsed.last4 ? 'Card ' + parsed.last4 : 'Card',
+    description: vendorKey(parsed.vendor) || (parsed.isIPN ? 'IPN transfer' : ''),
+    value: amount
+  };
+  await commitAddExpense(CONFIG.projectId, ctx.uid, ctx.idToken, target.id, expense);
+  return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, target.prof.currency || 'EGP')} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''}${target.prof.name ? ' (' + target.prof.name + ')' : ''}`;
+}
+function smsReply(status, notification, extra) {
+  return Object.assign({ status, notification }, extra || {});
+}
+async function handleBankMessage(text) {
+  try {
+    if (!configIsFilledIn()) return smsReply('error', 'Kashu: put your email and password into CONFIG in the Kashu script.');
+    const parsed = parseBankMessage(text);
+    if (parsed.declined) return smsReply('skipped', 'Declined transaction — nothing added.');
+    if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
+    const ctx = await loadSmsContext();
+    const rule = parsed.isIPN ? null : matchVendorRule(ctx.rules, parsed);
+    if (rule && !rule.ask && rule.category) {
+      const target = await loadTargetProfile(ctx, parsed.last4, false);
+      const note = await fileSmsExpense(ctx, target, parsed, rule.category, rule.subcategory);
+      return smsReply('added', note + ' · ' + (vendorKey(parsed.vendor) || rule.match));
+    }
+    const target = await loadTargetProfile(ctx, parsed.last4, true);
+    const cats = target.prof.categories || {};
+    const names = Object.keys(cats);
+    if (!names.length) return smsReply('error', 'No categories found in the profile for this card.');
+    const subs = {};
+    names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
+    const label = parsed.isIPN ? 'IPN transfer' : (vendorKey(parsed.vendor) || 'Unknown vendor');
+    const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount);
+    return smsReply('ask', '', {
+      prompt: `${label} · ${fmtCur(amount, target.prof.currency || 'EGP')}`,
+      vendor: label, amount, isIPN: parsed.isIPN, message: parsed.text,
+      categories: names, subs
+    });
+  } catch (err) {
+    return smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err)));
+  }
+}
+// Second call from the Shortcut after you picked a category for an "ask".
+async function handleResolve(p) {
+  try {
+    if (!configIsFilledIn()) return smsReply('error', 'Kashu: put your email and password into CONFIG in the Kashu script.');
+    const parsed = parseBankMessage(p.message || p.text || '');
+    const category = String(p.category ?? '').trim();
+    const subcategory = String(p.subcategory ?? '').trim();
+    if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
+    if (!category) return smsReply('error', 'No category was chosen — nothing added.');
+    const ctx = await loadSmsContext();
+    const target = await loadTargetProfile(ctx, parsed.last4, false);
+    let note = await fileSmsExpense(ctx, target, parsed, category, subcategory);
+    const key = vendorKey(parsed.vendor);
+    // Remember the vendor — never for IPN transfers, and never over an existing rule.
+    if (!parsed.isIPN && key && !matchVendorRule(ctx.rules, parsed)) {
+      try {
+        await commitAppendRule(ctx, { id: 'v_sms_' + Date.now(), match: key, category, subcategory: subcategory || category, ask: false, learned: true });
+        note += ' · remembered ' + key;
+      } catch (e) { note += ' · (couldn\'t save the vendor rule)'; }
+    }
+    return smsReply('added', note);
+  } catch (err) {
+    return smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err)));
+  }
+}
+function looksLikeBankMessage(s) {
+  const t = String(s || '').trim();
+  if (!t || /^[{\[]/.test(t) || /^[^ ]*=/.test(t)) return false;
+  return /@/.test(t) || /19700/.test(t) || /\b(transaction|transfer|IPN|debited|credited)\b/i.test(t);
+}
 async function fetchSyncedState(projectId, apiKey, email, password) {
   const { idToken, uid } = await signInWithPassword(apiKey, email, password);
   const docId = uid;
@@ -306,10 +485,12 @@ function monthSummary(profile, m) {
   const exps = (profile.expenses || []).filter(e => e.month === m);
   const buds = (profile.budget || []).filter(b => b.month === m);
   const allExps = profile.expenses || [];
-  // Same rule as the app: negative expense rows are additional income,
-  // and "spent" counts only real spending.
-  const spent = exps.reduce((s, e) => s + Math.max(0, Number(e.value || 0)), 0);
-  const extraIncome = exps.reduce((s, e) => s + Math.max(0, -Number(e.value || 0)), 0);
+  // Same rule as the app: rows in the "Income" category are additional
+  // income (any sign); a negative amount in any other category is a refund
+  // and reduces what was spent.
+  const isInc = e => String(e.category || '').trim().toLowerCase() === 'income';
+  const spent = exps.filter(e => !isInc(e)).reduce((s, e) => s + Number(e.value || 0), 0);
+  const extraIncome = exps.filter(isInc).reduce((s, e) => s + Math.abs(Number(e.value || 0)), 0);
   const salary = Number((profile.income || {})[m] || 0);
   const totalIncome = salary + extraIncome;
   const remaining = totalIncome - spent;
@@ -554,6 +735,18 @@ async function main() {
     const mode = typeof sp === 'string' ? sp.trim().toLowerCase() : (sp && typeof sp === 'object' && sp.mode ? String(sp.mode).toLowerCase() : '');
     if (mode === 'categories') {
       Script.setShortcutOutput(await categoriesForShortcut());
+      Script.complete();
+      return;
+    }
+    // Bank SMS: { mode: "message", message: <text> } or just the message text.
+    if (mode === 'message' || (typeof sp === 'string' && looksLikeBankMessage(sp))) {
+      Script.setShortcutOutput(await handleBankMessage(typeof sp === 'string' ? sp : (sp.message || sp.text || '')));
+      Script.complete();
+      return;
+    }
+    // After choosing a category: { mode: "resolve", message, category, subcategory }.
+    if (mode === 'resolve') {
+      Script.setShortcutOutput(await handleResolve(sp));
       Script.complete();
       return;
     }

@@ -833,6 +833,34 @@
     body:not(.row-dragging) .drag-handle { cursor: grab !important; }
   }
 
+  /* ===== Settings → Vendors (bank message rules) ===== */
+  .vd-note { font-size: 12.5px; color: var(--txt-dim); line-height: 1.5; margin-bottom: 16px; }
+  .vd-count { font-size: 11px; font-weight: 700; color: var(--txt-dim2); margin-left: 6px; }
+  .vd-list { border-radius: 18px; box-shadow: var(--shadow-out); overflow: hidden; margin-bottom: 12px; }
+  .vd-row { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.2fr) auto 30px; gap: 8px; align-items: center; padding: 9px 12px; }
+  .vd-row + .vd-row { border-top: 1px solid var(--line); }
+  .vd-row.card-row { grid-template-columns: 90px minmax(0,1fr) 30px; }
+  .vd-row input, .vd-row select, .vd-add input, .vd-search, .vd-test { border: none; min-width: 0; width: 100%; box-sizing: border-box; height: 36px; padding: 0 10px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-in); font: inherit; font-size: 13px; font-weight: 600; color: var(--txt); }
+  .vd-row .vd-match { font-weight: 800; }
+  .vd-ask { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--txt-dim); white-space: nowrap; cursor: pointer; }
+  .vd-ask input { width: 16px; height: 16px; box-shadow: none; accent-color: var(--blue); }
+  .vd-row.is-ask .vd-cat, .vd-row.is-ask .vd-sub { opacity: .45; }
+  .vd-tag { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: var(--blue-soft); color: #4f6d58; margin-left: 4px; }
+  .vd-add { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.2fr) auto; gap: 8px; margin-bottom: 10px; }
+  .vd-search { margin-bottom: 10px; }
+  .vd-test { height: auto; padding: 10px 12px; resize: vertical; font-weight: 500; line-height: 1.45; }
+  .vd-result { margin-top: 10px; padding: 12px 14px; border-radius: 14px; box-shadow: var(--shadow-out-sm); font-size: 12.5px; line-height: 1.7; }
+  .vd-result b { font-weight: 800; }
+  .vd-result .ok { color: #4f7d5c; } .vd-result .ask { color: #7d5a1e; } .vd-result .bad { color: #a9523f; }
+  .vd-empty { padding: 12px 14px; font-size: 12.5px; color: var(--txt-dim2); }
+  @media (max-width: 860px) {
+    .vd-row { grid-template-columns: minmax(0,1fr) minmax(0,1fr) 34px; grid-template-areas: "m m del" "c s s" "a a a"; }
+    .vd-row .vd-match { grid-area: m; } .vd-row .vd-cat { grid-area: c; } .vd-row .vd-sub { grid-area: s; } .vd-row .vd-ask { grid-area: a; } .vd-row .del-btn { grid-area: del; }
+    .vd-row.card-row { grid-template-columns: 80px minmax(0,1fr) 34px; grid-template-areas: none; }
+    .vd-row.card-row > * { grid-area: auto !important; }
+    .vd-add { grid-template-columns: 1fr 1fr; } .vd-add #vdNewMatch { grid-column: 1 / -1; }
+  }
+
   /* ===== Review fixes (V60) ===== */
   .due-chip.over { background: var(--red-soft); color: #a9523f; }
   .due-chip.soonish { background: var(--amber-soft); color: #7d5a1e; }
@@ -1405,6 +1433,7 @@
         <button class="on" data-t="income" onclick="setSettingsTab('income', this)">Income</button>
         <button data-t="card" onclick="setSettingsTab('card', this)" style="display:none;">Card</button>
         <button data-t="categories" onclick="setSettingsTab('categories', this)">Categories</button>
+        <button data-t="vendors" onclick="setSettingsTab('vendors', this)">Vendors</button>
         <button data-t="sync" onclick="setSettingsTab('sync', this)">Import &amp; export</button>
         <button data-t="cloud" onclick="setSettingsTab('cloud', this)">Cloud Sync</button>
         <button data-t="data" onclick="setSettingsTab('data', this)">Data</button>
@@ -1448,6 +1477,25 @@
           <input type="text" id="categorySearch" placeholder="Search categories…" oninput="renderCategoryManager()"
             style="width:100%;background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:9px 12px;border-radius:9px;font-size:12.5px; margin-bottom:12px;">
           <div id="categoryManager"></div>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel-vendors">
+          <p class="vd-note">When a bank message arrives, your Shortcut sends it to the Kashu script. A vendor with a rule here is added straight away; anything else (and every <b>IPN</b> transfer) asks you for the category. Vendors you categorize are remembered as new rules.</p>
+          <h3>Cards</h3>
+          <div class="vd-list" id="vdCards"></div>
+          <h3 style="margin-top:22px;">Vendor rules <span class="vd-count" id="vdCount"></span></h3>
+          <div class="vd-add">
+            <input type="text" id="vdNewMatch" placeholder="Text in the message, e.g. Uber">
+            <input type="text" id="vdNewCat" placeholder="Category" list="catList" oninput="vdFillSubs('vdNewSubList', this.value)">
+            <input type="text" id="vdNewSub" placeholder="Sub category" list="vdNewSubList"><datalist id="vdNewSubList"></datalist>
+            <button class="btn btn-primary" onclick="addVendorRule()">+ Add</button>
+          </div>
+          <input type="text" id="vdSearch" class="vd-search" placeholder="Search rules…" oninput="renderVendorRules()">
+          <div class="vd-list" id="vdRules"></div>
+          <h3 style="margin-top:22px;">Test a message</h3>
+          <textarea id="vdTestText" class="vd-test" rows="3" placeholder="Paste a bank message to see what would happen"></textarea>
+          <div class="btn-row"><button class="btn btn-ghost" onclick="testVendorMessage()">Test</button></div>
+          <div id="vdTestResult"></div>
         </div>
 
         <div class="settings-panel" id="settingsPanel-sync">
@@ -2038,7 +2086,7 @@ async function bindUserDoc(uid) {
     localStorage.setItem('ledger_state', JSON.stringify(state));
     fbState.applyingRemote = false;
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
-    const movedOnLoad = rebucketAllProfiles();
+    const movedOnLoad = [rebucketAllProfiles(), ensureVendorDefaults()].some(Boolean);
     currentMonth = todayCycleMonth();
     selectedMonths = null;
     renderProfileTabs();
@@ -2046,6 +2094,7 @@ async function bindUserDoc(uid) {
     renderAll();
     if (movedOnLoad) { localStorage.setItem('ledger_state', JSON.stringify(state)); await pushStateToCloud(); }
   } else {
+    ensureVendorDefaults();
     await pushStateToCloud();
   }
   const docData = snap.exists ? (snap.data() || {}) : {};
@@ -5330,6 +5379,7 @@ function renderSettingsPage() {
   renderIncomeList();
 
   renderCategoryManager();
+  renderVendorsPanel();
 }
 
 /* ============================================================
@@ -6099,6 +6149,203 @@ function exportReportPDF() {
   setTimeout(() => win.print(), 400);
 }
 
+// ---- Bank message parsing (identical copy in the app and in Kashu-Widget.js) ----
+// Reads one bank SMS: amount, currency, card last 4, vendor, and whether it's
+// an IPN transfer, money coming in, or a declined transaction.
+function parseBankMessage(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  const out = {
+    text: t, amount: null, currency: '', vendor: '', last4: '',
+    isIPN: /\bIPN\b/i.test(t),
+    declined: /\b(declined|unsuccessful|failed|rejected|insufficient)\b/i.test(t),
+    incoming: /\b(received|credited|deposited|refund(?:ed)?|reversal|reversed)\b/i.test(t) && !/\bdebited\b/i.test(t)
+  };
+  const card = t.match(/\*{2,}\s?(\d{4})\b/) || t.match(/\b(?:card|account|acc)\b[^0-9]{0,20}(\d{4})\b/i);
+  if (card) out.last4 = card[1];
+  const CUR = '(EGP|USD|EUR|GBP|SAR|AED|KWD|JPY|LE)';
+  let m = t.match(new RegExp('\\b' + CUR + '\\s?([\\d,]+(?:\\.\\d+)?)', 'i'));
+  if (m) { out.currency = m[1].toUpperCase(); out.amount = Number(m[2].replace(/,/g, '')); }
+  else if ((m = t.match(new RegExp('([\\d,]+(?:\\.\\d+)?)\\s?' + CUR + '\\b', 'i')))) { out.currency = m[2].toUpperCase(); out.amount = Number(m[1].replace(/,/g, '')); }
+  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(/\bat\s+([^,]+?)\s*(?:,|$)/i) || t.match(/\b(?:to|from)\s+([^,]+?)\s*(?:,|$)/i);
+  if (v) out.vendor = v[1].trim();
+  return out;
+}
+// "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
+// (drops the payment-gateway prefix so the remembered rule matches every gateway).
+function vendorKey(vendor) {
+  return String(vendor || '').replace(/^[^*]{0,20}\*\s*/, '').trim();
+}
+// The rule whose text appears in the vendor (or in the whole message when no
+// vendor could be read). The longest match wins, so "Uber Eats" beats "Uber".
+function matchVendorRule(rules, parsed) {
+  const hay = String(parsed.vendor || parsed.text || '').toLowerCase();
+  let best = null;
+  (rules || []).forEach(r => {
+    const k = String((r && r.match) || '').trim().toLowerCase();
+    if (k && hay.includes(k) && (!best || k.length > String(best.match).trim().length)) best = r;
+  });
+  return best;
+}
+
+/* ============================================================
+   VENDOR RULES (Settings → Vendors) — the dictionary the Kashu script
+   uses to file bank messages automatically. Stored on the whole state
+   (not per profile) so the script reads one list:
+     state.vendorRules: [{ id, match, category, subcategory, ask }]
+     state.cardRoutes:  { "6065": profileId }  — card → profile
+   A rule with ask:true always prompts. IPN transfers always prompt.
+   ============================================================ */
+const VENDOR_SEED_V1 = [
+  { match: 'Abu Auf',  category: 'Entertainment',  subcategory: 'Events/Movies/Concerts/Food' },
+  { match: 'Sahl',     category: 'Bills',          subcategory: 'Electricity' },
+  { match: 'ETISALAT', category: 'Bills',          subcategory: 'Etisalat' },
+  { match: 'Uber',     category: 'Transportation', subcategory: 'Uber' },
+  { match: 'WE-FBB',   category: 'Bills',          subcategory: 'WE Internet' }
+];
+function vdNorm(s) { return String(s || '').trim().toLowerCase(); }
+function newVendorId() { return 'v' + Date.now() + Math.random().toString(36).slice(2, 6); }
+// The profile a card's messages go to: one whose last 4 digits match,
+// otherwise the first regular budget profile.
+function findProfileForCard(last4) {
+  const ids = state.profileOrder || [];
+  const byDigits = ids.find(id => state.profiles[id] && state.profiles[id].cardLast4 === last4);
+  if (byDigits) return byDigits;
+  return ids.find(id => {
+    const p = state.profiles[id];
+    return p && p.cardType !== 'mastercard' && p.cardType !== 'savings' && !p.hidden && !String(p.name || '').startsWith(DEMO_PREFIX);
+  }) || ids[0] || null;
+}
+function ensureCategoryIn(p, cat, sub) {
+  if (!p || !cat) return;
+  if (!p.categories) p.categories = {};
+  if (!p.categories[cat]) p.categories[cat] = [];
+  if (sub && sub !== cat && !p.categories[cat].includes(sub)) p.categories[cat].push(sub);
+}
+function ensureVendorDefaults() {
+  let changed = false;
+  if (!Array.isArray(state.vendorRules)) { state.vendorRules = []; changed = true; }
+  if (!state.cardRoutes || typeof state.cardRoutes !== 'object') { state.cardRoutes = {}; changed = true; }
+  if (!state.vendorSeedV1) {
+    if (!state.cardRoutes['6065']) { const pid = findProfileForCard('6065'); if (pid) state.cardRoutes['6065'] = pid; }
+    const target = state.profiles[state.cardRoutes['6065']] || activeProfile();
+    VENDOR_SEED_V1.forEach(r => {
+      if (!state.vendorRules.some(x => vdNorm(x.match) === vdNorm(r.match))) state.vendorRules.push({ id: newVendorId(), ...r, ask: false });
+      ensureCategoryIn(target, r.category, r.subcategory);
+    });
+    state.vendorSeedV1 = true;
+    changed = true;
+  }
+  return changed;
+}
+function vdSubsFor(cat) { return (activeProfile().categories || {})[cat] || []; }
+function vdFillSubs(listId, cat) {
+  const dl = document.getElementById(listId);
+  if (dl) dl.innerHTML = vdSubsFor(cat).map(s => `<option value="${escapeHtml(s)}">`).join('');
+}
+function renderVendorsPanel() {
+  if (!document.getElementById('vdRules')) return;
+  ensureVendorDefaults();
+  populateCatListDatalist();
+  renderVendorCards();
+  renderVendorRules();
+}
+function renderVendorCards() {
+  const el = document.getElementById('vdCards');
+  const routes = state.cardRoutes || {};
+  const opts = id => state.profileOrder.map(pid => state.profiles[pid] ? `<option value="${pid}" ${pid === id ? 'selected' : ''}>${escapeHtml(state.profiles[pid].name)}</option>` : '').join('');
+  const rows = Object.keys(routes).sort().map(l4 => `
+    <div class="vd-row card-row">
+      <b>•••• ${escapeHtml(l4)}</b>
+      <select onchange="setCardRoute('${escapeHtml(l4)}', this.value)" aria-label="Profile for card ${escapeHtml(l4)}">${opts(routes[l4])}</select>
+      <button class="del-btn" onclick="removeCardRoute('${escapeHtml(l4)}')" title="Remove" aria-label="Remove card ${escapeHtml(l4)}">✕</button>
+    </div>`).join('');
+  el.innerHTML = (rows || '<div class="vd-empty">No cards yet — messages go to the profile open in the app.</div>') + `
+    <div class="vd-row card-row">
+      <input type="text" id="vdNewCard" placeholder="Last 4" inputmode="numeric" maxlength="4" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)">
+      <select id="vdNewCardProfile" aria-label="Profile">${opts(state.activeProfileId)}</select>
+      <button class="del-btn save" onclick="addCardRoute()" title="Add card" aria-label="Add card">＋</button>
+    </div>`;
+}
+function setCardRoute(l4, pid) { state.cardRoutes[l4] = pid; saveState(); }
+function removeCardRoute(l4) { delete state.cardRoutes[l4]; saveState(); renderVendorCards(); }
+function addCardRoute() {
+  const l4 = (document.getElementById('vdNewCard').value || '').trim();
+  if (!/^\d{4}$/.test(l4)) { alert('Enter the card\'s last 4 digits.'); return; }
+  state.cardRoutes[l4] = document.getElementById('vdNewCardProfile').value;
+  saveState();
+  renderVendorCards();
+}
+function renderVendorRules() {
+  const el = document.getElementById('vdRules');
+  const q = vdNorm((document.getElementById('vdSearch') || {}).value);
+  const rules = (state.vendorRules || []).map((r, i) => ({ r, i }))
+    .filter(({ r }) => !q || [r.match, r.category, r.subcategory].some(x => vdNorm(x).includes(q)))
+    .sort((a, b) => String(a.r.match).localeCompare(String(b.r.match)));
+  document.getElementById('vdCount').textContent = (state.vendorRules || []).length ? '· ' + state.vendorRules.length : '';
+  el.innerHTML = rules.length ? rules.map(({ r, i }) => `
+    <div class="vd-row${r.ask ? ' is-ask' : ''}">
+      <input class="vd-match" type="text" value="${escapeHtml(r.match)}" aria-label="Text to match" onchange="updateVendorRule(${i}, 'match', this.value)">
+      <input class="vd-cat" type="text" value="${escapeHtml(r.category || '')}" list="catList" placeholder="Category" aria-label="Category" oninput="vdFillSubs('vdSub_${i}', this.value)" onchange="updateVendorRule(${i}, 'category', this.value)">
+      <span class="vd-sub"><input type="text" value="${escapeHtml(r.subcategory || '')}" list="vdSub_${i}" placeholder="Sub category" aria-label="Sub category" onchange="updateVendorRule(${i}, 'subcategory', this.value)"><datalist id="vdSub_${i}">${vdSubsFor(r.category).map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></span>
+      <label class="vd-ask" title="Always ask for the category, even though this vendor is known"><input type="checkbox" ${r.ask ? 'checked' : ''} onchange="updateVendorRule(${i}, 'ask', this.checked)">Always ask${r.learned ? '<span class="vd-tag">learned</span>' : ''}</label>
+      <button class="del-btn" onclick="deleteVendorRule(${i})" title="Delete rule" aria-label="Delete rule ${escapeHtml(r.match)}">✕</button>
+    </div>`).join('') : `<div class="vd-empty">${q ? 'No rules match.' : 'No vendor rules yet.'}</div>`;
+}
+function updateVendorRule(i, field, val) {
+  const r = state.vendorRules[i];
+  if (!r) return;
+  if (field === 'ask') r.ask = !!val;
+  else {
+    val = String(val || '').trim();
+    if (field === 'match' && !val) { alert('The match text can\'t be empty — delete the rule instead.'); renderVendorRules(); return; }
+    r[field] = val;
+    if (field === 'category' || field === 'subcategory') ensureCategoryIn(activeProfile(), r.category, r.subcategory);
+  }
+  saveState();
+  renderVendorRules();
+}
+function deleteVendorRule(i) {
+  const r = state.vendorRules[i];
+  if (!r || !confirm(`Delete the rule "${r.match}"? Its messages will ask for a category again.`)) return;
+  state.vendorRules.splice(i, 1);
+  saveState();
+  renderVendorRules();
+}
+function addVendorRule() {
+  const match = document.getElementById('vdNewMatch').value.trim();
+  const category = document.getElementById('vdNewCat').value.trim();
+  const subcategory = document.getElementById('vdNewSub').value.trim() || category;
+  if (!match) { alert('Enter the text to look for in the message, e.g. Uber.'); return; }
+  if (!category) { alert('Pick a category.'); return; }
+  if (state.vendorRules.some(r => vdNorm(r.match) === vdNorm(match))) { alert(`There's already a rule for "${match}".`); return; }
+  state.vendorRules.push({ id: newVendorId(), match, category, subcategory, ask: false });
+  ensureCategoryIn(activeProfile(), category, subcategory);
+  ['vdNewMatch', 'vdNewCat', 'vdNewSub'].forEach(id => { document.getElementById(id).value = ''; });
+  saveState();
+  renderVendorRules();
+}
+function testVendorMessage() {
+  const out = document.getElementById('vdTestResult');
+  const m = parseBankMessage(document.getElementById('vdTestText').value);
+  if (!m.text) { out.innerHTML = ''; return; }
+  const pid = (m.last4 && state.cardRoutes[m.last4]) || state.activeProfileId;
+  const prof = state.profiles[pid] || activeProfile();
+  const rule = m.isIPN ? null : matchVendorRule(state.vendorRules, m);
+  let verdict;
+  if (m.declined) verdict = '<span class="bad">Declined — nothing is added.</span>';
+  else if (m.amount == null) verdict = '<span class="bad">No amount found — the script would return an error.</span>';
+  else if (m.isIPN) verdict = '<span class="ask">IPN transfer — asks you for the category every time.</span>';
+  else if (rule && rule.ask) verdict = `<span class="ask">Known vendor set to "Always ask" — asks you for the category.</span>`;
+  else if (rule) verdict = `<span class="ok">Added automatically → <b>${escapeHtml(rule.category)} / ${escapeHtml(rule.subcategory || rule.category)}</b></span>`;
+  else verdict = `<span class="ask">Unknown vendor — asks you once, then remembers "${escapeHtml(vendorKey(m.vendor) || '—')}".</span>`;
+  const amt = m.amount == null ? '—' : fmt((m.incoming ? -1 : 1) * m.amount, prof);
+  out.innerHTML = `<div class="vd-result">
+    Amount <b>${escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}<br>
+    Vendor <b>${escapeHtml(m.vendor || '—')}</b>${m.last4 ? ` · card <b>•••• ${escapeHtml(m.last4)}</b>` : ''}<br>
+    Goes to <b>${escapeHtml(prof.name)}</b>${m.last4 && state.cardRoutes[m.last4] ? '' : ' (the profile open in the app)'}<br>
+    ${verdict}</div>`;
+}
+
 /* ============================================================
    INIT
    ============================================================ */
@@ -6482,6 +6729,7 @@ RowDrag.register('budgetTableBody', { onDrop: persistBudgetRowOrder, rerender: (
 
 loadState();
 if (rebucketAllProfiles()) localStorage.setItem('ledger_state', JSON.stringify(state));
+if (ensureVendorDefaults()) localStorage.setItem('ledger_state', JSON.stringify(state));
 currentMonth = todayCycleMonth();
 renderProfileTabs();
 renderAll();
