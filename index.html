@@ -606,8 +606,31 @@
   .icon-trigger { background: var(--card); border: none; box-shadow: var(--shadow-out-sm); border-radius: 8px; width: 26px; height: 26px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
   .icon-trigger.sm { width: 20px; height: 20px; font-size: 11.5px; box-shadow: var(--shadow-in); }
   .icon-picker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
-  .icon-picker-grid button { background: none; border: none; font-size: 18px; padding: 5px; cursor: pointer; border-radius: 7px; }
+  .icon-picker-grid button { background: none; border: none; padding: 4px; cursor: pointer; border-radius: 9px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; }
+  .icon-picker-grid button .th-ic { width: 34px; height: 34px; vertical-align: 0; }
   .icon-picker-grid button:hover { background: var(--line); }
+  .icon-picker-grid button.sel { background: var(--blue-soft); box-shadow: inset 0 0 0 2px var(--blue); }
+  .icon-picker-search { position: sticky; top: -8px; z-index: 1; width: 100%; box-sizing: border-box; border: none; height: 36px; padding: 0 10px; margin: -8px 0 8px; border-radius: 10px; background: var(--card); box-shadow: var(--shadow-in); font: inherit; font-size: 13px; color: var(--txt); }
+  .icon-picker-foot { font-size: 10.5px; color: var(--txt-dim2); text-align: center; padding: 8px 0 2px; }
+  .icon-picker-foot a { color: var(--txt-dim); }
+  /* ===== Thiings 3D icons ===== */
+  .th-ic { width: 1.45em; height: 1.45em; object-fit: contain; vertical-align: -0.38em; display: inline-block; flex: none; user-select: none; -webkit-user-drag: none; }
+  .icon-trigger .th-ic { width: 22px; height: 22px; vertical-align: 0; }
+  .icon-trigger.sm .th-ic { width: 17px; height: 17px; }
+  .tx-icon .th-ic { width: 30px; height: 30px; vertical-align: 0; }
+  .cat-tag .th-ic { width: 16px; height: 16px; vertical-align: -3px; margin-right: 1px; }
+  .chip-btn .th-ic { width: 20px; height: 20px; vertical-align: -5px; margin-right: 2px; }
+  .cal-evt .th-ic { width: 12px; height: 12px; vertical-align: -2px; }
+  .kpi .ki .th-ic { width: 30px; height: 30px; vertical-align: 0; }
+  .kpi .ki { background: var(--bg) !important; box-shadow: var(--shadow-in); }
+  .kpi.hero .ki { background: rgba(255,255,255,.22) !important; box-shadow: none; }
+  .io-ic .th-ic { width: 26px; height: 26px; vertical-align: 0; }
+  .io-ic { background: var(--bg) !important; box-shadow: var(--shadow-in); }
+  .nav a .th-ic { width: 24px; height: 24px; vertical-align: 0; }
+  .tab .th-ic { width: 25px; height: 25px; vertical-align: 0; transition: transform .24s cubic-bezier(.34,1.56,.64,1); filter: saturate(.55) opacity(.75); }
+  .tab.on .th-ic { transform: scale(1.18); filter: none; }
+  .bud-tagicon .th-ic { width: 15px; height: 15px; vertical-align: -3px; margin-right: 4px; }
+  @media (max-width: 860px) { .kpi .ki .th-ic { width: 26px; height: 26px; } }
   .cat-icon-inline { margin-right: 4px; }
   .cat-accordion-head .meta { display:flex; align-items:center; gap:10px; }
   .cat-accordion-head .count { font-size: 10.5px; color: var(--txt-dim2); background: var(--card); padding: 2px 8px; border-radius: 10px; box-shadow: var(--shadow-in); }
@@ -1089,12 +1112,12 @@
       </div>
     </div>
     <div class="nav" id="nav">
-      <a data-page="dashboard" class="on" href="#dashboard" title="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nl">Dashboard</span></a>
-      <a data-page="expenses" href="#expenses" title="Expenses"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span class="nl" id="navExpensesLabel">Expenses</span></a>
-      <a data-page="budget" href="#budget" title="Budget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg><span class="nl">Budget</span></a>
-      <a data-page="installments" href="#installments" title="Installments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg><span class="nl">Installments</span></a>
-      <a data-page="calendar" href="#calendar" title="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg><span class="nl">Calendar</span></a>
-      <a data-page="settings" href="#settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg><span class="nl">Settings</span></a>
+      <a data-page="dashboard" class="on" href="#dashboard" title="Dashboard"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Qep2rmAXunWu8R2o1FCgLLDrtiD1q2.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Dashboard</span></a>
+      <a data-page="expenses" href="#expenses" title="Expenses"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-DjLfCX0etcbaHeaobCUklhYQWOSXUF.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl" id="navExpensesLabel">Expenses</span></a>
+      <a data-page="budget" href="#budget" title="Budget"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-QUD9QBFZRZ2ZYM6AV1VO3hYmCbUAq1.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Budget</span></a>
+      <a data-page="installments" href="#installments" title="Installments"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Dkc7LOL5KJR4dNRvE3KcYGbDSjzvzH.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Installments</span></a>
+      <a data-page="calendar" href="#calendar" title="Calendar"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-ij7GEZhfmzLNlLgDJVhkST8FIm5rJV.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Calendar</span></a>
+      <a data-page="settings" href="#settings" title="Settings"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-5WOZbM8gOwMf0RATXQa7UL57OKFSMg.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Settings</span></a>
     </div>
   </div>
 
@@ -1118,10 +1141,10 @@
         </div>
       </div>
       <div class="kpis">
-        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l"><span class="kpi-desk">Total i</span><span class="kpi-phone">I</span>ncome</div><div class="v" id="kpiIncome">0</div><div class="kpi-sub" id="kpiSalarySub"></div></div><span class="kpi-extra" id="kpiExtraBadge" hidden></span></div>
-        <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Spent</div><div class="v" id="kpiSpent">0</div><div class="delta" id="kpiSpentDelta"></div></div></div>
-        <div class="kpi"><span class="ki rem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg></span><div class="kt"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div></div>
-        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div></div>
+        <div class="kpi"><span class="ki in"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-oKmcX6Scsb03ofRIcpVfqdCdpSBiC3.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l"><span class="kpi-desk">Total i</span><span class="kpi-phone">I</span>ncome</div><div class="v" id="kpiIncome">0</div><div class="kpi-sub" id="kpiSalarySub"></div></div><span class="kpi-extra" id="kpiExtraBadge" hidden></span></div>
+        <div class="kpi"><span class="ki out"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-1kzlhXN3lasEQYBtwdeQrzzhBEwurX.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Spent</div><div class="v" id="kpiSpent">0</div><div class="delta" id="kpiSpentDelta"></div></div></div>
+        <div class="kpi"><span class="ki rem"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-r5QxxRu1dvIND6CpaRBYLTnJmCfzNM.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Remaining</div><div class="v pos" id="kpiRemaining">0</div></div></div>
+        <div class="kpi hero"><span class="ki av"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-bvJNHPc0tIkrnBQsWtfPI7Q1YIE9xO.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Available balance</div><div class="v warn" id="kpiAvailable">0</div></div></div>
       </div>
       <div class="dash-grid">
         <div class="card dash-bva">
@@ -1168,10 +1191,10 @@
         <h1>Card overview</h1>
       </div>
       <div class="kpis">
-        <div class="kpi"><span class="ki cc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span><div class="kt"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div></div>
-        <div class="kpi"><span class="ki out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></span><div class="kt"><div class="l">Balance</div><div class="v" id="ccKpiBalance">0</div></div></div>
-        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Available credit</div><div class="v pos" id="ccKpiAvailable">0</div></div></div>
-        <div class="kpi"><span class="ki pct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5"/><path d="M12 12l6 6"/></svg></span><div class="kt"><div class="l">Utilization</div><div class="v warn" id="ccKpiUtil">0%</div></div></div>
+        <div class="kpi"><span class="ki cc"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-xylXWxjRoBYdaH9IPOx1080olvl5Ur.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Credit limit</div><div class="v" id="ccKpiLimit">0</div></div></div>
+        <div class="kpi"><span class="ki out"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-YKe6fRTt2bVGNakAliyzCyEDvhJj3N.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Balance</div><div class="v" id="ccKpiBalance">0</div></div></div>
+        <div class="kpi hero"><span class="ki av"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-CZxT18DNf12Vjv8rrZv8V0tddRi9Xu.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Available credit</div><div class="v pos" id="ccKpiAvailable">0</div></div></div>
+        <div class="kpi"><span class="ki pct"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-gJgeXqFZbbutMpZyph69ryLkBlvJ77.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Utilization</div><div class="v warn" id="ccKpiUtil">0%</div></div></div>
       </div>
       <div class="card" id="ccDueCard" style="margin-bottom:16px;">
         <h3>Payment due</h3>
@@ -1209,10 +1232,10 @@
         <h1>Savings overview</h1>
       </div>
       <div class="kpis">
-        <div class="kpi hero"><span class="ki av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><div class="kt"><div class="l">Balance</div><div class="v pos" id="svKpiBalance">0</div></div></div>
-        <div class="kpi"><span class="ki in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span><div class="kt"><div class="l">Total deposited</div><div class="v" id="svKpiDeposited">0</div></div></div>
-        <div class="kpi"><span class="ki up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V8"/><path d="M7 13l5-5 5 5"/><path d="M5 4h14"/></svg></span><div class="kt"><div class="l">Total withdrawn</div><div class="v" id="svKpiWithdrawn">0</div></div></div>
-        <div class="kpi"><span class="ki net"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l5-5 4 3 7-8"/><path d="M15 7h5v5"/></svg></span><div class="kt"><div class="l">Net this month</div><div class="v" id="svKpiNet">0</div></div></div>
+        <div class="kpi hero"><span class="ki av"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-yXrodRQ1tufqDh2wXeFl82sDXZBv3c.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Balance</div><div class="v pos" id="svKpiBalance">0</div></div></div>
+        <div class="kpi"><span class="ki in"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-sZUirjvzsK6y5syb9vN6pJ9ZvSUswv.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Total deposited</div><div class="v" id="svKpiDeposited">0</div></div></div>
+        <div class="kpi"><span class="ki up"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-zXT8vJ7jS2zjXpm1KoB4lXmTTpyd6L.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Total withdrawn</div><div class="v" id="svKpiWithdrawn">0</div></div></div>
+        <div class="kpi"><span class="ki net"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-73pNGHJBFF75t0zRsAgQInW9DAM4vd.png&w=96&q=75" alt="" decoding="async" draggable="false"></span><div class="kt"><div class="l">Net this month</div><div class="v" id="svKpiNet">0</div></div></div>
       </div>
       <div class="grid3">
         <div class="card">
@@ -1517,24 +1540,24 @@
           <div class="io-list">
             <div class="io-sec">Bring data in</div>
             <div class="io-row">
-              <span class="io-ic in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>
+              <span class="io-ic in"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-6TJq3TblGrgJLKvMLFj3N2YcDEXG2A.png&w=96&q=75" alt="" decoding="async" draggable="false"></span>
               <div class="io-txt"><b>Import Excel workbook</b><span id="ioImportNote">Replaces this profile's expenses, budget and income · categories are kept</span></div>
               <label class="io-btn primary">Choose file<input type="file" id="importFile" accept=".xlsx" style="display:none;" onchange="handleImport(event)"></label>
             </div>
             <div id="importStatus"></div>
             <div class="io-sec">Take data out</div>
             <div class="io-row">
-              <span class="io-ic x">XLSX</span>
+              <span class="io-ic x" title="XLSX"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-yFtjfKzQBiN4N3in0hmfzJN0a4u71g.png&w=96&q=75" alt="" decoding="async" draggable="false"></span>
               <div class="io-txt"><b>Excel workbook</b><span>Same shape as your spreadsheet · can be imported back</span></div>
               <button type="button" class="io-btn" onclick="exportExcel()">Export</button>
             </div>
             <div class="io-row">
-              <span class="io-ic c">CSV</span>
+              <span class="io-ic c" title="CSV"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-BjimxRD0gb4rZBjr9jbO9LYXmOZJao.png&w=96&q=75" alt="" decoding="async" draggable="false"></span>
               <div class="io-txt"><b>Transactions CSV</b><span>A flat list for any other app</span></div>
               <button type="button" class="io-btn" onclick="exportReportCSV()">Export</button>
             </div>
             <div class="io-row">
-              <span class="io-ic p">PDF</span>
+              <span class="io-ic p" title="PDF"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Q2AyLFpsfle7dsgOfa3VRInvXpfrjJ.png&w=96&q=75" alt="" decoding="async" draggable="false"></span>
               <div class="io-txt"><b>Printable report</b><span>Income, spending and categories · Save as PDF in the print window</span></div>
               <button type="button" class="io-btn" onclick="exportReportPDF()">Open</button>
             </div>
@@ -1573,12 +1596,12 @@
 
 <!-- Mobile tabbar -->
 <div class="tabbar" id="tabbar">
-  <button class="tab on" data-page="dashboard" onclick="goPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</button>
-  <button class="tab" data-page="expenses" onclick="goPage('expenses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v19l-2.5-1.5L13 21l-2.5-1.5L8 21l-2-1.5V2z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span id="tabExpensesLabel">Expenses</span></button>
-  <button class="tab" data-page="budget" onclick="goPage('budget')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>Budget</button>
-  <button class="tab" data-page="installments" onclick="goPage('installments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 13h3M8 17h6"/></svg>Installments</button>
-  <button class="tab" data-page="calendar" onclick="goPage('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/><circle cx="8" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.1" fill="currentColor" stroke="none"/></svg>Calendar</button>
-  <button class="tab" data-page="settings" onclick="goPage('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 000-3l1-1.7-1.7-1.7-1.7 1a1.65 1.65 0 00-3 0l-.3-2H10.3l-.3 2a1.65 1.65 0 00-3 0l-1.7-1-1.7 1.7 1 1.7a1.65 1.65 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.65 1.65 0 003 0l.3 2h3.4l.3-2a1.65 1.65 0 003 0l1.7 1 1.7-1.7z"/></svg>Settings</button>
+  <button class="tab on" data-page="dashboard" onclick="goPage('dashboard')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Qep2rmAXunWu8R2o1FCgLLDrtiD1q2.png&w=96&q=75" alt="" decoding="async" draggable="false">Dashboard</button>
+  <button class="tab" data-page="expenses" onclick="goPage('expenses')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-DjLfCX0etcbaHeaobCUklhYQWOSXUF.png&w=96&q=75" alt="" decoding="async" draggable="false"><span id="tabExpensesLabel">Expenses</span></button>
+  <button class="tab" data-page="budget" onclick="goPage('budget')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-QUD9QBFZRZ2ZYM6AV1VO3hYmCbUAq1.png&w=96&q=75" alt="" decoding="async" draggable="false">Budget</button>
+  <button class="tab" data-page="installments" onclick="goPage('installments')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Dkc7LOL5KJR4dNRvE3KcYGbDSjzvzH.png&w=96&q=75" alt="" decoding="async" draggable="false">Installments</button>
+  <button class="tab" data-page="calendar" onclick="goPage('calendar')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-ij7GEZhfmzLNlLgDJVhkST8FIm5rJV.png&w=96&q=75" alt="" decoding="async" draggable="false">Calendar</button>
+  <button class="tab" data-page="settings" onclick="goPage('settings')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-5WOZbM8gOwMf0RATXQa7UL57OKFSMg.png&w=96&q=75" alt="" decoding="async" draggable="false">Settings</button>
 </div>
 <button class="fab" onclick="goPage('add')">+</button>
 <button class="fab-desktop" onclick="goPage('add')">+</button>
@@ -1674,7 +1697,7 @@
 <!-- Icon picker popover (categories & sub categories) -->
 <div id="msPanel"></div>
 <div class="sheet-backdrop" id="sheetBackdrop" onclick="if (event.target === this) closeSheet()"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
-<div id="iconPickerPopover" style="display:none; position:fixed; z-index:70; background:var(--card); border:1px solid var(--card-b); border-radius:12px; padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.18); width:224px; max-height:220px; overflow-y:auto;"></div>
+<div id="iconPickerPopover" style="display:none; position:fixed; z-index:70; background:var(--card); border:1px solid var(--card-b); border-radius:12px; padding:8px; box-shadow:0 12px 30px rgba(0,0,0,.18); width:300px; max-height:330px; overflow-y:auto;"></div>
 
 <!-- Record payment modal (credit card profiles) -->
 <div class="modal-backdrop" id="paymentModalBackdrop">
@@ -1722,51 +1745,174 @@ const DEFAULT_CATEGORIES = {
   "Income": ["Other income"]
 };
 
-// Small curated emoji set used as the app's icon library — no external assets,
-// renders everywhere, and covers the common budget categories.
-const ICON_LIBRARY = [
-  '🏠','🧑‍🔧','💵','💡','🧹','💧','🔥','📶','📱','🧾',
-  '🎬','🎮','🎵','📺','🍽️','☕','🍔','🍕','🎉','🎁',
-  '💳','📈','💰','🏦','🚗','⛽','🔧','🅿️','🚌','🚕',
-  '✈️','🚆','🛳️','🚲','🏖️','🧳','🚬','❤️','👶','🧒',
-  '🎓','⚖️','💊','🏥','🧴','💇','💅','👕','🛍️','🛒',
-  '📚','🎨','📷','💻','🖨️','🔌','🌐','🐾','🐶','🐱',
-  '🕌','⛪','🧘','🌳','🎯','⚽','🏋️','🔑','🏢','📦',
-  '📄','⭐','🧺','🪑','🛋️'
+/* ============================================================
+   ICONS — 3D icons from Thiings (thiings.co, free for personal use).
+   Each icon is referenced by its Thiings name ("slug"). Images are the
+   site's own 96px versions (a few KB each); sw.js keeps a copy, so once
+   seen they also show offline.
+   ============================================================ */
+const THIINGS = {"2026-calendar":"yPVgnIzgk5q19ZtOnxrli2CrcolmcO","air-conditioner":"jF7fLrYXiJ3e52OdVMvuJeC9eGVFVO","air-fryer":"fMel4ZlzvWVc3Kr8GuFqJd0aiQsD7I","airplane":"v0LP91OBaZckcNrHRNpH4uXzImn4v5","alarm-clock":"ecrt5EpWVPk65L4VgdKcQhSkNgjJfX","ambulance":"Q7gohKS7yl0qi3z28ADvIhJ9HOHMw3","apartment-building":"OFwUiXE5rQRHFHmyeQ3A174tB4u8Bi","apple":"PGsquqsWiNY7oX6G4drTdq36ieTBjG","atm":"zXT8vJ7jS2zjXpm1KoB4lXmTTpyd6L","baby":"OwYoHmyqGQ3XlXi2ANnhOTkf1HgwB9","backpack":"53doFZDyMbmChPPHfnbbPjt0Zvlzq7","bag-of-groceries":"DXDecT3Ip0rCJy8HyeBzAE9HvaqWDl","bagel":"t530xa4qDhOSambh8UqJLy6VUwEsX3","balloon":"SLW4v3ZRvj7Si9YqPiWqBSY3K1J03w","bank":"IiMitsVHDCFJDFZnsGOFBFJg3Jhsbp","bar-chart":"73pNGHJBFF75t0zRsAgQInW9DAM4vd","barber":"Utg1qSdCimjvNE3AcS9BHAkl0lShOv","bathroom":"Az1TXZ9XiWndOHVQbGJoSaI3zrAdhT","beach":"em0QUIsW2K1AYeCtbpxuUniDkcARay","bicycle":"PaCc0tIkRuwOlV8GdtTxkKQfa1Dfdu","birthday-cake":"YimA3sxsT00vWqiUyzyLUshxsSZvll","blender":"1YhSHP2f6HOkakvvZ2StG2IlCpIZ9I","boat":"Iy3td04F3W9maaDXJ15mBgY3neSWcV","bone":"7tgO6LagJYCD9gdfRUrJhXjvElAjmX","book":"QhvfavmoGfPmREwwvl4XtqTIORARDz","bowling":"DFiJBJyUFg9QYTZOWEFeeza18HBnty","box":"SSBtrTO0QRBRm4ldsdYVYECocsQVOk","bracelet":"IAjdhCClrG1tbXT4TCmEcJpb5YcLj8","brain":"vCbtdmRUutVmm5NeAk2OPuldTwPzC9","briefcase":"NPWlghgOkWsgF4xolYbb4TzXYD4tRh","broom":"6xo5670qotaNvqqu1Pr9SFnfCO9C01","bubble-tea":"hjeR0RhrulxE7VRgoizvB0VQ4yD4I6","bucket":"UcwijGzvp3Uu8Mhfpmz0RJ2VIETjYv","building":"iU4rmwBdlMt24UolY2WynkeolDz2nj","burger":"ufchp2pkhx8YgcCt0U4kqfXB4eEihP","bus":"eul8D3pWw6n8J32F5tqJHvnYub3mwd","cactus":"fU9czDRDxWeygdxSuiBSKwz26dcbJ1","cafe":"FaRiktLxJvWUWryBFXhogUKzlvOT1k","cake":"rYK4LEWRoD3w2ceeJVr7Kgf7hIvego","calculator":"HCwnlHIkzR4wXtkTVAySMqAWigIejw","calendar":"ij7GEZhfmzLNlLgDJVhkST8FIm5rJV","camera":"s09fUJ3H6nVTAzwemNRaSQgTJi6PUP","candle":"wxB7C5QPQ9vtzacSrwZ3R5jAOMybvj","candy":"j129H0KfxMbyWWWYBQnQfHJ8wIUeQg","car":"BUdFzT6W46HCgNoa5ncDJwdfqXzfqq","car-battery":"JgagqfPJ52ovXvCZc6gQrjRpakDVh7","car-wash":"emu6wsuq0wawve4kwMCZn4GmCjIoxC","carousel":"HDX3H27dMcIL8KAWfK2cDAIVgznMN1","cash":"wnzXfGqb6aI838iS9TCufJSh2ToJP8","cat":"X5oYX1FDDLVSQ1aPCSIaOBkmCQGhDP","ceiling-fan":"qfRKxjyN2Abv1yNUA14YHlTPP5wnUA","chocolate":"NKrw6tAMmE2WCoO6nfszwB3pCI5s5h","cigarette":"ugvbj9chQdXWBPs7YMDu6pIbOA57qv","clipboard":"yFtjfKzQBiN4N3in0hmfzJN0a4u71g","clothes-iron":"Au1cUNgSQvICuVHmpH4bKT9TKWAy5I","cloud":"K7DwuNB7r9RzuCFMvLWAAwck0LSGNa","coffee":"mOoyvLISs98asAdPdQUhTac4S9Q1M9","coffee-cup":"fsXVydeN0F6ipA61bBmRs4jicdBfuR","coffee-maker":"u1weJfn0wFuPr9VJ0wUijZy2DVdtph","cogwheel":"W1aNYP1wwoZL142Dw17xM19qSHxIOP","coin":"S70eRKwGghbWrxnQFigJARrNiDgtR2","coin-jar":"8GUfMmXOmukQ9S4JBlSbAbhhAVRVtg","coin-purse":"367r2STELMzjNowNJZFAFwrdeVWaI1","coins":"n9dmFV9wD0hKFc4BFPY2Mc7nByhtNY","concert":"vz8m2Hwyh6qIkCVW8VdFAjMNwTKJ35","confetti":"jXWGLvyWSU51gFrcZzGq0ZogGxfD6M","contract":"Q2AyLFpsfle7dsgOfa3VRInvXpfrjJ","couple":"qTUvWdU0Wr0fenyLJqPeBX04tjW9Si","credit-card":"xylXWxjRoBYdaH9IPOx1080olvl5Ur","credit-card-reader":"Hhh0XcLYlTEDe7mUw5iDdTmSyEhf2A","crib":"J74jZYULwyiFs1XO18OwncPdTQXDXH","croissant":"xQVobqSxdGjcPEh9gHbekNg04Fkoqf","dartboard":"tUh2KFWP2S4uuLyPXmyqWKtCrJUOsq","dashboard":"Qep2rmAXunWu8R2o1FCgLLDrtiD1q2","debt":"Sust6UPeN4FK0MPRFRMIRDDVG6H0Nd","dentist":"tA9azjG6zk84T4fnIw0TzGruodB5HP","deposit":"sZUirjvzsK6y5syb9vN6pJ9ZvSUswv","desktop-computer":"pri3DOVpzgeVvruiQZLb6NooNGyxyV","diamond":"JWrKzAbDTTpB1o29JJb88rMrUMXAqW","diary":"pjTOq8ovOHhscqg9cjCdaae0H4MDyV","dice":"oBUVWdbvHSxep2I7h2FU5nLccpdClO","discount":"c12bJfwU3bGXSu17QkqHYr7BSV5RKE","dishwasher":"MIkMxp3ekWHJ2EVH8mnYAK41e6vnMf","doctor":"pcwDumhXniGZuYzNx62131rTpzPkf3","document":"BjimxRD0gb4rZBjr9jbO9LYXmOZJao","dog":"YXDHNtGHmuIYVUpDDrH3GBHMqKQB4c","dollar-bill":"eFBuNm0r8VaMWxy4MM6UzQWVsUvNz7","donating":"1sSWsMSyKdRLezddAdTAGvRoZBHCLa","donut":"Ps0wVjpYaVHDuAcgNtpAMnQdkPvoFX","dress":"sjnsZFCzT6VnSOqmWOg9YE53KR68pi","drinking-water":"Ocnl5KMhF8xshUr8xNZEMc05xB6X00","dumbbell":"5RAX5kW85fgiRpM3VdHTeOZmSRx3wB","egypt":"a6X2HXdhOvpU07GIwGYhdvoyu2B6eo","electric-drill":"BBbcNVNgTCIsN3KrBnM7BaOzQPzJAX","electricity-meter":"1MHYCMjGiWisTFZ8bnxC3aIa49E3vP","engine":"HNZtmx9Vgcl8n5akJLZ9PCrhsW787A","envelope":"lp9vjuXTCqeB9yhVXBoBmyqdy8e9jv","eye":"Tu0liR9bpDlPqjqWsJOwGAB7UoCnPg","family":"iSpZcrHmxvZHZPeIwv3rttJNK7TGqu","faucet":"WlsBsv5aOMu1Oi7rXAIHXYHGNSxMpb","ferris-wheel":"kYrwS6jZZDlCY3fY1RRZR6r7wMOmkH","ferry":"adD99QtxVE5zK0oRmUbkC7gswNoLNX","file":"a3SkroygtTE6lQGs0XbfDco9M3lV7H","film-reel":"pBW8iRuU18G7PgS1DxpQmJhi2EMAmw","finances":"1EVaHvpmReiwwINGWc3M2wwiz9fTrp","first-aid-kit":"1q1eYmgfvvNC6DtKmjGYzY8YqIKTgQ","fish":"6Kc8FEaenBuiqvJ7OlkiZboS0L1Y4W","flame":"NddQdftBhn6rEWlENfoUc4kpma0Ixv","flower":"9oe9iO5AGJO61EHdy3ti8lKCJukfZM","folder":"6TJq3TblGrgJLKvMLFj3N2YcDEXG2A","football":"p7Gv0HPTSpuFyJaippzrWsKAzpMmj7","french-fries":"1Dl7jHKSCiA1Ez3RTcZwJaJkTCqtH5","fruit":"ebvFjqXzkNdcNfusfKPU09W8DBFAfR","frying-pan":"7DIhLKu4paRnCW8Zsd8LmbE9FE6Utf","fuel-tank":"6CyrHm5bXn7tHPAF074R8BSpbmjF0e","game-controller":"w6RCw1smyKwJ3hQwyEVqK4CgiTpD0u","garage":"mlhQNhgVqu1ZxZAGedPgDJKneIlg7o","garden":"dqLT1QMu4LXBumfjD46JoLK8dtQntV","gas-cylinder":"XHPnX0OuPmynHWczr0VGScgGjixfSV","gas-pump":"Y9XTBPYYZden371yTkDUk5RakCVmX9","gas-station":"0J3HeTBw7OlENzRBjYxhCozIqq8fUV","gear":"5WOZbM8gOwMf0RATXQa7UL57OKFSMg","gift":"yqO1RPHoOjuNAvqMy997ClCPIwICsb","gift-box":"VCxaluugoXxQ6G57uYpHSlGZL18bLp","gift-card":"ptreaSKDFQqhY7oF7Qw6s18YOwh68e","glasses":"vPoEt4yeT8osHdpBzhnBsjFn0mAFbb","globe":"KBUXl6AhDj2IsoZnozHL39yX1acqa5","gold-ingot":"ObYG6zcPcX739HLghAbh7vzhtB79g6","golden-heart":"uJSVQdQj01UX2n3ZgKDJH0AxRbUdnn","golf":"GtiFbQ2EP0P4GaKbnhu6IgWYnAqwBo","graduation-cap":"iZKfmUSHuQtDn1W2NBIwoLZ0epsnzZ","graph":"gJgeXqFZbbutMpZyph69ryLkBlvJ77","grocery-bag":"lFyVsXFy78FRWzCdwXODoVqc7R3eeh","grocery-receipt":"NWXw6QffPgeDJFsxgIfzwBnMb7XKaA","guitar":"rBBGU9Xk6VcySyHSUq85qBW2ZiOqD0","gym":"9nfkO2yI0lvKCl7Any15roC9jEeLKX","hair-dryer":"d0GAO5ycNDeZ700WGF58zQs6P3yEAi","hairbrush":"pJqISMaDiCKUTHyyVYaaBEa6MvD2lu","hamburger":"azbkcojk7G9xRKqA75hmDxp8KWWgDZ","hammer":"NOz55QQ4guRuLACgtdvzvMbTd4wO4G","hand-tool-set":"dj2mL1nMI1DLOaBnZvkJie9V9rKY7Z","handbag":"OAYK6HWr7j9IxNH5mk3vkntjQCJnwc","handshake":"g0jWpKzDefUBkVrz5WRvIkWjsUYOer","headphones":"i8kglgSpa6qTxfOFu2nYODqRk7MUo1","heart":"RQtOXVb8LaWRBM1vFtlMCggGMulrKV","home":"Wvq7585iCYbsHgY7vvs9lvG1MXUZbW","home-appliances":"Js6gLOUHlJarU1knnWJZZIFqcn2bSV","hospital":"epAwtd04YYhZgr1a1SWFCXDmM8TYsK","hotel":"lCvW4p3khtoganHdqFzwxmQszzsKjS","hourglass":"jZvuQMZCi8XuT0afzKwdnQXwS7maTf","house":"0OoMAJRtHLxXtHGKaC50y1kLqsAPFV","house-key":"CAQrC0JHHEl1QEE6iSWdDbn4twwibX","houseplant":"4cc60PUOnpTU1ecUHut20qFUCk5GBO","ice-cream":"e0gBzg3VGC1IPCAL36VBZAWMkykHOY","iced-coffee":"Gvli0UQqXbUBmyomVAUqfPPkgW4lRT","id-card":"gahIe45OSBuvqPogVpr3KaBJF0zCSL","insurance":"EXQKqxwkBgsyk04E6ht3UY7xupVGrE","internet":"OzYLzVAmCv5Hj2J6l6T2lkulL5EoC6","invoice":"YKe6fRTt2bVGNakAliyzCyEDvhJj3N","iron":"SuKfW52PoZ7CpQpDR5krHfyuGRYV9i","janitor":"yFY4uVwmbzLthVJOaVehFdfhK4oO18","jeans":"DULdzV3uEdmGmIzORCmUox0QGw8W1z","joystick":"qgkOcWB4IzZKUUxYCC7FtmT84Kzzgm","juice-box":"bWWFBmJMk5k1F4T5fAeQavD6zfOhoM","kettle":"0ZXSBAoeMNJMJl0yVzkSmo4sKcnDMA","key":"MUeRFCYcMO6Cp1jlR2ZQd0B6wGD5G3","keyboard":"EIMVgdKNXjK9nAb9LGnRKmVDVMOl9v","kit-bag":"f18BeARTmyKtaCcvbbROLCEtmBQLuN","kitchen":"Y7NpccH5uX43D3gQgnc6I7taEfe00O","ladder":"vJ8rMMoXISqQGtUIxkyiw01mNLuyQD","lamp":"Vuj4grHI1gKLik4quzFhT5LLjlLetj","lantern":"G2WKItTJtbbEhGbWfgs4x3sAXnVa2P","laptop":"UsyTZyMk2er8VfZu1T68Z4BbnfHYL1","latte":"TY25MEA8FS7jCUYpzifu5mNUcG9G8Z","law":"tJ1togoNqunAE3CBiqtQlFvXCiBxJp","light-bulb":"BkZNLc7O2vCGCXXFm5uD2hypleNGCV","light-switch":"hlEEXf1UNCQk18T4BCI42vXL3guUa0","lightning":"VgWX4UmDW5pY171o65GSc2VFAIfUMl","lipstick":"9R2YsI8ol6X4qXKeVXyZ0c5SGqJPYS","loan":"9lBsF5KajMlN5QBzjvIZuJqEkM4uyE","love":"L93lnbuA9nvGliGfS6mXFVNzxsU72b","mail":"PmB1YFEMJKVMt3uX6K7j0g0J9m8fQd","makeup":"n8G31Cqh3JyKkxXgC4UC1NDwW6tD3A","map":"SsfjxCJh43Hr1dqzkbFWUGH3ICZQbH","massage":"6x4C05BBSCgkOXkISOAGEckXp0imU5","mechanic":"YpJzgIUw8vXzweeLhNHH3TVxZ45y9S","metro-card":"s5YyMvylDYThaxB3JEq3t6LhbaHNMP","microwave":"CC9EOBkPQNPDBMHISn7qNVcSez3vYb","milk":"nkcassY3FIZAdFy5rp0OO7t522CHj1","milkshake":"byBRCyc6PiHlepue6FAlkEDhxeRuxl","mobile-phone":"4InIbjutnVbO2RgfQjb4X5InSQnbWH","money":"IeKGYKeLd25OWlrmd5WrSsfbD7OIPA","money-bag":"oKmcX6Scsb03ofRIcpVfqdCdpSBiC3","mop":"QKg58FxZUdVZOt3AbKaj1xQtwW3mmB","mosque":"nDKPNnlCh1zQAV577JyWeXxLByEjwc","motorcycle":"eI6n4x6dT5zthnTccmRnV0GX7PJxmW","movie":"DNaKSDV2Vm6rz8yKS6WtuJwy4rLZwh","movie-ticket":"qPQLq1V50HckroIaHfkCl3QVKAg6fe","museum":"1XZWfZfNXAMmNByZTMC1KI9DTvpfe6","necklace":"IzpAiEPUhmyIp69cv7LNwmlPKqrltx","necktie":"9pYdeb75ecYybDqBqaNpQeAKSCSTOm","notebook":"V5g1BA4Fg3Mgks7vN6n3eaXb8KBz0g","office":"xxQ5VICS3oxVTrT5nkAdl6JLIsbLnp","oil-can":"HTkfaRMe4nifQMfQq7vViru0yei2Kh","oven":"lKM4u8JnYdMyrAIG1r06jd3wztDiJS","pacifier":"jL54aJcS0cEx88x1u3UugQwVDmy3eM","pack-of-cigarettes":"z4H1lnD1QLDGENZnmt0g79Xk947b5i","padel":"oCkF1qrf6JHlSR5Hy1bI0cHRqAihWI","park":"NdBLt6elFUIbOtnLqyH6e7uR6hczwe","parking-garage":"gNWoxxz6CHWHkLzXGw8eASnrSHp8hT","parking-meter":"K6ajbbuH2IH369bGYsW1ID6JWeSN55","parking-ticket":"nLjjZifDsj4rfgXUQPdRDX0RbAHIyp","party-hat":"8Y4vTmV5FmRuiaQPvL1E4DxsEkWIpZ","passport":"YxxWewuwXdRncaZSbQNORwOieVOP39","pay":"IgwTmMqp5DJMkVjEyWeG00sRl0ZvMh","pencil":"uvT8LcYBki2O1QqshT6NUI5Uh81k3r","perfume-bottle":"USYWgntKCcn9OMx7jLXrlx2zKxF9gA","pharmacy":"6wMF08KL3k63lcTffQtNl21e7rnvlZ","phone":"y1Z0TGvr67bblbtRo9exj26PTl4f6J","piggy-bank":"yXrodRQ1tufqDh2wXeFl82sDXZBv3c","pill-bottle":"Hw2fBErc10Krg5cppU7KMgSGaWQHL4","pizza":"BzDI4uzt2LYSK3YP9UguQDZrOZmC8X","pizza-box":"iGITx5bX2seyVHhefardLDnqhb1Ysg","plate":"Swa13h7uaHX7OPgB0ss940lRzX433D","playing-cards":"a7bgCSp7V8PvxQHSydB5tmeXCuI9mp","popcorn":"8ziNPyr4uUoT1yh4Fxp2yQnh2dw0Oa","popcorn-bucket":"I52nJsaGDSwuZS3iCW3QMYsKhcL345","pot":"U7IER4eMzpK1IEPwcICUq6dneAfqB1","prayer-beads":"dV0XxxHpL1dR5Bcd4xUUoZplN8ueol","price-tag":"dAl3njirA4NBVpbQvBuAG6YLwKu9eE","purse":"JiLuUypf3VvThZQb8Ndnax8gcJjkku","pyramid":"l7snYg56r05cQZ5I27afVhRmmylrtW","question-mark":"GHLlVvoifSdvzv5ojMTLUf8GOVIeee","quran":"o9nqQnhVbTQAbcVl91V7Nx9aI0c6qI","radio":"bjOa9jiylaqH81X5fdCQOxOBzv6YVD","rattle":"YmgfZmj2NoaqIs8LfIz17AJB8WVFMF","razor":"f9yGhonZlOCD6T8TK90BDDYxg8d0YK","receipt":"DjLfCX0etcbaHeaobCUklhYQWOSXUF","receipt-printer":"RNyRuayvDnJBi9FYocbYxgskvQv776","recycle":"3oO1FdYezMT0TBNCoEM47udBNFPzer","refrigerator":"XHOvbMy3dCQ9kIPii4wnMb4bE9UcoJ","refund":"5IeOd3FqvBlSrKCHnWIA4cCPyf9saV","remote-control":"11WkcJJrLdbUuQ18DNarAtZQSMt43A","rent-a-car":"ZY8MgKs5A5Kh8GgGf4F23WojfxaeAQ","reserve-calendar":"Dkc7LOL5KJR4dNRvE3KcYGbDSjzvzH","restaurant":"hRETElBXDrcXOu32Vv4OnRgHpWQZj3","restaurant-receipt":"j6AZXCfA554CsSI0WPgB0Yct9MBu7t","rickshaw":"p06XQH3odU5qQRSo52NwDbCGhBka1i","ring":"W68FVT8R1haHu0Vqbhq95CyitIQkWx","road":"2b2ERYDwFzcRBkF4LQvoZlSeH6ng89","rocket":"WtteJ2W5xSZ9e19zvN5b5x3ULLxCRH","roller-coaster":"61xcf8bG48U7mHCJhzbG4F6HBRigjF","room":"hqdnyUvW584KGwWbeAIYVvmX1gwgFL","rose":"sT3q3aFFAJlvvqPXCddQEzacaMt7qG","router":"HSXnqaOUs8Hl1qCYBPXfDRrjEDY55k","safe":"bvJNHPc0tIkrnBQsWtfPI7Q1YIE9xO","sailboat":"d3oF7OaPgHQtj00OABpdo74gmvigXE","sandwich":"8z56eYewnENLCEJaNCus5jBYErHDBD","satellite-dish":"vGq6s0QYIpUuIgj2lZOX1xv2kZqPXA","school":"XB81XNpqWBCwAUJFsXSgtRALH8DrSP","scissors":"RfMj0CSPtD4mSqRejKJey4v1FObAtH","scooter":"OmuWG1hSJKC21XClFlW2AIWx3n8LN8","screwdriver":"kzJezjKtRDN7FECJkqfrhOn57zeyZH","server":"E6UN0DhtLJwxusfI6hIZaLplYkWH2W","shampoo":"MbZzUetKofCRz1fZChkwXYAeCuL4JI","shawarma":"sqghISDAEUumblSWUbSvYRk6Qco5xD","shield":"CZxT18DNf12Vjv8rrZv8V0tddRi9Xu","shop":"hoysfVCXwcawKj1Kr7C6goZVRR1sP9","shopping-bag":"1kzlhXN3lasEQYBtwdeQrzzhBEwurX","shopping-basket":"wfA0HoNGCQ3pnu9PiSSKnKQ7hWEtBc","shopping-cart":"aVMcBoKPxWSQV3iw3xPRFYGVBDZwzN","shopping-mall":"99IhytlUNXSL1Il9URduG3zq1c6SWz","shower-head":"RKBCQr6ToHZOp9UwTmz6jezSqDB3lO","signed-document":"icEFfA5ka74NmwIVxGw2NjxnKyzMAX","sim-card":"kkjefkjyioOSS5pimcohzw1ZSssTlI","smart-tv":"f1sTPTjprUyc7cN3t44jfM9sQkWUUO","smartphone":"LxbDZUY1gzuzF4AEv0OHAqsSGpAng8","smartwatch":"kzabTGJOkCN2GbNtsEYctUy9uK5eI1","sneakers":"llBJrXGTGW8fvXFYtSynrQ6nWHbhKo","soap":"0EumVwFuSrcJSbTbqi6NGpq8ddFGKB","soccer-ball":"HSHCfamfmrRJe2qzudsJk9N4k3ySBB","socket":"6raW05Dm78twOXQ0WHgiEeLngoV4Jk","socks":"wsHayAtLFxk5o1f2ZhsJOhwe1keftG","soda-can":"sXo7OavtNgDPJ51Nmffc9krWL5BriT","spa":"bkdUNYIhdtrWnm5wKkRmKHaRfiGOAx","spark-plug":"5ml8JTBl7dPlLLShSYZeusOiOxzuDK","speaker":"U8NVtxQbToN7GSMyZnp0e36cxew3VN","stadium":"vkLjEj41iZYRoCUyOS6A2iElwtAG5c","star-1":"K6ajnEunSyn0dpLf3ZXfW4cvI1dCO3","steering-wheel":"h2A4Uc1Cc525S7jCcyMH4DbNxtt86C","stethoscope":"YM427q0rp7oBdrNFxZLbdSyYBZNTjA","stroller":"AlOU4KOK22eX92stfugvfVd0YeyT1K","subscription":"JFRJMlgmIk1SNlNPZVGSW7bTco4jY4","suitcase":"SJxXSQiZvg2rhqvpw6hANLsmgfO4tX","sunflower":"ZVEHmGEYlU5hwlW3hvb7UqqQaj0rOZ","sunglasses":"xbu17L0fw8vi5UpvTCgPDQLde0RQVK","supermarket":"6RTw7Ifo1xhDr9ETjDBjMGv5S5YzTi","sushi":"9CY8eypBeC0cXG0brbuA5jv4yGvu2n","swimming-pool":"BWBtiIA0RTZ9SrIb0oOdPBZRfvTVYn","syringe":"pK4NZDRK2QPjJrVx7YL17gcmgt2JNO","t-shirt":"ScKZwuDUTUPRm5ljOa5KSKzyJB3BNB","tablet":"RfZWMYPolUNkF8E5eI5LriAMjXdsXh","target":"QUD9QBFZRZ2ZYM6AV1VO3hYmCbUAq1","taxi":"Ei311Qi6EfCbzzHIhoFcn9ngw1jNlj","tea":"XOnrXjR0Ndf7NA9w5x64IPk0RHgpNF","teddy-bear":"YMzIxkDqOMMYZ7MtEMvs0ES0wNRgtt","television":"ob5X6P6AiLzXqRjJXCOedM4RaJ3Joa","tennis-ball":"PdQ6e0nT01AlUZ68JTSsHZQ9iLHNuc","tennis-racket":"BBXTV4LAEedO5jo0W6YkMkVyTlmflS","tent":"ctCiP3glZeziQjunHWJqFIWQ66zGZ3","theater":"Qz0we9ljzjGlodmj8Euy7o5NBaMfxy","thermometer":"iMCKWh41vxsRK2SLktUolyAxlrI0LP","ticket":"xPBxqYxnSi0VmK3ALnqKVxdTMKcII9","timer":"f7rdIE4CfBPLp1ltnBHOmQV1WxtMms","tissue":"nKj5LX1UWFA7mrHpVCmlabiLyJgWjB","to-do-list":"Lofrfh8hYAlSORMenjKq1dkvoBxf4n","toilet-paper":"RcxHkjUdGdFrHiaOfPUEwAIm6NeRC4","toolbox":"d7lf8LhduKgJMeGR7zKIrY9OCmpv0E","tooth":"CO4KOn0XgL7vM3OGalhMPXtGIlprSl","toothbrush":"xNeWQ0a885IvaVul71PkA4v3mdsi9s","traffic-light":"hkTZ1VdLjYIzHXRhRviqVHFUABzro2","train":"B6HK6QalkOwIxTOxbj2guRpL5YQjAL","transfer":"FPqFahLtjwxA6xvHx51zA2mnfQKOCU","transformer":"IvbgeSvAiNMAXA18AcC7azkFwnT1tJ","tree":"yLBbZMvacxsSxiNPlvXmLCiHRwgjc9","trophy":"BwtahaCLSoUOyWdITnlPCNiwzCLUdL","truck":"31GYuaDQ6tzlmK2MsYTpfwzmJwf9Kr","tuk-tuk":"tz7WPwc46I6ll8Fu8KrzSHT3Ab5fUc","tulip":"wBmeLpU3JemycVuK7Vsm5bIpg1lPIZ","umbrella":"UoaYOG517tIhHK4E1CCxU83D6Add6c","vacuum-cleaner":"T4bnGXas7ByWQya2Nw4ct4cpPmoEDW","vape":"XbM9sZaZOMb2iP7Qld6UguBdp7jBhE","video":"Eu2Ph2tWRZNcZUBi5acmRTEYlQhMhx","video-camera":"8gA639D5Oy3AwJ65VfmgtpVoMnfmwq","video-game-console":"wq17AJQephrhBeyrQduVlCandwX2Vr","vitamins":"aBqKepFsAjufXKHK4Eko21mWw89nhF","wall-calendar":"Sae9tyL6cjfCtWIsMdmFt0tn7Iu2tQ","wall-clock":"mmxt1FZH1PS1tzvcF8HCVOPaFfFnC4","wallet":"r5QxxRu1dvIND6CpaRBYLTnJmCfzNM","washing-machine":"3VvT5beQ7zVUeXuJIptK5lCq8kMkXp","watch":"GMDUYJRKP7kEcXKVWjUVqk64HOpE0U","water":"tCrSQrf5x3zet2xDPDA1L6WvKfLzJc","water-bottle":"buDMpEM3yB7tkljKDSuFMrnqlK7LQN","water-glass":"QYTeqNE63w32Noe3jHVTabQrFUw7Er","water-meter":"xMcRRMqFLuqeGf4I18U3xTXD0QyQ4S","wheel":"jWkSRMSWDFMbfAnJO0l7jFvPFJgkpS","wifi":"VXaWfLCXlsRCXSbioAplHuPLkfoqWe","woman":"HOLCUQcjFPgJhrnLCKwCMaCRv8OA2g","wrench":"rwEvYLT3gAQ9WJJXFEV6eMrbaB2EaO","wristwatch":"zRhjhcyXjuELkfRNtk8wFLFLQovQsw","yacht":"xrYcgL4nr9hm8FT9LRBh3RZoHyN1mw","yoga":"m2SOQuJWIeR3yhaHHkIn6ueDQ5KAEZ"};
+function thUrl(slug) {
+  const id = THIINGS[slug] || THIINGS['price-tag'];
+  return 'https://www.thiings.co/_next/image?url=' + encodeURIComponent('https://lftz25oez4aqbxpq.public.blob.vercel-storage.com/image-' + id + '.png') + '&w=96&q=75';
+}
+// One icon as an <img>. If an image can't load (offline before it was ever
+// cached), it is hidden instead of showing a broken-image box.
+function thImg(slug, cls) {
+  return `<img class="th-ic${cls ? ' ' + cls : ''}" src="${thUrl(slug)}" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.style.visibility='hidden'">`;
+}
+// Name → icon. Matched against a sub category's name first, then its
+// category's, so every category and sub category gets a fitting icon —
+// including ones that exist only in synced/imported data. Words are
+// lowercase; the app's own Franco-Arabic names are covered too.
+const ICON_RULES = [
+  [/salary transfer/, 'cash'],
+  [/\b(income|salary|paycheck|bonus|other income)\b/, 'money-bag'],
+  [/refund|reversal|cashback/, 'refund'],
+  [/superinten|bawab|doorman|ragab|janitor/, 'janitor'],
+  [/home allowance|home money|home budget|feloos el beet|masroof/, 'cash'],
+  [/electric|kahraba/, 'light-bulb'],
+  [/\bwater\b|maya|faucet/, 'faucet'],
+  [/clean|tandeef|nadafa|makwa|laundry|launder/, 'broom'],
+  [/\bgas\b|anboba|amboba|cylinder/, 'gas-cylinder'],
+  [/internet|wifi|we-?fbb|we internet|\bwe\b|router|adsl/, 'router'],
+  [/etisalat|vodafone|orange|mobile|phone|sim\b|karta|recharge/, 'smartphone'],
+  [/\bbills?\b|invoice|fatora|fatoret/, 'invoice'],
+  [/housing|\brent\b|\bhome\b|house|apartment|\bbeet\b/, 'house'],
+  [/cinema|movie|film|imax/, 'popcorn'],
+  [/concert|music|event/, 'concert'],
+  [/entertain|outing|5roga|\bfun\b/, 'movie-ticket'],
+  [/playstation|psn|\bps\d?\b|console|xbox|games?\b|gaming/, 'game-controller'],
+  [/laptop|computer|\bpc\b|macbook/, 'laptop'],
+  [/gam3eya|gem3eya|savings club|circle/, 'coin-jar'],
+  [/wadi degla|club|nady/, 'tennis-racket'],
+  [/padel|tennis/, 'tennis-racket'],
+  [/gym|fitness|training|workout/, 'dumbbell'],
+  [/streaming|netflix|shahid|watchit|osn|youtube|tv\b|television/, 'television'],
+  [/microsoft|365|software|cloud|icloud|google|apple one|\btech\b/, 'cloud'],
+  [/subscri|membership|eshterak/, 'subscription'],
+  [/installment|valu|sohoula|souhoola|halan|\bbro\b|aman/, 'reserve-calendar'],
+  [/gold|dahab/, 'gold-ingot'],
+  [/saving|ta7weesh|deposit/, 'piggy-bank'],
+  [/invest|stock|shares|fund/, 'graph'],
+  [/withdraw|\batm\b|sa7b/, 'atm'],
+  [/instapay|transfer|ta7weel|ta7wel/, 'transfer'],
+  [/bank|fees|hsbc|qnb|cib/, 'bank'],
+  [/loan|borrow|debt|salaf/, 'loan'],
+  [/credit card|mastercard|visa/, 'credit-card'],
+  [/fuel|petrol|banzene|benzine|benzene|gasoline/, 'gas-pump'],
+  [/parking|rakna|sayes|garage/, 'parking-meter'],
+  [/car wash|ghaseel|wash/, 'car-wash'],
+  [/maintenance|repair|taslee7|kawetsh|tire|mechanic|oil change|zeet/, 'wrench'],
+  [/\bcar\b|3arabeya|vehicle|car stuff/, 'car'],
+  [/uber|careem|taxi|indrive|didi|yango|driver/, 'taxi'],
+  [/scooter/, 'scooter'],
+  [/toktok|tuk/, 'tuk-tuk'],
+  [/metro|train|subway/, 'train'],
+  [/\bbus\b|microbus|transport|toll/, 'bus'],
+  [/flight|airplane|plane|airline/, 'airplane'],
+  [/hotel|resort/, 'hotel'],
+  [/vacation|travel|trip|safar|beach|sa7el|ba7r|summer/, 'beach'],
+  [/boat|markeb|felucca|faloka|yacht/, 'sailboat'],
+  [/cigar|sagayer|sagyer|smok|tobacco/, 'cigarette'],
+  [/iqos|vape|heets/, 'vape'],
+  [/shisha|hookah/, 'vape'],
+  [/enjy|jojo|wife|love|valentine/, 'heart'],
+  [/flower|ward|bouquet/, 'flower'],
+  [/charity|zakat|sadaqa|donat|sadaka/, 'donating'],
+  [/gift|hedeya|hadaya|present|3edeya|eid/, 'gift'],
+  [/medic|dawa|adweya|pharmac|saydaleya|vitamin/, 'pill-bottle'],
+  [/doctor|kashf|clinic|3eyada|3eyadet/, 'stethoscope'],
+  [/dent|asnan|teeth|tooth/, 'tooth'],
+  [/hospital|mostashfa|surgery/, 'hospital'],
+  [/\blab\b|\btests?\b|ta7aleel|x-?ray|scan/, 'thermometer'],
+  [/glasses|nadara|optic/, 'glasses'],
+  [/insurance|ta2meen/, 'insurance'],
+  [/health|medical/, 'first-aid-kit'],
+  [/barber|7ela2a|7la2|hair|haircut|salon/, 'barber'],
+  [/perfume|cologne|fragrance/, 'perfume-bottle'],
+  [/spa|massage/, 'spa'],
+  [/personn?al care|cosmetic|makeup|skincare|soap|shampoo|deodorant|duedrant/, 'shampoo'],
+  [/grocer|supermarket|market|breadfast|talabat mart|carrefour|spinneys/, 'shopping-basket'],
+  [/delivery|talabat|elmenus|order/, 'pizza-box'],
+  [/breakfast|fetar|feter|bagel|croissant|makhbaz|bakery|3eesh|bread/, 'croissant'],
+  [/se7oor|sohour|sehoor|ramadan|iftar/, 'lantern'],
+  [/coffee|cofee|cafe|café|ahwa|starbucks|latte|frape|frappe|shake|boba|tea\b|shay/, 'coffee-cup'],
+  [/juice|3aseer|soda|pepsi|cola|drink|shorb|water bottle/, 'soda-can'],
+  [/ice ?cream|dessert|7elw|cake|konafa|chocolate|sweets|7alaweyat|candy/, 'ice-cream'],
+  [/pizza/, 'pizza'],
+  [/burger|mcdonald|kfc|\bmac\b|fast food/, 'burger'],
+  [/shawerma|shawarma/, 'shawarma'],
+  [/sushi|suchi/, 'sushi'],
+  [/fish|samak|shrimp|seafood/, 'fish'],
+  [/dining|restaurant|dinner|lunch|food|\bakl\b|eating|meal/, 'restaurant'],
+  [/cloth|shirt|dress|jeans|pants|fashion|defacto|lc waikiki|zara|cottonil/, 't-shirt'],
+  [/shoe|sneaker|gazma|gazmet/, 'sneakers'],
+  [/watch|sa3a|sa3ty/, 'wristwatch'],
+  [/accessor|jewel|\brings?\b|bracelet|necklace/, 'diamond'],
+  [/\bbags?\b|shanta|shantet/, 'handbag'],
+  [/amazon|noon|online shop/, 'box'],
+  [/btech|appliance|air fr[iy]er|fridge|washing machine/, 'home-appliances'],
+  [/furniture|monazem|dolab|decor/, 'house-key'],
+  [/shop/, 'shopping-bag'],
+  [/school|tuition|course|educat|university|college/, 'graduation-cap'],
+  [/book|maktaba|library|stationery/, 'book'],
+  [/baby|diaper|pampers/, 'baby'],
+  [/kid|children|3eyal|toy/, 'teddy-bear'],
+  [/\bpet|dog|cat\b|vet\b/, 'dog'],
+  [/work|office|shoghl|business/, 'briefcase'],
+  [/\btips?\b|ba2sheesh|baksheesh/, 'coins'],
+  [/family|mama|baba|teta|mom|dad|parents/, 'family'],
+  [/mosque|prayer|quran/, 'mosque'],
+  [/wedding|engagement/, 'ring'],
+  [/party|birthday|melad|celebrat|farewell/, 'party-hat'],
+  [/photo|tasweer|camera/, 'camera'],
+  [/govern|tax|license|tar5ees|tagdeed|legal|lawyer|court/, 'law'],
+  [/money exchange|exchange|currency|dollar/, 'dollar-bill'],
+  [/cash|feloos|money/, 'cash'],
+  [/misc|other|anything|general|uncategor/, 'box']
 ];
-const DEFAULT_CATEGORY_ICONS = {
-  "Housing": "🏠",
-  "Housing>Superintendent": "🧑‍🔧",
-  "Housing>Home Allowance": "💵",
-  "Housing>Electricity": "💡",
-  "Housing>Home Money": "🏠",
-  "Housing>Cleaning": "🧹",
-  "Housing>Water": "💧",
-  "Bills": "🧾",
-  "Bills>WE Internet": "🌐",
-  "Bills>Etisalat": "📱",
-  "Bills>Vodafone": "📱",
-  "Bills>Gas": "🔥",
-  "Entertainment": "🎬",
-  "Installments": "💳",
-  "Subscriptions": "📺",
-  "Savings & Investment": "📈",
-  "Car": "🚗",
-  "Car>Fuel": "⛽",
-  "Car>Maintenance": "🔧",
-  "Car>Parking": "🅿️",
-  "Cigarette": "🚬",
-  "Enjy": "❤️",
-  "Charity": "🎁",
-  "Health": "💊",
-  "Shopping": "🛍️",
-  "Transportation": "🚌",
-  "Vacation": "🏖️",
-  "Personnal Care": "🧴",
-  "Credit Card": "💳",
-  "Miscellaneous": "📦",
-  "Income": "💰"
+// Emoji that older versions stored (or that were picked from the old
+// emoji picker) → the Thiings icon closest to it, for names no rule knows.
+const EMOJI_TH = {
+  '🏠':'house','🧑‍🔧':'janitor','💵':'cash','💡':'light-bulb','🧹':'broom','💧':'faucet','🔥':'flame','📶':'wifi','📱':'smartphone','🧾':'invoice',
+  '🎬':'popcorn','🎮':'game-controller','🎵':'headphones','📺':'television','🍽️':'restaurant','☕':'coffee-cup','🍔':'burger','🍕':'pizza','🎉':'confetti','🎁':'gift',
+  '💳':'credit-card','📈':'graph','💰':'money-bag','🏦':'bank','🚗':'car','⛽':'gas-pump','🔧':'wrench','🅿️':'parking-meter','🚌':'bus','🚕':'taxi',
+  '✈️':'airplane','🚆':'train','🛳️':'ferry','🚲':'bicycle','🏖️':'beach','🧳':'suitcase','🚬':'cigarette','❤️':'heart','👶':'baby','🧒':'teddy-bear',
+  '🎓':'graduation-cap','⚖️':'law','💊':'pill-bottle','🏥':'hospital','🧴':'shampoo','💇':'barber','💅':'makeup','👕':'t-shirt','🛍️':'shopping-bag','🛒':'shopping-cart',
+  '📚':'book','🎨':'pencil','📷':'camera','💻':'laptop','🖨️':'document','🔌':'socket','🌐':'internet','🐾':'dog','🐶':'dog','🐱':'cat',
+  '🕌':'mosque','⛪':'building','🧘':'yoga','🌳':'tree','🎯':'target','⚽':'soccer-ball','🏋️':'dumbbell','🔑':'key','🏢':'office','📦':'box',
+  '📄':'document','⭐':'star-1','🧺':'shopping-basket','🪑':'room','🛋️':'room','🏷️':'price-tag'
 };
+function iconSlugForName(name) {
+  const n = String(name || '').toLowerCase().trim();
+  if (!n) return null;
+  for (const [re, slug] of ICON_RULES) if (re.test(n)) return slug;
+  return null;
+}
+// Stored icon value → slug. 'th:<slug>' is one the person picked; anything
+// else is a legacy emoji.
+function storedIconSlug(v) {
+  if (!v) return null;
+  v = String(v);
+  if (v.startsWith('th:')) return THIINGS[v.slice(3)] ? v.slice(3) : null;
+  return EMOJI_TH[v] || null;
+}
+// Picked icon first; otherwise matched by the sub category's name, then the
+// category's name; then an older stored emoji; then a price tag.
+function categoryIconSlug(p, category, subcategory) {
+  const icons = (p && p.categoryIcons) || {};
+  const pick = v => (v && String(v).startsWith('th:')) ? storedIconSlug(v) : null;
+  if (subcategory && subcategory !== category) {
+    const key = category + '>' + subcategory;
+    return pick(icons[key]) || iconSlugForName(subcategory) || storedIconSlug(icons[key])
+      || pick(icons[category]) || iconSlugForName(category) || storedIconSlug(icons[category]) || 'price-tag';
+  }
+  return pick(icons[category]) || iconSlugForName(category) || storedIconSlug(icons[category]) || 'price-tag';
+}
+// Icon picker library: every Thiings icon the app knows, by name.
+const ICON_LIBRARY = Object.keys(THIINGS).sort();
+const DEFAULT_CATEGORY_ICONS = {};
 
 const CARD_THEMES = {
   visa:       { label: 'Visa',       gradient: 'linear-gradient(135deg, #3f5a49 0%, #5f7d68 55%, #86a589 100%)' },
@@ -1837,19 +1983,13 @@ function ensureProfileDefaults(p) {
   if (p.categories && p.cardType !== 'mastercard' && p.cardType !== 'savings' &&
       !Object.keys(p.categories).some(c => String(c).trim().toLowerCase() === 'income')) {
     p.categories['Income'] = ['Other income'];
-    if (!p.categoryIcons['Income']) p.categoryIcons['Income'] = '💰';
+    
   }
   return p;
 }
-// A category's icon is keyed by its own name; a sub category's icon is keyed
-// "Category>Sub category" so the same sub-category name under different
-// categories can carry different icons.
+// The icon HTML for a category / sub category (see categoryIconSlug).
 function getCategoryIcon(p, category, subcategory) {
-  if (subcategory && subcategory !== category) {
-    const key = category + '>' + subcategory;
-    if (p.categoryIcons[key]) return p.categoryIcons[key];
-  }
-  return p.categoryIcons[category] || '🏷️';
+  return thImg(categoryIconSlug(p, category, subcategory));
 }
 
 let state = (() => {
@@ -2731,9 +2871,6 @@ function buildDemoCreditProfile() {
 function buildDemoSavingsProfile() {
   const p = blankProfile(DEMO_PREFIX + 'Savings Account', 'savings', '5566');
   p.categories['Income'] = ['Salary transfer', 'Bonus'];
-  p.categoryIcons['Income'] = '💰';
-  p.categoryIcons['Income>Salary transfer'] = '💵';
-  p.categoryIcons['Income>Bonus'] = '🎉';
   const months = demoMonthKeys(4);
   const withdrawals = [
     ['Vacation', 'Trip deposit', 2500],
@@ -3590,7 +3727,7 @@ function renderCreditDashboard() {
   // ---- Recent transactions (charges and payments together) ----
   const recentMerged = [
     ...p.expenses.map(e => ({ date:e.date, desc:e.description||e.subcategory, meta:e.category, icon:getCategoryIcon(p, e.category, e.subcategory), value:e.value, isPayment:false })),
-    ...p.payments.map(pm => ({ date:pm.date, desc:pm.note||'Payment', meta:'Payment', icon:'💳', value:pm.amount, isPayment:true }))
+    ...p.payments.map(pm => ({ date:pm.date, desc:pm.note||'Payment', meta:'Payment', icon:thImg('credit-card'), value:pm.amount, isPayment:true }))
   ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
   document.getElementById('ccRecentTxns').innerHTML = recentMerged.length ? recentMerged.map(t => `
     <div class="txn-row">
@@ -3677,7 +3814,7 @@ function renderSavingsDashboard() {
   // ---- Recent transactions (deposits and withdrawals together) ----
   const recentMerged = [
     ...p.expenses.map(e => ({ date:e.date, desc:e.description||e.subcategory, meta:e.category, icon:getCategoryIcon(p, e.category, e.subcategory), value:e.value, isDeposit:false })),
-    ...p.payments.map(pm => ({ date:pm.date, desc:pm.note||(pm.category||'Deposit'), meta:pm.category||'Deposit', icon:pm.category?getCategoryIcon(p, pm.category, pm.subcategory):'💰', value:pm.amount, isDeposit:true }))
+    ...p.payments.map(pm => ({ date:pm.date, desc:pm.note||(pm.category||'Deposit'), meta:pm.category||'Deposit', icon:pm.category?getCategoryIcon(p, pm.category, pm.subcategory):thImg('money-bag'), value:pm.amount, isDeposit:true }))
   ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
   document.getElementById('svRecentTxns').innerHTML = recentMerged.length ? recentMerged.map(t => `
     <div class="txn-row">
@@ -4068,7 +4205,7 @@ function renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel) {
     else if (isIncomeCategory(r.category)) { amtCls = 'neg'; meta = 'Income'; metaCls = 'neg'; }
     else if (ai.signed < 0) { amtCls = 'neg'; meta = 'Refund'; metaCls = 'neg'; }
     else meta = r.method || '';
-    const icon = plainPayment ? '💳' : getCategoryIcon(p, r.category, r.subcategory);
+    const icon = plainPayment ? thImg('credit-card') : getCategoryIcon(p, r.category, r.subcategory);
     html += `<button type="button" class="tx-card" onclick="openTxSheet('${r.kind}','${r.id}')">
       <span class="tx-icon ${plainPayment ? 'c1' : catTone(r.category)}">${icon}</span>
       <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span></span>
@@ -4432,14 +4569,29 @@ let iconPickerTarget = null; // { category, subcategory|null }
 function openIconPicker(category, subcategory, anchorEl) {
   iconPickerTarget = { category, subcategory: subcategory || null };
   const pop = document.getElementById('iconPickerPopover');
-  pop.innerHTML = `<div class="icon-picker-grid">${ICON_LIBRARY.map(ic => `<button onclick="pickIcon('${ic}')">${ic}</button>`).join('')}</div>`;
+  const current = categoryIconSlug(activeProfile(), category, subcategory);
+  pop.innerHTML = `<input type="text" class="icon-picker-search" placeholder="Search icons…" oninput="filterIconPicker(this.value)" aria-label="Search icons">
+    <div class="icon-picker-grid">${ICON_LIBRARY.map(ic => `<button type="button" data-ic="${ic}" class="${ic === current ? 'sel' : ''}" title="${ic.replace(/-/g, ' ')}" aria-label="${ic.replace(/-/g, ' ')}" onclick="pickIcon('${ic}')">${thImg(ic)}</button>`).join('')}</div>
+    <div class="icon-picker-foot">3D icons by <a href="https://www.thiings.co/things" target="_blank" rel="noopener">Thiings</a></div>`;
   const rect = anchorEl.getBoundingClientRect();
-  const popWidth = 224;
+  const popWidth = Math.min(300, window.innerWidth - 16);
+  pop.style.width = popWidth + 'px';
   let left = rect.left;
   if (left + popWidth > window.innerWidth - 8) left = window.innerWidth - popWidth - 8;
   pop.style.left = Math.max(8, left) + 'px';
-  pop.style.top = (rect.bottom + 6) + 'px';
+  const popH = 330;
+  let top = rect.bottom + 6;
+  if (top + popH > window.innerHeight - 8) top = Math.max(8, rect.top - popH - 6);
+  pop.style.top = top + 'px';
   pop.style.display = 'block';
+  const sel = pop.querySelector('button.sel');
+  if (sel) sel.scrollIntoView({ block: 'center' });
+}
+function filterIconPicker(q) {
+  q = String(q || '').trim().toLowerCase().replace(/\s+/g, '-');
+  document.querySelectorAll('#iconPickerPopover .icon-picker-grid button').forEach(b => {
+    b.style.display = !q || b.dataset.ic.includes(q) ? '' : 'none';
+  });
 }
 function closeIconPicker() {
   iconPickerTarget = null;
@@ -4449,7 +4601,7 @@ function pickIcon(icon) {
   if (!iconPickerTarget) return;
   const p = activeProfile();
   const key = iconPickerTarget.subcategory ? (iconPickerTarget.category + '>' + iconPickerTarget.subcategory) : iconPickerTarget.category;
-  p.categoryIcons[key] = icon;
+  p.categoryIcons[key] = 'th:' + icon;
   saveState();
   closeIconPicker();
   renderCategoryManager();
@@ -4736,7 +4888,7 @@ function renderBudgetPage() {
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="drag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>${escapeHtml(monthLabel(b.month))}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')"><span class="cat-tag">${getCategoryIcon(p, b.category, b.subcategory)} ${escapeHtml(b.category)}</span></td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
-      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? '<span title="Part of a recurring series" style="margin-right:4px;">🔁</span>' : ''}${instIds.has(b.id) ? '<span title="Installment" style="margin-right:4px;">📆</span>' : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
+      <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? `<span class="bud-tagicon" title="Part of a recurring series">${thImg('recycle')}</span>` : ''}${instIds.has(b.id) ? `<span class="bud-tagicon" title="Installment">${thImg('reserve-calendar')}</span>` : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable" onclick="startBudgetEdit('${b.id}')">${fmt(planned)}</td>
       <td class="amt-cell">${fmt(actual)}</td>
       <td class="amt-cell">${fmt(remaining)}</td>
@@ -5235,8 +5387,8 @@ function calendarEventsForMonth(m) {
   if (isCredit(p)) {
     const [y, mo] = m.split('-').map(Number);
     const statementDate = new Date(y, mo-1, clampDay(p.statementDay));
-    push(isoDate(statementDate), { label: 'Statement closes', type: 'info', icon: '📄' });
-    push(isoDate(statementDueDate(p, statementDate)), { label: 'Card payment due', type: 'due', icon: '💳' });
+    push(isoDate(statementDate), { label: 'Statement closes', type: 'info', icon: thImg('invoice') });
+    push(isoDate(statementDueDate(p, statementDate)), { label: 'Card payment due', type: 'due', icon: thImg('credit-card') });
   } else if (!isSavings(p)) {
     p.budget.forEach(b => {
       push(b.startDate, {

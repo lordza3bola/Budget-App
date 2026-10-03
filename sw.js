@@ -3,7 +3,7 @@
 // opens instantly and works with no connection. Firebase's own traffic
 // (auth + Firestore sync) is left completely alone — never cached, never
 // intercepted — so your data always reflects the network, not a stale copy.
-const CACHE_NAME = 'kashu-app-shell-v25';
+const CACHE_NAME = 'kashu-app-shell-v26';
 
 // Same-origin app shell — always cached on install.
 const CORE_ASSETS = [
@@ -22,7 +22,8 @@ const LIB_HOSTS = [
   'cdnjs.cloudflare.com',
   'www.gstatic.com',
   'fonts.googleapis.com',
-  'fonts.gstatic.com'
+  'fonts.gstatic.com',
+  'www.thiings.co'   // the 3D category / page icons (small 96px images)
 ];
 
 // Hosts that must NEVER be cached or served from cache — live sync traffic.
@@ -65,7 +66,9 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(isNavigation ? './index.html' : req).then((cached) => {
       const network = fetch(req).then((res) => {
-        if (res && res.ok) {
+        // Icon images load cross-origin without CORS, so they come back "opaque"
+        // (status 0) — still a good response to keep.
+        if (res && (res.ok || res.type === 'opaque')) {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(isNavigation ? './index.html' : req, copy));
         }
