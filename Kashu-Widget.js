@@ -46,8 +46,9 @@
 //        Run Script (this script, Parameter = that Dictionary)
 //        Show Notification [notification]
 //      Otherwise: Show Notification [notification]
-// Known vendors are added silently; unknown ones are asked once and then
-// remembered; IPN transfers are always asked; declined messages are ignored.
+// Known vendors are added silently; unknown ones ask and are saved to
+// Settings → Vendors with "Always ask" on (switch it off there to make one
+// automatic); IPN transfers always ask; declined messages are ignored.
 //
 // SECURITY NOTE: your password is only ever sent straight to Google's own
 // Firebase Auth endpoint (identitytoolkit.googleapis.com) to get a fresh
@@ -299,8 +300,9 @@ async function runFromShortcut(param) {
 //   • unknown vendor, a rule set to "Always ask", or any IPN transfer
 //     → returns status "ask" plus your categories, so the Shortcut can
 //       show its two Choose-from-List steps and call back with mode
-//       "resolve". An unknown vendor is then remembered as a new rule
-//       (IPN transfers never are).
+//       "resolve". An unknown vendor is then saved to Settings → Vendors
+//       with "Always ask" ON, so it keeps asking until you switch that
+//       off in the app (IPN transfers are never saved).
 //   • declined transaction → nothing added, status "skipped"
 // Messages are filed under the profile set for that card in
 // Settings → Vendors → Cards (e.g. **6065 → Main), else the open profile.
@@ -440,8 +442,8 @@ async function handleResolve(p) {
     // Remember the vendor — never for IPN transfers, and never over an existing rule.
     if (!parsed.isIPN && key && !matchVendorRule(ctx.rules, parsed)) {
       try {
-        await commitAppendRule(ctx, { id: 'v_sms_' + Date.now(), match: key, category, subcategory: subcategory || category, ask: false, learned: true });
-        note += ' · remembered ' + key;
+        await commitAppendRule(ctx, { id: 'v_sms_' + Date.now(), match: key, category, subcategory: subcategory || category, ask: true, learned: true });
+        note += ' · saved ' + key + ' to Vendors';
       } catch (e) { note += ' · (couldn\'t save the vendor rule)'; }
     }
     return smsReply('added', note);

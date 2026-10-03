@@ -1480,7 +1480,7 @@
         </div>
 
         <div class="settings-panel" id="settingsPanel-vendors">
-          <p class="vd-note">When a bank message arrives, your Shortcut sends it to the Kashu script. A vendor with a rule here is added straight away; anything else (and every <b>IPN</b> transfer) asks you for the category. Vendors you categorize are remembered as new rules.</p>
+          <p class="vd-note">When a bank message arrives, your Shortcut sends it to the Kashu script. A vendor with a rule here is added straight away; anything else (and every <b>IPN</b> transfer) asks you for the category. A new vendor you categorize is saved here with <b>Always ask</b> on, so it keeps asking — switch that off once a vendor is always the same category.</p>
           <h3>Cards</h3>
           <div class="vd-list" id="vdCards"></div>
           <h3 style="margin-top:22px;">Vendor rules <span class="vd-count" id="vdCount"></span></h3>
@@ -6287,7 +6287,7 @@ function renderVendorRules() {
       <input class="vd-match" type="text" value="${escapeHtml(r.match)}" aria-label="Text to match" onchange="updateVendorRule(${i}, 'match', this.value)">
       <input class="vd-cat" type="text" value="${escapeHtml(r.category || '')}" list="catList" placeholder="Category" aria-label="Category" oninput="vdFillSubs('vdSub_${i}', this.value)" onchange="updateVendorRule(${i}, 'category', this.value)">
       <span class="vd-sub"><input type="text" value="${escapeHtml(r.subcategory || '')}" list="vdSub_${i}" placeholder="Sub category" aria-label="Sub category" onchange="updateVendorRule(${i}, 'subcategory', this.value)"><datalist id="vdSub_${i}">${vdSubsFor(r.category).map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></span>
-      <label class="vd-ask" title="Always ask for the category, even though this vendor is known"><input type="checkbox" ${r.ask ? 'checked' : ''} onchange="updateVendorRule(${i}, 'ask', this.checked)">Always ask${r.learned ? '<span class="vd-tag">learned</span>' : ''}</label>
+      <label class="vd-ask" title="Always ask for the category, even though this vendor is known"><input type="checkbox" ${r.ask ? 'checked' : ''} onchange="updateVendorRule(${i}, 'ask', this.checked)">Always ask${r.learned ? '<span class="vd-tag">new</span>' : ''}</label>
       <button class="del-btn" onclick="deleteVendorRule(${i})" title="Delete rule" aria-label="Delete rule ${escapeHtml(r.match)}">✕</button>
     </div>`).join('') : `<div class="vd-empty">${q ? 'No rules match.' : 'No vendor rules yet.'}</div>`;
 }
@@ -6337,7 +6337,7 @@ function testVendorMessage() {
   else if (m.isIPN) verdict = '<span class="ask">IPN transfer — asks you for the category every time.</span>';
   else if (rule && rule.ask) verdict = `<span class="ask">Known vendor set to "Always ask" — asks you for the category.</span>`;
   else if (rule) verdict = `<span class="ok">Added automatically → <b>${escapeHtml(rule.category)} / ${escapeHtml(rule.subcategory || rule.category)}</b></span>`;
-  else verdict = `<span class="ask">Unknown vendor — asks you once, then remembers "${escapeHtml(vendorKey(m.vendor) || '—')}".</span>`;
+  else verdict = `<span class="ask">Unknown vendor — asks you, then saves "${escapeHtml(vendorKey(m.vendor) || '—')}" here with Always ask on.</span>`;
   const amt = m.amount == null ? '—' : fmt((m.incoming ? -1 : 1) * m.amount, prof);
   out.innerHTML = `<div class="vd-result">
     Amount <b>${escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}<br>
