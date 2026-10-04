@@ -1128,6 +1128,48 @@
   .pl-chips { display: flex; gap: 8px; flex-wrap: wrap; }
   .pl-chip { padding: 4px 10px; border-radius: 999px; background: #f3e6cf; color: #7d5a1e; font-size: 11.5px; font-weight: 700; }
   .pl-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: #f3e6cf; color: #7d5a1e; font-size: 13px; font-weight: 700; }
+  .pl-dbtns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pl-sec { font-size: 11px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: -6px; }
+  .pl-cp-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pl-mchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pl-mc { border: none; height: 36px; padding: 0 12px; border-radius: 10px; font: 700 12.5px Manrope, sans-serif; color: var(--txt-dim); background: var(--bg); box-shadow: 3px 3px 6px #d3cab9, -3px -3px 6px #fffcf5; display: inline-flex; align-items: center; cursor: pointer; }
+  .pl-mc.on { background: var(--blue); color: #fff; box-shadow: 3px 3px 7px #c2cdb9, -3px -3px 7px #fffcf5; }
+  .pl-mc.on::before { content: "✓"; margin-right: 5px; }
+  .pl-mc.src { background: #e2ebdc; color: #4f7d5c; box-shadow: inset 0 0 0 2px var(--blue); cursor: default; }
+  .pl-quick { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 12.5px; font-weight: 700; color: var(--txt-dim); }
+  .pl-quick .pl-link { text-decoration: underline; }
+  .pl-list { border-radius: 14px; box-shadow: inset 3px 3px 7px #d3cab9, inset -3px -3px 7px #fffcf5; padding: 2px 0; }
+  .pl-lrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 13.5px; }
+  .pl-lrow + .pl-lrow { border-top: 1px solid var(--line); }
+  .pl-lname { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .pl-ldesc { font-size: 11.5px; color: var(--txt-dim2); font-weight: 600; }
+  .pl-ck { width: 18px; height: 18px; border-radius: 6px; background: var(--blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex: none; }
+  .pl-locked { color: var(--txt-dim); }
+  .pl-locked .pl-lrow > span:last-child { font-size: 12px; font-weight: 700; text-align: right; }
+  .pl-lock { flex: none; color: var(--txt-dim2); }
+  .pl-ask { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; box-shadow: 0 0 0 2px var(--amber), var(--shadow-out-sm); }
+  .pl-ask > b { font-size: 14px; }
+  .pl-tog { -webkit-appearance: none; appearance: none; width: 42px !important; height: 24px !important; min-width: 42px; border-radius: 999px; background: #ddd4c4; position: relative; flex: none; box-shadow: inset 2px 2px 4px #c9bfa9; cursor: pointer; margin: 0; padding: 0 !important; transition: background .15s; }
+  .pl-tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fffcf5; box-shadow: 1px 1px 3px rgba(0,0,0,.15); transition: left .15s; }
+  .pl-tog:checked { background: var(--blue); }
+  .pl-tog:checked::after { left: 21px; }
+  .pl-rv-head, .pl-rv-row { display: grid; grid-template-columns: 62px minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr) auto; gap: 8px; align-items: center; }
+  .pl-rv-head { font-size: 10.5px; font-weight: 800; color: var(--txt-dim2); text-transform: uppercase; letter-spacing: .04em; padding: 0 12px; margin-bottom: -6px; }
+  .pl-rv-row { padding: 10px 12px; font-size: 13px; }
+  .pl-rv-row + .pl-rv-row { border-top: 1px solid var(--line); }
+  .pl-rv-dim { color: var(--txt-dim); }
+  @media (max-width: 520px) {
+    .pl-rv-head { display: none; }
+    .pl-rv-row { grid-template-columns: 1fr auto; grid-template-areas: "m st" "n a" "l l"; row-gap: 4px; }
+    .pl-rv-row > :nth-child(1) { grid-area: m; }
+    .pl-rv-row > :nth-child(2) { grid-area: n; }
+    .pl-rv-row > :nth-child(3) { grid-area: a; justify-self: end; }
+    .pl-rv-row > :nth-child(4) { grid-area: l; }
+    .pl-rv-row > :nth-child(5) { grid-area: st; justify-self: end; }
+    .pl-rv-row > :nth-child(2)::before { content: "Now "; color: var(--txt-dim2); }
+    .pl-rv-row > :nth-child(3)::before { content: "After copy "; color: var(--txt-dim2); font-weight: 600; }
+    .pl-rv-row > :nth-child(4)::before { content: "Left over "; color: var(--txt-dim2); }
+  }
   @media (max-width: 1100px) and (min-width: 861px) {
     .pl-form { grid-template-columns: repeat(2, minmax(0,1fr)); }
     .pl-form .pl-f-desc { grid-column: 1 / -1; }
@@ -6727,6 +6769,24 @@ function plLatestSalary(p, m) {
 function plSumKey(lines, m, key) {
   return lines.filter(b => b.month === m && plLineKey(b) === key).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
 }
+// Installment lines (the app's own definition, see installmentPlanGroups)
+// are never changed by the Planner: edits, removals and copies only touch
+// the other lines. Cached per budget array.
+let plInstCache = { ref: null, len: -1, ids: null };
+function plInstIds(lines) {
+  if (plInstCache.ref === lines && plInstCache.len === lines.length) return plInstCache.ids;
+  const ids = new Set();
+  try { const g = installmentPlanGroups({ budget: lines }); Object.values(g).forEach(x => x.rows.forEach(r => ids.add(r.id))); } catch (e) {}
+  lines.forEach(b => { if (b.installmentGroupId || b._plInst) ids.add(b.id); });
+  plInstCache = { ref: lines, len: lines.length, ids };
+  return ids;
+}
+function plIsInst(b, ids) { return !!(b._plInst || b.installmentGroupId || (ids && ids.has(b.id))); }
+// Sum of a key's non-installment lines in the REAL budget (what overrides compare against).
+function plBaseSum(p, m, key) {
+  const ids = plInstIds(p.budget || []);
+  return (p.budget || []).filter(b => b.month === m && plLineKey(b) === key && !plIsInst(b, ids)).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+}
 function plCycleStartDate(p, m) {
   const c = (p.incomeCycles || {})[m];
   return (c && c.start) ? c.start : m + '-01';
@@ -6734,6 +6794,7 @@ function plCycleStartDate(p, m) {
 // The budget as it would be with the draft applied. forSave=false marks the
 // hypothetical installment's lines so the chart can hatch them.
 function plBuildBudget(p, d, forSave) {
+  const instIds = plInstIds(p.budget || []);
   let out = (p.budget || []).map(b => Object.assign({}, b));
   const stamp = Date.now();
   let n = 0;
@@ -6742,17 +6803,21 @@ function plBuildBudget(p, d, forSave) {
     Object.keys(ovs[m] || {}).forEach(key => {
       const v = plR2(ovs[m][key]);
       const [cat, sub] = plSplit(key);
-      const match = out.filter(b => b.month === m && plLineKey(b) === key);
+      const match = out.filter(b => b.month === m && plLineKey(b) === key && !plIsInst(b, instIds));
+      const meta = (d.meta && d.meta[m] && d.meta[m][key]) || {};
       if (v <= 0) {
         if (match.length) out = out.filter(b => !match.includes(b));
         return;
       }
       if (!match.length) {
-        out.push({
-          id: 'b_pl_' + stamp + '_' + (n++), month: m, category: cat, subcategory: sub, description: '',
+        // 'b<digits>' ids keep these out of the installment detection.
+        const line = {
+          id: 'b' + stamp + '_pl' + (n++), month: m, category: cat, subcategory: sub, description: meta.ds || '',
           startDate: plCycleStartDate(p, m), durationMonths: 1, plannedValue: v,
-          status: 'Not Paid Yet', oneTime: true
-        });
+          status: 'Not Paid Yet'
+        };
+        if (meta.o) line.oneTime = true;
+        out.push(line);
       } else if (match.length === 1) {
         match[0].plannedValue = v;
       } else {
@@ -6787,10 +6852,10 @@ function plBuildBudget(p, d, forSave) {
 }
 // One row per chart month: planned/spent/income and what is left before and
 // after the draft, using the app's own monthSummary math.
-function plCompute() {
+function plCompute(dIn, monthsIn) {
   const p = activeProfile();
-  const d = plDraft();
-  const months = plMonths(d, p);
+  const d = dIn || plDraft();
+  const months = monthsIn || plMonths(d, p);
   const after = plBuildBudget(p, d, false);
   const inc = Object.assign({}, p.income || {});
   const est = {};
@@ -6945,7 +7010,8 @@ function plRenderChart(c) {
 function plMonthDetail(c, m) {
   const p = c.p, d = c.d;
   const ov = (d.overrides && d.overrides[m]) || {};
-  const baseLines = (p.budget || []).filter(b => b.month === m && !isIncomeCategory(b.category));
+  const baseIds = plInstIds(p.budget || []);
+  const baseLines = (p.budget || []).filter(b => b.month === m && !isIncomeCategory(b.category) && !plIsInst(b, baseIds));
   const afterLines = c.after.filter(b => b.month === m && !isIncomeCategory(b.category));
   const exps = (p.expenses || []).filter(e => e.month === m && !isIncomeCategory(e.category));
   const keys = [];
@@ -6960,19 +7026,21 @@ function plMonthDetail(c, m) {
     const base = baseLines.filter(b => plLineKey(b) === k).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
     const al = afterLines.filter(b => plLineKey(b) === k);
     const plan = al.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
-    const inst = al.filter(b => b._plInst).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    const inst = al.filter(b => plIsInst(b, baseIds)).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    const instNew = al.filter(b => b._plInst).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
     const spent = exps.filter(e => plKey(e.category, e.subcategory || e.category) === k).reduce((s, e) => s + Number(e.value || 0), 0);
     const o = Object.prototype.hasOwnProperty.call(ov, k) ? Number(ov[k]) : undefined;
     const removed = o === 0 && base > 0;
     if (o === 0 && base === 0 && spent === 0 && inst === 0) return;
     if (!cats[cat]) cats[cat] = { cat, subs: [] };
-    cats[cat].subs.push({ sub, key: k, base, plan, inst, spent, ov: o, removed, added: o > 0 && base === 0, lines: baseLines.filter(b => plLineKey(b) === k).length });
+    cats[cat].subs.push({ sub, key: k, base, plan, inst, instNew, spent, ov: o, removed, added: o > 0 && base === 0, lines: baseLines.filter(b => plLineKey(b) === k).length });
   });
   const list = Object.values(cats).map(g => {
     g.subs.sort((a, b) => Math.max(b.base, b.plan) - Math.max(a.base, a.plan) || a.sub.localeCompare(b.sub));
     g.base = g.subs.reduce((s, x) => s + x.base, 0);
     g.plan = g.subs.reduce((s, x) => s + x.plan, 0);
     g.inst = g.subs.reduce((s, x) => s + x.inst, 0);
+    g.instNew = g.subs.reduce((s, x) => s + x.instNew, 0);
     g.spent = g.subs.reduce((s, x) => s + x.spent, 0);
     g.changed = g.subs.some(x => x.ov !== undefined);
     g.removed = g.subs.some(x => x.removed) && g.plan === 0 && g.subs.every(x => x.removed || (x.base === 0 && x.plan === 0));
@@ -6982,6 +7050,7 @@ function plMonthDetail(c, m) {
   list.sort((a, b) => Math.max(b.base, b.plan) - Math.max(a.base, a.plan) || a.cat.localeCompare(b.cat));
   return { m, cats: list };
 }
+const PL_COPY = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>';
 const PL_TRASH = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
 function plRenderDrill(c) {
   const el = document.getElementById('plDrill');
@@ -7010,7 +7079,7 @@ function plRenderDrill(c) {
     if (g.cat !== plOpenCat) {
       const over = !future && g.spent > g.plan + 0.005;
       return `<div class="pl-cg"><div class="pl-cbars">
-          <button type="button" class="pl-vbtn" onclick="plToggleCat(${ci})" aria-label="Open ${escapeHtml(g.cat)}"><span class="pl-v${g.changed ? ' chg' : ''}">${planLbl(g.base, g.plan, g.changed)}</span><div class="pl-stack">${g.inst > 0 ? `<div class="pl-b pl-hat" style="height:${h(g.inst)}px"></div>` : ''}<div class="pl-b pl${g.changed ? ' chg' : ''}" style="height:${h(g.plan - g.inst)}px"></div></div></button>
+          <button type="button" class="pl-vbtn" onclick="plToggleCat(${ci})" aria-label="Open ${escapeHtml(g.cat)}"><span class="pl-v${g.changed ? ' chg' : ''}">${planLbl(g.base + g.inst - g.instNew, g.plan - g.instNew, g.changed)}</span><div class="pl-stack">${g.instNew > 0 ? `<div class="pl-b pl-hat" style="height:${h(g.instNew)}px"></div>` : ''}<div class="pl-b pl${g.changed ? ' chg' : ''}" style="height:${h(g.plan - g.instNew)}px"></div></div></button>
           ${spentCol(g.spent, g.plan, `plToggleCat(${ci})`)}
         </div><button type="button" class="pl-cl${over ? ' ov' : ''}" onclick="plToggleCat(${ci})">${escapeHtml(g.cat)}${g.subs.length > 1 ? ' ›' : ''}</button></div>`;
     }
@@ -7021,7 +7090,7 @@ function plRenderDrill(c) {
       const chg = s.ov !== undefined;
       const over = !future && s.spent > s.plan + 0.005;
       return `<div class="pl-sg"><div class="pl-cbars">
-          <button type="button" class="pl-vbtn" onclick="plEdit(${ci},${si})" aria-label="Change planned for ${escapeHtml(s.sub)}"><span class="pl-v${chg ? ' chg' : ''}">${planLbl(s.base, s.plan, chg)}</span><div class="pl-stack">${s.inst > 0 ? `<div class="pl-b pl-hat" style="height:${h(s.inst)}px"></div>` : ''}<div class="pl-b pl${chg ? ' chg' : ''}" style="height:${h(s.plan - s.inst)}px"></div></div></button>
+          <button type="button" class="pl-vbtn" onclick="plEdit(${ci},${si})" aria-label="Change planned for ${escapeHtml(s.sub)}"><span class="pl-v${chg ? ' chg' : ''}">${planLbl(s.base + s.inst, s.plan, chg)}</span><div class="pl-stack">${s.instNew > 0 ? `<div class="pl-b pl-hat" style="height:${h(s.instNew)}px"></div>` : ''}<div class="pl-b pl${chg ? ' chg' : ''}" style="height:${h(s.plan - s.instNew)}px"></div></div></button>
           ${spentCol(s.spent, s.plan, `plEdit(${ci},${si})`)}
         </div><button type="button" class="pl-cl${over ? ' ov' : ''}" onclick="plEdit(${ci},${si})">${escapeHtml(s.sub)}</button></div>`;
     }).join('');
@@ -7032,7 +7101,7 @@ function plRenderDrill(c) {
   const planned = det.cats.reduce((s, g) => s + g.plan, 0);
   el.innerHTML = `<div class="pl-dhead">
       <div class="pl-crumb"><button type="button" class="pl-link" onclick="plGoAll()">All months</button><span style="color:var(--txt-dim2)">›</span><span>${escapeHtml(monthLabel(m))}</span>${row.changed ? '<span class="pl-dot"></span>' : ''}<span class="pl-st pl-${row.status}">${escapeHtml(plStatusText(row))}</span></div>
-      <button type="button" class="pl-mini" onclick="plAddLine()">+ Add line</button>
+      <div class="pl-dbtns"><button type="button" class="pl-mini" onclick="plCopyOpen()">${PL_COPY}Copy this month</button><button type="button" class="pl-mini" onclick="plAddLine()">+ Add line</button></div>
     </div>
     <div class="pl-sum"><span>Planned <b>${escapeHtml(fmt(planned))}</b></span><span>Spent <b>${future && row.spent === 0 ? '—' : escapeHtml(fmt(row.spent))}</b></span><span>Income <b>${escapeHtml(fmt(row.income))}</b>${row.est ? ' (est.)' : ''}</span><span>Left <b style="color:${row.left < 0 ? '#a9523f' : '#4f7d5c'}">${escapeHtml(fmt(row.left))}</b></span></div>
     <div class="pl-hint">Tap a category to open its sub categories · tap a planned column to change it</div>
@@ -7062,6 +7131,11 @@ function plChanges(c) {
     const slots = plSlots(d, p);
     out.push(`${String(d.desc || '').trim() || 'New installment'} · ${plN(d.monthly)} × ${slots.length} from ${plMS(slots[0].m)}`);
   }
+  (Array.isArray(d.copies) ? d.copies : []).forEach(cp => {
+    const live = (cp.to || []).filter(t => d.overrides && d.overrides[t] && Object.keys(d.overrides[t]).length);
+    if (!live.length) return;
+    out.push(`${plMS(cp.from)} plan copied → ${live.length === 1 ? plMS(live[0]) : plMS(live[0]) + ' – ' + plMS(live[live.length - 1])} · ${live.length} month${live.length === 1 ? '' : 's'}`);
+  });
   const groups = {};
   const order = [];
   const push = (text, m) => { if (!groups[text]) { groups[text] = []; order.push(text); } groups[text].push(m); };
@@ -7073,13 +7147,14 @@ function plChanges(c) {
     const byCat = {};
     keys.forEach(k => { const [cat] = plSplit(k); (byCat[cat] = byCat[cat] || []).push(k); });
     Object.keys(byCat).forEach(cat => {
-      const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat).map(plLineKey))];
+      const ids = plInstIds(p.budget || []);
+      const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat && !plIsInst(b, ids)).map(plLineKey))];
       const ks = byCat[cat];
       const allZero = ks.every(k => Number(ov[k]) === 0);
       if (baseKeys.length && allZero && baseKeys.every(k => ks.includes(k))) { push(`${cat} removed`, m); return; }
       ks.forEach(k => {
         const [, sub] = plSplit(k);
-        const base = plSumKey(p.budget || [], m, k);
+        const base = plBaseSum(p, m, k);
         const v = Number(ov[k]);
         if (v === 0 && base === 0) return;
         const lbl = plLabel(cat, sub);
@@ -7128,24 +7203,33 @@ function plPickScope(btn, scope) {
   document.querySelectorAll('#plScopeSeg button').forEach(b => b.classList.toggle('sel', b === btn));
 }
 function plTargetMonths(m) { return plEdScope === 'all' ? plMonths(plDraft()) : [m]; }
-function plSetOverride(d, m, k, v) {
+function plSetOverride(d, m, k, v, meta) {
   const p = activeProfile();
-  const base = plSumKey(p.budget || [], m, k);
+  const base = plBaseSum(p, m, k);
   v = plR2(v);
   if (!d.overrides) d.overrides = {};
   if (!d.overrides[m]) d.overrides[m] = {};
   if (v === plR2(base) || (v === 0 && base === 0)) delete d.overrides[m][k];
   else d.overrides[m][k] = v;
   if (!Object.keys(d.overrides[m]).length) delete d.overrides[m];
+  // meta = how a brand-new line should look (one-time flag, description).
+  if (!d.meta) d.meta = {};
+  const keep = d.overrides[m] && d.overrides[m][k] > 0 && base === 0 && meta && (meta.o || meta.ds);
+  if (keep) { if (!d.meta[m]) d.meta[m] = {}; d.meta[m][k] = { o: meta.o ? 1 : 0, ds: meta.ds || '' }; }
+  else if (d.meta[m]) { delete d.meta[m][k]; if (!Object.keys(d.meta[m]).length) delete d.meta[m]; }
 }
 function plEdit(ci, si) {
   const g = plDrillCache && plDrillCache.cats[ci];
   const s = g && g.subs[si];
   if (!s) return;
-  if (s.base === 0 && s.ov === undefined && s.inst > 0) {
-    showToast('That column is the new installment — change it in the form above');
-    const mi = document.getElementById('plMonthly');
-    if (mi) { mi.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => mi.focus(), 300); }
+  if (s.base === 0 && s.ov === undefined && s.inst > 0 && plR2(s.plan - s.inst) === 0) {
+    if (s.instNew > 0) {
+      showToast('That column is the new installment — change it in the form above');
+      const mi = document.getElementById('plMonthly');
+      if (mi) { mi.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => mi.focus(), 300); }
+    } else {
+      showToast('That is an installment — change it on the Installments tab');
+    }
     return;
   }
   const m = plDrillCache.m;
@@ -7216,7 +7300,7 @@ function plAskRemoveCat(ci) {
   plEdKey = { m, cat: g.cat };
   plEdScope = 'one';
   openSheet(`${sheetHead('Remove ' + g.cat + '?')}
-    <div class="pl-sheet-text">Takes out its ${g.lines} line${g.lines === 1 ? '' : 's'} (${escapeHtml(fmtRaw(g.plan))}) from the plan. Spending already logged stays, and the category stays in your list.</div>
+    <div class="pl-sheet-text">Takes out its ${g.lines} line${g.lines === 1 ? '' : 's'} (${escapeHtml(fmtRaw(g.plan - g.inst))}) from the plan.${g.inst > 0 ? ' Installments in it stay.' : ''} Spending already logged stays, and the category stays in your list.</div>
     ${plScopeSeg(m)}
     <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" style="background:#c0604b" onclick="plRemoveCat()">Remove</button></div>`);
 }
@@ -7226,7 +7310,8 @@ function plRemoveCat() {
   const d = plDraft();
   const cat = plEdKey.cat;
   plTargetMonths(plEdKey.m).forEach(m => {
-    const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat).map(plLineKey))];
+    const ids = plInstIds(p.budget || []);
+    const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat && !plIsInst(b, ids)).map(plLineKey))];
     baseKeys.forEach(k => plSetOverride(d, m, k, 0));
     const ov = d.overrides[m];
     if (ov) {
@@ -7280,12 +7365,203 @@ function plSaveNew() {
   if (!v || v <= 0) { alert('Enter a planned amount.'); return; }
   const d = plDraft();
   const k = plKey(cat, sub);
-  plTargetMonths(plEdKey.m).forEach(m => plSetOverride(d, m, k, v));
+  const many = plEdScope === 'all';
+  plTargetMonths(plEdKey.m).forEach(m => plSetOverride(d, m, k, v, { o: !many }));
   plCommit(d);
   plOpenCat = cat;
   closeSheet();
   renderPlannerPage(false);
 }
+/* ---------- Copy a month's plan to other months ----------
+   Copies the selected month's planned lines (as the draft has them) into
+   other months, as draft overrides. Installments are never copied — they are
+   already set for their own months. One-time lines are only copied when
+   switched on in the sheet. "Replace" makes each target month match the
+   source (its own installments stay); "Only add what's missing" fills in
+   keys the target month doesn't plan yet. Review shows the effect first. */
+let plCp = null;
+function plCopySource(c, m) {
+  const ids = plInstIds(c.p.budget || []);
+  const lines = c.after.filter(b => b.month === m && !isIncomeCategory(b.category));
+  const reg = {}, ot = {}, regLines = {}, inst = [];
+  lines.forEach(b => {
+    const k = plLineKey(b), v = Number(b.plannedValue || 0);
+    if (plIsInst(b, ids)) { inst.push(b); return; }
+    if (b.oneTime) {
+      if (!ot[k]) ot[k] = { sum: 0, descs: [] };
+      ot[k].sum += v;
+      if (b.description) ot[k].descs.push(b.description);
+    } else {
+      reg[k] = (reg[k] || 0) + v;
+      (regLines[k] = regLines[k] || []).push(b);
+    }
+  });
+  // Installment rows: show where each one already runs until.
+  const instRows = [];
+  const seen = new Set();
+  inst.forEach(b => {
+    const gid = b.installmentGroupId || ('legacy|' + b.category + '|' + b.subcategory + '|' + (b.description || ''));
+    if (seen.has(gid)) return;
+    seen.add(gid);
+    const same = c.after.filter(x => b.installmentGroupId ? x.installmentGroupId === b.installmentGroupId
+      : (x.category === b.category && x.subcategory === b.subcategory && (x.description || '') === (b.description || '')));
+    const last = same.map(x => x.month).sort().pop() || m;
+    const amt = inst.filter(x => (x.installmentGroupId || ('legacy|' + x.category + '|' + x.subcategory + '|' + (x.description || ''))) === gid).reduce((s, x) => s + Number(x.plannedValue || 0), 0);
+    instRows.push({ name: b.description || plLabel(b.category, b.subcategory), amt, last });
+  });
+  return { reg, ot, regLines, instRows };
+}
+function plCopyCandidates(m) {
+  const set = new Set(plMonths(plDraft()));
+  let x = m;
+  for (let i = 0; i < 12; i++) { x = nextMonthOf(x); set.add(x); }
+  set.delete(m);
+  return [...set].sort();
+}
+function plCopyOpen() {
+  const m = plSel;
+  if (!m) return;
+  const c = plCompute();
+  const src = plCopySource(c, m);
+  if (!Object.keys(src.reg).length && !Object.keys(src.ot).length) { showToast('Nothing planned in ' + monthLabel(m) + ' to copy', true); return; }
+  plCp = { m, src, targets: new Set(), ot: {}, mode: 'replace', cands: plCopyCandidates(m) };
+  plCopyRenderPick();
+}
+function plCopyRenderPick() {
+  const cp = plCp;
+  if (!cp) return;
+  const { m, src } = cp;
+  const byCat = {};
+  Object.keys(src.reg).forEach(k => { const [cat] = plSplit(k); byCat[cat] = (byCat[cat] || 0) + src.reg[k]; });
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  const total = cats.reduce((s, x) => s + x[1], 0);
+  const shown = cats.slice(0, 6), rest = cats.slice(6);
+  const otKeys = Object.keys(src.ot);
+  const chips = cp.cands.map(x => `<button type="button" class="pl-mc${cp.targets.has(x) ? ' on' : ''}" data-m="${x}" onclick="plCopyToggleMonth('${x}')">${plMS(x)}</button>`).join('');
+  openSheet(`${sheetHead('Copy ' + monthLabel(m) + ' to…')}
+    <div class="pl-cp-sum"><span class="pl-pill pl-ok">${escapeHtml(fmt(total))} planned</span><span class="pl-note" style="width:auto">The months you pick get this plan in the draft. Nothing changes in your budget until “Add as real plan”.</span></div>
+    <div class="pl-sec">Copy to</div>
+    <div class="pl-mchips"><span class="pl-mc src">${plMS(m)} · from</span>${chips}</div>
+    <div class="pl-quick"><span>Quick pick:</span><button type="button" class="pl-link" onclick="plCopyQuick(3)">Next 3</button><button type="button" class="pl-link" onclick="plCopyQuick(6)">Next 6</button><button type="button" class="pl-link" onclick="plCopyQuick(12)">Next 12</button><button type="button" class="pl-link" style="color:var(--txt-dim2)" onclick="plCopyQuick(0)">Clear</button></div>
+    <div class="pl-sec">What gets copied</div>
+    <div class="pl-list">${shown.map(([cat, v]) => `<div class="pl-lrow"><span class="pl-ck">✓</span><span class="pl-lname">${escapeHtml(cat)}</span><b>${plN(v)}</b></div>`).join('')}${rest.length ? `<div class="pl-lrow"><span class="pl-ck">✓</span><span class="pl-lname" style="color:var(--txt-dim)">+ ${rest.length} more · ${escapeHtml(rest.map(x => x[0]).join(', '))}</span><b>${plN(rest.reduce((s, x) => s + x[1], 0))}</b></div>` : ''}${!cats.length ? '<div class="pl-lrow"><span class="pl-lname" style="color:var(--txt-dim)">Only one-time items below</span></div>' : ''}</div>
+    ${src.instRows.length ? `<div class="pl-sec">Installments · not copied</div>
+    <div class="pl-list pl-locked">${src.instRows.map(r => `<div class="pl-lrow">${PL_LOCK}<span class="pl-lname">${escapeHtml(r.name)}</span><span>${plN(r.amt)} · already set to ${plMS(r.last)}</span></div>`).join('')}</div>` : ''}
+    ${otKeys.length ? `<div class="pl-ask"><b>${escapeHtml(plMShort(m))} has ${otKeys.length} one-time item${otKeys.length === 1 ? '' : 's'}. Copy ${otKeys.length === 1 ? 'it' : 'them'} too?</b>
+      <div class="pl-list">${otKeys.map((k, i) => { const [cat, sub] = plSplit(k); const o = src.ot[k]; return `<label class="pl-lrow" for="plCpOt${i}"><span class="pl-lname">${escapeHtml(plLabel(cat, sub))}${o.descs.length ? `<span class="pl-ldesc">${escapeHtml(o.descs.join(', '))}</span>` : ''}</span><b>${plN(o.sum)}</b><input type="checkbox" class="pl-tog" id="plCpOt${i}" ${cp.ot[k] ? 'checked' : ''} onchange="plCopyOt(${i}, this.checked)"></label>`; }).join('')}</div>
+      <span class="pl-note">Off = left out. Items you switch on are copied as one-time again.</span></div>` : ''}
+    <div class="pl-sec">If a month already has a plan</div>
+    <div class="sheet-seg" id="plCpMode"><button type="button" class="${cp.mode === 'replace' ? 'sel' : ''}" onclick="plCopyMode('replace')">Replace it with ${escapeHtml(plMShort(m))}</button><button type="button" class="${cp.mode === 'add' ? 'sel' : ''}" onclick="plCopyMode('add')">Only add what's missing</button></div>
+    <div class="pl-note" id="plCpModeNote">${plCopyModeNote()}</div>
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" id="plCpGo" onclick="plCopyReview()">${plCopyGoLabel()}</button></div>`);
+}
+const PL_LOCK = '<svg class="pl-lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+function plCopyModeNote() {
+  if (!plCp) return '';
+  return plCp.mode === 'replace'
+    ? `Each picked month gets exactly ${escapeHtml(plMShort(plCp.m))}'s lines; lines it has that ${escapeHtml(plMShort(plCp.m))} doesn't are taken out. Its installments stay.`
+    : `Each picked month keeps its own lines; only what it doesn't plan yet is added from ${escapeHtml(plMShort(plCp.m))}.`;
+}
+function plCopyGoLabel() {
+  const n = plCp ? plCp.targets.size : 0;
+  return n ? `Review copy to ${n} month${n === 1 ? '' : 's'}` : 'Pick months to copy to';
+}
+function plCopyRefresh() {
+  if (!plCp) return;
+  document.querySelectorAll('.pl-mc[data-m]').forEach(b => b.classList.toggle('on', plCp.targets.has(b.dataset.m)));
+  const go = document.getElementById('plCpGo');
+  if (go) go.textContent = plCopyGoLabel();
+  const note = document.getElementById('plCpModeNote');
+  if (note) note.innerHTML = plCopyModeNote();
+  document.querySelectorAll('#plCpMode button').forEach((b, i) => b.classList.toggle('sel', (i === 0) === (plCp.mode === 'replace')));
+}
+function plCopyToggleMonth(x) {
+  if (!plCp) return;
+  if (plCp.targets.has(x)) plCp.targets.delete(x); else plCp.targets.add(x);
+  plCopyRefresh();
+}
+function plCopyQuick(n) {
+  if (!plCp) return;
+  plCp.targets = new Set(n ? plCp.cands.filter(x => x > plCp.m).slice(0, n) : []);
+  plCopyRefresh();
+}
+function plCopyOt(i, on) {
+  if (!plCp) return;
+  const k = Object.keys(plCp.src.ot)[i];
+  if (k) plCp.ot[k] = !!on;
+}
+function plCopyMode(mode) { if (plCp) { plCp.mode = mode; plCopyRefresh(); } }
+// Writes the copy into draft d as overrides (d may be a scratch clone for the review).
+function plCopyApplyTo(d, c, cp) {
+  const ids = plInstIds(c.p.budget || []);
+  const vals = {}, metas = {};
+  Object.keys(cp.src.reg).forEach(k => {
+    vals[k] = cp.src.reg[k];
+    const rl = cp.src.regLines[k] || [];
+    metas[k] = { o: 0, ds: rl.length === 1 ? (rl[0].description || '') : '' };
+  });
+  const skipped = new Set();
+  Object.keys(cp.src.ot).forEach(k => {
+    if (cp.ot[k]) {
+      vals[k] = (vals[k] || 0) + cp.src.ot[k].sum;
+      if (!cp.src.reg[k]) metas[k] = { o: 1, ds: cp.src.ot[k].descs.length === 1 ? cp.src.ot[k].descs[0] : '' };
+    } else if (!cp.src.reg[k]) skipped.add(k);
+  });
+  [...cp.targets].sort().forEach(t => {
+    const cur = {};
+    c.after.filter(b => b.month === t && !isIncomeCategory(b.category) && !plIsInst(b, ids)).forEach(b => { const k = plLineKey(b); cur[k] = (cur[k] || 0) + Number(b.plannedValue || 0); });
+    Object.keys(vals).forEach(k => {
+      if (cp.mode === 'add' && (cur[k] || 0) > 0) return;
+      plSetOverride(d, t, k, vals[k], metas[k]);
+    });
+    if (cp.mode === 'replace') {
+      Object.keys(cur).forEach(k => { if (!(k in vals) && !skipped.has(k) && cur[k] !== 0) plSetOverride(d, t, k, 0); });
+    }
+  });
+}
+function plPlannedNoInst(c, m) {
+  const ids = plInstIds(c.p.budget || []);
+  return c.after.filter(b => b.month === m && !isIncomeCategory(b.category) && !plIsInst(b, ids)).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+}
+function plCopyReview() {
+  const cp = plCp;
+  if (!cp) return;
+  if (!cp.targets.size) { showToast('Pick at least one month to copy to', true); return; }
+  const d = plDraft();
+  const targets = [...cp.targets].sort();
+  const now = plCompute(d, targets);
+  const clone = JSON.parse(JSON.stringify(d));
+  plCopyApplyTo(clone, now, cp);
+  const after = plCompute(clone, targets);
+  const est = after.rows.some(r => r.est);
+  const rows = targets.map((t, i) => {
+    const a = now.rows[i], b = after.rows[i];
+    return `<div class="pl-rv-row"><b>${plMS(t)}</b><span class="pl-rv-dim">${plN(plPlannedNoInst(now, t))}</span><b>${plN(plPlannedNoInst(after, t))}</b><span class="pl-rv-dim">${a.left < 0 ? '−' : ''}${plN(Math.abs(a.left))} → <b style="color:var(--txt)">${b.left < 0 ? '−' : ''}${plN(Math.abs(b.left))}</b></span><span class="pl-st pl-${b.status}">${escapeHtml(plStatusText(b))}</span></div>`;
+  }).join('');
+  const short = after.rows.filter(r => r.status === 'sh').length, tight = after.rows.filter(r => r.status === 'tg').length;
+  openSheet(`${sheetHead('Review before copying')}
+    <div class="pl-note" style="width:auto">${escapeHtml(monthLabel(cp.m))} → ${targets.length} month${targets.length === 1 ? '' : 's'} · ${cp.mode === 'replace' ? 'replace their plan' : 'only add what’s missing'}${Object.values(cp.ot).some(Boolean) ? ' · with one-time items' : ''}</div>
+    <div class="pl-rv-head"><span>Month</span><span>Planned now</span><span>After copy</span><span>Left over</span><span>Status</span></div>
+    <div class="pl-list pl-rv">${rows}</div>
+    <div class="pl-note">Planned figures leave out installments, which stay in every month as they are.${est ? ' Salary for months without one is estimated from your latest salary.' : ''}${short ? ` <b style="color:#a9523f">${short} month${short === 1 ? '' : 's'} would be short.</b>` : (tight ? ` ${tight} month${tight === 1 ? ' is' : 's are'} tight.` : '')}</div>
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="plCopyRenderPick()">Back</button><button type="button" class="save" onclick="plCopyConfirm()">Copy to ${targets.length} month${targets.length === 1 ? '' : 's'}</button></div>`);
+}
+function plCopyConfirm() {
+  const cp = plCp;
+  if (!cp || !cp.targets.size) return;
+  const d = plDraft();
+  const c = plCompute(d);
+  plCopyApplyTo(d, c, cp);
+  if (!Array.isArray(d.copies)) d.copies = [];
+  d.copies.push({ from: cp.m, to: [...cp.targets].sort() });
+  plCommit(d);
+  const n = cp.targets.size;
+  plCp = null;
+  closeSheet();
+  renderPlannerPage(false);
+  showToast(`Copied to ${n} month${n === 1 ? '' : 's'} in the draft`);
+}
+
 function plDiscard() {
   const d = plDraft();
   if (plHasContent(d) && !confirm('Throw away this draft? Your real budget is not affected.')) return;
