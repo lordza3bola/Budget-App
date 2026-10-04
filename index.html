@@ -1054,6 +1054,97 @@
   .login-brand span { color: var(--blue); }
   .login-sub { font-size: 12.5px; color: var(--txt-dim); text-align: center; margin-bottom: 22px; }
 
+  /* ===== Planner tab ===== */
+  body.on-planner .fab, body.on-planner .fab-desktop { display: none !important; }
+  .pl-wrap { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+  .pl-wrap > .card h3 { margin-bottom: 12px; }
+  .pl-form { display: grid; grid-template-columns: minmax(0,1.8fr) repeat(4, minmax(0,1fr)); gap: 12px; }
+  .pl-form .sheet-field input { height: 44px; font-size: 14.5px; }
+  .pl-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 16px; box-shadow: var(--shadow-in); }
+  .pl-head { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+  .pl-vnote { margin-left: auto; font-size: 12px; color: var(--txt-dim); }
+  .pl-pill { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .pl-ok { background: #e2ebdc; color: #4f7d5c; }
+  .pl-tg { background: #f3e6cf; color: #7d5a1e; }
+  .pl-sh { background: #f5e1da; color: #a9523f; }
+  .pl-strip { display: flex; gap: 6px; overflow-x: auto; width: 100%; padding: 2px 2px 4px; -webkit-overflow-scrolling: touch; }
+  .pl-tile { flex: 0 0 auto; min-width: 62px; padding: 6px 9px; border-radius: 10px; display: flex; flex-direction: column; gap: 1px; font: 700 10.5px Manrope, sans-serif; border: none; text-align: left; cursor: pointer; }
+  .pl-tile b { font-size: 12.5px; font-weight: 800; }
+  .pl-tile.on { box-shadow: inset 0 0 0 2px currentColor; }
+  .pl-note { width: 100%; font-size: 11.5px; color: var(--txt-dim2); }
+  .pl-chead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+  .pl-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px; font-weight: 700; color: var(--txt-dim); }
+  .pl-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .pl-sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .pl-hatch, .pl-b.pl-hat { background: repeating-linear-gradient(135deg, #b9863b 0 3px, #f3e6cf 3px 6px); }
+  .pl-incsw { height: 0; border-top: 2px dashed #8f968a; border-radius: 0; width: 14px; }
+  .pl-hint { font-size: 12px; color: var(--txt-dim2); margin-top: 6px; }
+  .pl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 8px 2px 6px; }
+  .pl-months { display: flex; gap: 6px; min-width: max-content; align-items: flex-end; }
+  .pl-mg { border: none; background: transparent; font: inherit; color: inherit; padding: 8px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 86px; cursor: pointer; }
+  .pl-mg.on { background: rgba(95,125,104,.10); box-shadow: inset 0 0 0 1.5px rgba(95,125,104,.35); }
+  .pl-cols { position: relative; height: 172px; display: flex; gap: 4px; align-items: flex-end; justify-content: center; width: 100%; }
+  .pl-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+  .pl-stack { display: flex; flex-direction: column; align-items: center; }
+  .pl-v { font-size: 10px; font-weight: 800; white-space: nowrap; color: var(--txt); }
+  .pl-v.sp { color: #4f7d5c; } .pl-v.ov { color: #a9523f; } .pl-v.na { color: var(--txt-dim2); } .pl-v.chg { color: #7d5a1e; }
+  .pl-v.gone { color: #a9523f; text-decoration: line-through; }
+  .pl-b { width: 26px; border-radius: 7px 7px 2px 2px; }
+  .pl-b.pl { background: #d9cdb6; } .pl-b.sp { background: #5f7d68; } .pl-b.ov { background: #c0604b; }
+  .pl-b.pl-hat { border-radius: 7px 7px 0 0; }
+  .pl-stack .pl-hat + .pl-b.pl { border-radius: 0 0 2px 2px; }
+  .pl-b.chg { outline: 2px dashed #b9863b; outline-offset: 2px; }
+  .pl-inc { position: absolute; left: 4px; right: 4px; border-top: 2px dashed #8f968a; pointer-events: none; }
+  .pl-ml { font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; }
+  .pl-dot { width: 7px; height: 7px; border-radius: 50%; background: #b9863b; display: inline-block; flex: none; }
+  .pl-st { font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pl-dhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pl-crumb { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; flex-wrap: wrap; }
+  .pl-link { border: none; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--blue); cursor: pointer; text-align: left; }
+  .pl-link.danger { color: #a9523f; }
+  .pl-sum { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--txt-dim); margin-top: 10px; }
+  .pl-sum b { color: var(--txt); }
+  .pl-cats { display: flex; gap: 14px; align-items: flex-end; min-width: max-content; padding-top: 6px; }
+  .pl-cg, .pl-sg { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .pl-cg.open { background: rgba(95,125,104,.10); border-radius: 14px; padding: 10px 12px 8px; gap: 10px; align-items: stretch; }
+  .pl-cbars { display: flex; gap: 4px; align-items: flex-end; height: 168px; justify-content: center; }
+  .pl-vbtn { border: none; background: none; padding: 0; font: inherit; color: inherit; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; cursor: pointer; }
+  .pl-gonecol { gap: 5px; }
+  .pl-cl { border: none; background: none; padding: 0; font: 700 11px Manrope, sans-serif; color: var(--txt-dim); text-align: center; width: 76px; line-height: 1.25; overflow-wrap: anywhere; cursor: pointer; min-height: 28px; }
+  .pl-cl.ov { color: #a9523f; }
+  .pl-openhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 11.5px; font-weight: 800; }
+  .pl-openhead .pl-link { font-weight: 800; font-size: 12px; }
+  .pl-mini { border: none; height: 30px; padding: 0 10px; border-radius: 9px; background: var(--bg); box-shadow: 3px 3px 6px #d3cab9, -3px -3px 6px #fffcf5; font: 800 11px Manrope, sans-serif; color: var(--blue); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; }
+  .pl-mini.danger { color: #a9523f; }
+  .pl-subs { display: flex; gap: 14px; align-items: flex-end; }
+  .pl-ghost { width: 26px; border-radius: 7px 7px 2px 2px; border: 2px dashed #c0604b; background: rgba(192,96,75,.06); box-sizing: border-box; min-height: 6px; }
+  .pl-add { border: 2px dashed #c9bfa9; border-radius: 12px; background: transparent; width: 64px; height: 92px; font: 800 11px Manrope, sans-serif; color: var(--blue); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; margin-bottom: 34px; flex: none; cursor: pointer; }
+  .pl-sheet-text { font-size: 13px; color: var(--txt-dim); line-height: 1.5; }
+  .pl-sheet-links { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+  #plSaveBar { position: sticky; bottom: 16px; z-index: 30; }
+  .pl-savebar { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 16px; background: var(--bg); box-shadow: var(--shadow-out); }
+  .pl-sb-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; font-size: 13px; }
+  .pl-sb-btns { display: flex; gap: 10px; flex: none; }
+  .pl-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pl-chip { padding: 4px 10px; border-radius: 999px; background: #f3e6cf; color: #7d5a1e; font-size: 11.5px; font-weight: 700; }
+  .pl-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: #f3e6cf; color: #7d5a1e; font-size: 13px; font-weight: 700; }
+  @media (max-width: 1100px) and (min-width: 861px) {
+    .pl-form { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .pl-form .pl-f-desc { grid-column: 1 / -1; }
+  }
+  @media (max-width: 860px) {
+    .pl-wrap { padding: 0 18px; }
+    .pl-form { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .pl-form .pl-f-desc { grid-column: 1 / -1; }
+    .pl-verdict { padding: 12px 14px; }
+    .pl-head { font-size: 16px; width: 100%; }
+    .pl-vnote { margin-left: 0; width: 100%; }
+    .pl-mg { min-width: 78px; padding: 8px 4px; }
+    #plSaveBar { bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+    .pl-savebar { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
+    .pl-sb-btns .btn { flex: 1; }
+    .tab { font-size: 9px; }
+  }
 </style>
 </head>
 <body>
@@ -1116,6 +1207,7 @@
       <a data-page="expenses" href="#expenses" title="Expenses"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-DjLfCX0etcbaHeaobCUklhYQWOSXUF.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl" id="navExpensesLabel">Expenses</span></a>
       <a data-page="budget" href="#budget" title="Budget"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-QUD9QBFZRZ2ZYM6AV1VO3hYmCbUAq1.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Budget</span></a>
       <a data-page="installments" href="#installments" title="Installments"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Dkc7LOL5KJR4dNRvE3KcYGbDSjzvzH.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Installments</span></a>
+      <a data-page="planner" href="#planner" title="Planner"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-HCwnlHIkzR4wXtkTVAySMqAWigIejw.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Planner</span></a>
       <a data-page="calendar" href="#calendar" title="Calendar"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-ij7GEZhfmzLNlLgDJVhkST8FIm5rJV.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Calendar</span></a>
       <a data-page="settings" href="#settings" title="Settings"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-5WOZbM8gOwMf0RATXQa7UL57OKFSMg.png&w=96&q=75" alt="" decoding="async" draggable="false"><span class="nl">Settings</span></a>
     </div>
@@ -1420,6 +1512,30 @@
       </div>
     </div>
 
+    <!-- PLANNER -->
+    <div class="page" id="page-planner">
+      <div class="top">
+        <div><h1>Planner</h1><div class="sub">Try an installment or reshape your budget as a draft — nothing changes until you add it as a real plan.</div></div>
+      </div>
+      <div class="pl-wrap">
+        <div id="plBanner" style="display:none"></div>
+        <div class="card">
+          <h3>What if I add an installment?</h3>
+          <div class="pl-form">
+            <div class="sheet-field pl-f-desc"><label for="plDesc">Description</label><input id="plDesc" type="text" placeholder="e.g. New laptop" oninput="plFormChanged()"></div>
+            <div class="sheet-field"><label for="plMonthly">Monthly payment</label><input id="plMonthly" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" oninput="plFormChanged()"></div>
+            <div class="sheet-field"><label for="plStart">First payment</label><input id="plStart" type="date" onchange="plFormChanged()"></div>
+            <div class="sheet-field"><label for="plCount">Installments</label><input id="plCount" type="number" inputmode="numeric" min="1" max="120" step="1" placeholder="12" oninput="plFormChanged()"></div>
+            <div class="sheet-field"><label for="plCushion">Keep at least</label><input id="plCushion" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" oninput="plFormChanged()"></div>
+          </div>
+        </div>
+        <div id="plVerdict"></div>
+        <div class="card" id="plChart"></div>
+        <div class="card" id="plDrill"></div>
+        <div id="plSaveBar" style="display:none"></div>
+      </div>
+    </div>
+
     <!-- CALENDAR -->
     <div class="page" id="page-calendar">
       <div class="top">
@@ -1600,6 +1716,7 @@
   <button class="tab" data-page="expenses" onclick="goPage('expenses')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-DjLfCX0etcbaHeaobCUklhYQWOSXUF.png&w=96&q=75" alt="" decoding="async" draggable="false"><span id="tabExpensesLabel">Expenses</span></button>
   <button class="tab" data-page="budget" onclick="goPage('budget')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-QUD9QBFZRZ2ZYM6AV1VO3hYmCbUAq1.png&w=96&q=75" alt="" decoding="async" draggable="false">Budget</button>
   <button class="tab" data-page="installments" onclick="goPage('installments')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-Dkc7LOL5KJR4dNRvE3KcYGbDSjzvzH.png&w=96&q=75" alt="" decoding="async" draggable="false">Installments</button>
+  <button class="tab" data-page="planner" onclick="goPage('planner')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-HCwnlHIkzR4wXtkTVAySMqAWigIejw.png&w=96&q=75" alt="" decoding="async" draggable="false">Planner</button>
   <button class="tab" data-page="calendar" onclick="goPage('calendar')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-ij7GEZhfmzLNlLgDJVhkST8FIm5rJV.png&w=96&q=75" alt="" decoding="async" draggable="false">Calendar</button>
   <button class="tab" data-page="settings" onclick="goPage('settings')"><img class="th-ic" src="https://www.thiings.co/_next/image?url=https%3A%2F%2Flftz25oez4aqbxpq.public.blob.vercel-storage.com%2Fimage-5WOZbM8gOwMf0RATXQa7UL57OKFSMg.png&w=96&q=75" alt="" decoding="async" draggable="false">Settings</button>
 </div>
@@ -3013,7 +3130,7 @@ function fmt(n, profile) {
 function updateNavVisibility() {
   const p = activeProfile();
   const ledger = hasLedgerMode(p);
-  document.querySelectorAll('.nav a[data-page="budget"], .tab[data-page="budget"], .nav a[data-page="installments"], .tab[data-page="installments"]').forEach(el => {
+  document.querySelectorAll('.nav a[data-page="budget"], .tab[data-page="budget"], .nav a[data-page="installments"], .tab[data-page="installments"], .nav a[data-page="planner"], .tab[data-page="planner"]').forEach(el => {
     el.style.display = ledger ? 'none' : '';
   });
   const label = ledger ? 'Transactions' : 'Expenses';
@@ -3049,18 +3166,19 @@ function syncPageForProfileChange() {
   updateNavVisibility();
   const onBudget = document.getElementById('page-budget').classList.contains('on');
   const onInstallments = document.getElementById('page-installments').classList.contains('on');
+  const onPlanner = document.getElementById('page-planner').classList.contains('on');
   const onDash = document.getElementById('page-dashboard').classList.contains('on');
   const onDashCredit = document.getElementById('page-dashboard-credit').classList.contains('on');
   const onDashSavings = document.getElementById('page-dashboard-savings').classList.contains('on');
-  if (((onBudget || onInstallments) && hasLedgerMode()) || onDash || onDashCredit || onDashSavings) { goPage('dashboard'); return true; }
+  if (((onBudget || onInstallments || onPlanner) && hasLedgerMode()) || onDash || onDashCredit || onDashSavings) { goPage('dashboard'); return true; }
   return false;
 }
 // Left-to-right order the tab bar and sidebar actually present pages in —
 // used only to pick a swipe direction for the page-change animation, so a
 // page this doesn't know about (e.g. 'add') just gets the plain fade below.
-const NAV_ORDER = ['dashboard','expenses','budget','installments','calendar','settings'];
+const NAV_ORDER = ['dashboard','expenses','budget','installments','planner','calendar','settings'];
 function goPage(name) {
-  if ((name === 'budget' || name === 'installments') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments tab
+  if ((name === 'budget' || name === 'installments' || name === 'planner') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments/planner tab
   const prevPageEl = document.querySelector('.page.on');
   const prevName = prevPageEl ? (prevPageEl.id.startsWith('page-dashboard') ? 'dashboard' : prevPageEl.id.replace('page-','')) : null;
   if (typeof closeMs === 'function') closeMs();
@@ -3074,12 +3192,14 @@ function goPage(name) {
   }
   target.classList.add('on');
   document.body.classList.toggle('on-add', name === 'add');
+  document.body.classList.toggle('on-planner', name === 'planner');
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   if (name === 'dashboard') renderDashboard();
   if (name === 'expenses') renderExpensesPage();
   if (name === 'budget') renderBudgetPage();
   if (name === 'installments') renderInstallmentsPage();
+  if (name === 'planner') renderPlannerPage(true);
   if (name === 'calendar') renderCalendarPage();
   if (name === 'settings') renderSettingsPage();
   if (name === 'add') renderAddExpensePage();
@@ -3100,7 +3220,7 @@ document.getElementById('nav').addEventListener('click', (e) => {
     tracking = false;
     if (window.innerWidth > 860) return;
     if (document.querySelector('.modal-backdrop.on')) return;
-    if (e.target.closest('.table-wrap, .profile-strip, input, select, textarea, .cal-grid, .icon-picker-grid')) return;
+    if (e.target.closest('.table-wrap, .profile-strip, input, select, textarea, .cal-grid, .icon-picker-grid, .pl-scroll, .pl-strip')) return;
     const t = e.touches[0];
     sx = t.clientX; sy = t.clientY; tracking = true;
   }, { passive: true });
@@ -6505,12 +6625,702 @@ function refreshCurrencyLabels() {
   const code = currencyOf().code;
   document.querySelectorAll('.cur-unit').forEach(el => el.textContent = code);
 }
+/* ============================================================
+   PLANNER — "what if" installment + month-by-month budget columns.
+   Everything here is a DRAFT layered on top of the real budget: the
+   real p.budget is never touched until "Add as real plan" (plApply).
+   The draft lives on synced state (state.plannerDrafts[profileId]) so
+   it survives reloads and follows the account to other devices.
+     draft = { desc, monthly, start, count, cushion,
+               overrides: { 'YYYY-MM': { 'Category>>Sub': plannedValue } },
+               updatedAt }
+   An override of 0 removes that sub category's lines for that month;
+   an override for a key with no budget line adds a new one-time line.
+   ============================================================ */
+const PL_SEP = '>>';
+let plMem = {};            // per-profile draft held in memory until it has content
+let plSel = null;          // selected month in the chart ('YYYY-MM')
+let plOpenCat = null;      // category opened inline in the drill chart
+let plFormPid = null;      // profile whose draft is currently shown in the form
+let plBannerHidden = false;
+let plEdKey = null;        // { m, key, cat, sub, mode } for the open edit sheet
+let plEdScope = 'one';
+let plDrillCache = null;   // last drill detail, so onclick handlers can use indexes
+let plFormTimer = null;
+const plSessionStart = Date.now();
+
+function plBlankDraft() {
+  return { desc: '', monthly: '', start: localIso(new Date()), count: 12, cushion: '', overrides: {}, updatedAt: 0 };
+}
+function plDraft() {
+  const pid = state.activeProfileId;
+  const saved = state.plannerDrafts && state.plannerDrafts[pid];
+  if (saved) {
+    if (!saved.overrides || typeof saved.overrides !== 'object') saved.overrides = {};
+    return saved;
+  }
+  if (!plMem[pid]) plMem[pid] = plBlankDraft();
+  return plMem[pid];
+}
+function plHasOverrides(d) { return Object.keys(d.overrides || {}).some(m => Object.keys(d.overrides[m] || {}).length); }
+function plHasInstallment(d) { return Number(d.monthly) > 0 && Number(d.count) > 0 && !!d.start; }
+function plHasContent(d) { return !!(String(d.desc || '').trim() || Number(d.monthly) > 0 || Number(d.cushion) > 0 || plHasOverrides(d)); }
+// Persist the draft (only once it actually holds something), then sync.
+function plCommit(d) {
+  const pid = state.activeProfileId;
+  d.updatedAt = Date.now();
+  if (!state.plannerDrafts || typeof state.plannerDrafts !== 'object') state.plannerDrafts = {};
+  if (plHasContent(d)) {
+    state.plannerDrafts[pid] = d;
+    plMem[pid] = d;
+    saveState();
+  } else if (state.plannerDrafts[pid]) {
+    delete state.plannerDrafts[pid];
+    plMem[pid] = d;
+    saveState();
+  } else {
+    plMem[pid] = d;
+  }
+}
+function plKey(cat, sub) { return cat + PL_SEP + (sub || cat); }
+function plSplit(k) { const i = k.indexOf(PL_SEP); return i === -1 ? [k, k] : [k.slice(0, i), k.slice(i + PL_SEP.length)]; }
+function plR2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function plN(n) { return Math.round(Number(n) || 0).toLocaleString('en-US'); }
+function plMS(m) { const [y, mo] = m.split('-').map(Number); return SHORT_MONTHS[mo - 1] + ' ' + String(y).slice(2); }
+function plMShort(m) { return SHORT_MONTHS[Number(m.split('-')[1]) - 1]; }
+function plLabel(cat, sub) { return (!sub || sub === cat) ? cat : cat + ' › ' + sub; }
+function plLineKey(b) { return plKey(b.category, b.subcategory || b.category); }
+// Payment dates of the hypothetical installment, and the budget month each lands in.
+function plSlots(d, p) {
+  p = p || activeProfile();
+  const n = Math.max(0, Math.min(120, parseInt(d.count, 10) || 0));
+  if (!d.start || !/^\d{4}-\d{2}-\d{2}$/.test(d.start) || !n) return [];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const date = i === 0 ? d.start : addMonthsToDateStr(d.start, i);
+    out.push({ date, m: monthForDate(date, p) });
+  }
+  return out;
+}
+// Months the chart shows: from the first-payment month, one per installment
+// (12 when no count is set).
+function plMonths(d, p) {
+  p = p || activeProfile();
+  const slots = plSlots(d, p);
+  const out = [];
+  if (slots.length) slots.forEach(s => { if (!out.includes(s.m)) out.push(s.m); });
+  if (!out.length) {
+    let m = (d.start && /^\d{4}-\d{2}-\d{2}$/.test(d.start)) ? monthForDate(d.start, p) : todayCycleMonth();
+    for (let i = 0; i < 12; i++) { out.push(m); m = nextMonthOf(m); }
+  }
+  // Fill any gap a pay cycle could leave so the months stay continuous.
+  const full = [out[0]];
+  while (full[full.length - 1] < out[out.length - 1] && full.length < 130) full.push(nextMonthOf(full[full.length - 1]));
+  return full;
+}
+function plLatestSalary(p, m) {
+  const keys = Object.keys(p.income || {}).filter(k => Number(p.income[k]) > 0).sort();
+  if (!keys.length) return 0;
+  const before = keys.filter(k => k <= m);
+  return Number(p.income[(before.length ? before[before.length - 1] : keys[keys.length - 1])]) || 0;
+}
+function plSumKey(lines, m, key) {
+  return lines.filter(b => b.month === m && plLineKey(b) === key).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+}
+function plCycleStartDate(p, m) {
+  const c = (p.incomeCycles || {})[m];
+  return (c && c.start) ? c.start : m + '-01';
+}
+// The budget as it would be with the draft applied. forSave=false marks the
+// hypothetical installment's lines so the chart can hatch them.
+function plBuildBudget(p, d, forSave) {
+  let out = (p.budget || []).map(b => Object.assign({}, b));
+  const stamp = Date.now();
+  let n = 0;
+  const ovs = d.overrides || {};
+  Object.keys(ovs).sort().forEach(m => {
+    Object.keys(ovs[m] || {}).forEach(key => {
+      const v = plR2(ovs[m][key]);
+      const [cat, sub] = plSplit(key);
+      const match = out.filter(b => b.month === m && plLineKey(b) === key);
+      if (v <= 0) {
+        if (match.length) out = out.filter(b => !match.includes(b));
+        return;
+      }
+      if (!match.length) {
+        out.push({
+          id: 'b_pl_' + stamp + '_' + (n++), month: m, category: cat, subcategory: sub, description: '',
+          startDate: plCycleStartDate(p, m), durationMonths: 1, plannedValue: v,
+          status: 'Not Paid Yet', oneTime: true
+        });
+      } else if (match.length === 1) {
+        match[0].plannedValue = v;
+      } else {
+        const total = match.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+        if (total > 0) {
+          let used = 0;
+          match.forEach((b, i) => { if (i) { b.plannedValue = plR2(Number(b.plannedValue || 0) * v / total); used += b.plannedValue; } });
+          match[0].plannedValue = plR2(v - used);
+        } else {
+          match.forEach((b, i) => { b.plannedValue = i ? 0 : v; });
+        }
+      }
+    });
+  });
+  if (plHasInstallment(d)) {
+    const slots = plSlots(d, p);
+    const groupId = 'inst' + stamp;
+    const desc = String(d.desc || '').trim();
+    const finish = slots[slots.length - 1].date;
+    slots.forEach((s, i) => {
+      const line = {
+        id: 'b_inst_' + stamp + '_' + i, month: s.m,
+        category: 'Installments', subcategory: desc || 'New installment', description: desc,
+        startDate: s.date, durationMonths: 1, plannedValue: plR2(d.monthly), status: 'Not Paid Yet',
+        installmentGroupId: groupId, installmentIndex: i + 1, installmentTotal: slots.length, installmentFinish: finish
+      };
+      if (!forSave) line._plInst = true;
+      out.push(line);
+    });
+  }
+  return out;
+}
+// One row per chart month: planned/spent/income and what is left before and
+// after the draft, using the app's own monthSummary math.
+function plCompute() {
+  const p = activeProfile();
+  const d = plDraft();
+  const months = plMonths(d, p);
+  const after = plBuildBudget(p, d, false);
+  const inc = Object.assign({}, p.income || {});
+  const est = {};
+  months.forEach(m => { if (!(Number(inc[m]) > 0)) { const s = plLatestSalary(p, m); if (s > 0) { inc[m] = s; est[m] = true; } } });
+  const cushion = Math.max(0, Number(d.cushion) || 0);
+  const nowM = todayCycleMonth();
+  const instMonths = plHasInstallment(d) ? plSlots(d, p).map(s => s.m) : [];
+  const ob = p.budget, oi = p.income;
+  const rows = [];
+  try {
+    p.income = inc;
+    months.forEach(m => {
+      p.budget = ob;
+      const before = monthSummary(m);
+      p.budget = after;
+      const aft = monthSummary(m);
+      const lines = after.filter(b => b.month === m && !isIncomeCategory(b.category));
+      const planned = lines.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+      const instAmt = lines.filter(b => b._plInst).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+      const left = aft.availableBalance;
+      rows.push({
+        m, planned, inst: instAmt, spent: aft.totalExpenses, income: aft.totalIncome,
+        left, before: before.availableBalance, est: !!est[m], future: m > nowM,
+        hasInst: instMonths.includes(m),
+        status: left < 0 ? 'sh' : (left < cushion ? 'tg' : 'ok'),
+        changed: !!(d.overrides && d.overrides[m] && Object.keys(d.overrides[m]).length)
+      });
+    });
+  } finally { p.budget = ob; p.income = oi; }
+  return { p, d, months, rows, after, cushion };
+}
+
+/* ---------- Rendering ---------- */
+function renderPlannerPage(fill) {
+  const page = document.getElementById('page-planner');
+  if (!page) return;
+  if (hasLedgerMode()) return;
+  const d = plDraft();
+  if (fill || plFormPid !== state.activeProfileId) plFillForm(d);
+  const c = plCompute();
+  if (!plSel || !c.months.includes(plSel)) { plSel = c.months[0]; plOpenCat = null; }
+  plRenderBanner(c);
+  plRenderVerdict(c);
+  plRenderChart(c);
+  plRenderDrill(c);
+  plRenderSaveBar(c);
+}
+function plFillForm(d) {
+  plFormPid = state.activeProfileId;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v === undefined || v === null) ? '' : v; };
+  set('plDesc', d.desc);
+  set('plMonthly', d.monthly);
+  set('plStart', d.start);
+  set('plCount', d.count);
+  set('plCushion', d.cushion);
+}
+function plFormChanged() {
+  const d = plDraft();
+  const val = id => (document.getElementById(id) || {}).value || '';
+  d.desc = val('plDesc').trim();
+  const mon = val('plMonthly');
+  d.monthly = mon === '' ? '' : Math.max(0, Number(mon) || 0);
+  d.start = val('plStart') || '';
+  const cnt = parseInt(val('plCount'), 10);
+  d.count = isNaN(cnt) ? '' : Math.max(1, Math.min(120, cnt));
+  const cu = val('plCushion');
+  d.cushion = cu === '' ? '' : Math.max(0, Number(cu) || 0);
+  clearTimeout(plFormTimer);
+  plFormTimer = setTimeout(() => { plCommit(d); renderPlannerPage(false); }, 250);
+}
+function plRenderBanner(c) {
+  const el = document.getElementById('plBanner');
+  if (!el) return;
+  const d = c.d;
+  const saved = state.plannerDrafts && state.plannerDrafts[state.activeProfileId];
+  if (!saved || plBannerHidden || !(d.updatedAt < plSessionStart) || !plHasContent(d)) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  const when = new Date(d.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  const n = plChanges(c).length;
+  el.style.display = '';
+  el.innerHTML = `<div class="pl-banner"><span style="flex:1;min-width:0">Draft restored · last edited ${escapeHtml(when)}${n ? ' · ' + n + ' change' + (n === 1 ? '' : 's') : ''}</span>
+    <button type="button" class="pl-mini" onclick="plDiscard()">Start over</button>
+    <button type="button" class="pl-mini" aria-label="Hide" onclick="plBannerHidden=true;renderPlannerPage(false)">✕</button></div>`;
+}
+function plStatusText(r) {
+  if (r.status === 'sh') return 'Short −' + plN(Math.abs(r.left));
+  if (r.status === 'tg') return 'Tight ' + plN(r.left);
+  return 'Fits ' + plN(r.left);
+}
+function plRenderVerdict(c) {
+  const el = document.getElementById('plVerdict');
+  if (!el) return;
+  const d = c.d;
+  const inst = plHasInstallment(d);
+  const rows = inst ? c.rows.filter(r => r.hasInst) : c.rows;
+  const fit = rows.filter(r => r.status !== 'sh').length;
+  const tight = rows.filter(r => r.status === 'tg');
+  const short = rows.filter(r => r.status === 'sh');
+  const names = list => list.slice(0, 4).map(r => plMShort(r.m)).join(', ') + (list.length > 4 ? '…' : '');
+  const head = inst
+    ? `${plHasOverrides(d) ? 'With your changes: affordable' : 'Affordable'} in ${fit} of ${rows.length} month${rows.length === 1 ? '' : 's'}`
+    : `${rows.filter(r => r.status === 'ok').length} of ${rows.length} months fit your budget`;
+  const estRows = c.rows.filter(r => r.est);
+  let estNote = '';
+  if (estRows.length) {
+    const sal = plLatestSalary(c.p, estRows[0].m);
+    estNote = `<div class="pl-note">Salary for ${estRows.length === 1 ? plMS(estRows[0].m) : plMS(estRows[0].m) + ' – ' + plMS(estRows[estRows.length - 1].m)} is estimated from your latest salary (${escapeHtml(fmt(sal))}).</div>`;
+  }
+  const first = c.rows[0];
+  const leftNote = first && Math.round(first.before) !== Math.round(first.left)
+    ? `<span class="pl-vnote">${plMShort(first.m)} left over: ${plN(first.before)} → ${plN(first.left)}</span>` : '';
+  el.innerHTML = `<div class="pl-verdict">
+      <span class="pl-head">${escapeHtml(head)}</span>
+      ${tight.length ? `<span class="pl-pill pl-tg">${tight.length} tight · ${escapeHtml(names(tight))}</span>` : ''}
+      ${short.length ? `<span class="pl-pill pl-sh">${short.length} short · ${escapeHtml(names(short))}</span>` : ''}
+      ${!tight.length && !short.length ? `<span class="pl-pill pl-ok">All good</span>` : ''}
+      ${leftNote}
+      <div class="pl-strip">${c.rows.map(r => `<button type="button" class="pl-tile pl-${r.status}${r.m === plSel ? ' on' : ''}" onclick="plSelectMonth('${r.m}')"><span>${plMS(r.m)}</span><b>${r.left < 0 ? '−' : ''}${plN(Math.abs(r.left))}</b></button>`).join('')}</div>
+      ${estNote}
+    </div>`;
+}
+function plRenderChart(c) {
+  const el = document.getElementById('plChart');
+  if (!el) return;
+  const d = c.d;
+  const max = Math.max(1, ...c.rows.map(r => Math.max(r.planned, r.spent, r.income)));
+  const H = 150;
+  const h = v => Math.max(v > 0 ? 3 : 0, Math.round(H * v / max));
+  const instName = String(d.desc || '').trim() || 'New installment';
+  const groups = c.rows.map(r => {
+    const base = r.planned - r.inst;
+    const over = !r.future && r.spent > r.planned + 0.005;
+    const spentLbl = r.future && r.spent === 0 ? '—' : plN(r.spent);
+    return `<button type="button" class="pl-mg${r.m === plSel ? ' on' : ''}" onclick="plSelectMonth('${r.m}')" aria-label="${escapeHtml(monthLabel(r.m))}: planned ${plN(r.planned)}, spent ${plN(r.spent)}, ${escapeHtml(plStatusText(r))}">
+      <div class="pl-cols">
+        ${r.income > 0 ? `<span class="pl-inc" style="bottom:${h(r.income) + 17}px" title="Income ${plN(r.income)}"></span>` : ''}
+        <div class="pl-col"><span class="pl-v${r.changed ? ' chg' : ''}">${plN(r.planned)}</span>
+          <div class="pl-stack">${r.inst > 0 ? `<div class="pl-b pl-hat" style="height:${h(r.inst)}px"></div>` : ''}<div class="pl-b pl${r.changed ? ' chg' : ''}" style="height:${h(base)}px"></div></div></div>
+        <div class="pl-col"><span class="pl-v ${r.future && r.spent === 0 ? 'na' : (over ? 'ov' : 'sp')}">${spentLbl}</span>
+          <div class="pl-b ${over ? 'ov' : 'sp'}" style="height:${h(r.spent)}px"></div></div>
+      </div>
+      <span class="pl-ml">${plMS(r.m)}${r.changed ? '<span class="pl-dot" title="Has draft changes"></span>' : ''}</span>
+      <span class="pl-st pl-${r.status}">${escapeHtml(plStatusText(r))}</span>
+    </button>`;
+  }).join('');
+  el.innerHTML = `<div class="pl-chead"><b>Planned vs spent · ${plMS(c.months[0])} – ${plMS(c.months[c.months.length - 1])}</b>
+      <div class="pl-legend"><span><i class="pl-sw" style="background:#d9cdb6"></i>Planned</span>${plHasInstallment(d) ? `<span><i class="pl-sw pl-hatch"></i>${escapeHtml(instName)}</span>` : ''}<span><i class="pl-sw" style="background:#5f7d68"></i>Spent</span><span><i class="pl-sw" style="background:#c0604b"></i>Over plan</span><span><i class="pl-sw pl-incsw"></i>Income</span></div></div>
+    <div class="pl-hint">Tap a month to see its categories</div>
+    <div class="pl-scroll"><div class="pl-months">${groups}</div></div>`;
+}
+// Categories → sub categories for one month, comparing the real budget (base)
+// with the draft (plan), plus what was actually spent.
+function plMonthDetail(c, m) {
+  const p = c.p, d = c.d;
+  const ov = (d.overrides && d.overrides[m]) || {};
+  const baseLines = (p.budget || []).filter(b => b.month === m && !isIncomeCategory(b.category));
+  const afterLines = c.after.filter(b => b.month === m && !isIncomeCategory(b.category));
+  const exps = (p.expenses || []).filter(e => e.month === m && !isIncomeCategory(e.category));
+  const keys = [];
+  const add = k => { if (!keys.includes(k)) keys.push(k); };
+  baseLines.forEach(b => add(plLineKey(b)));
+  afterLines.forEach(b => add(plLineKey(b)));
+  Object.keys(ov).forEach(add);
+  exps.forEach(e => add(plKey(e.category, e.subcategory || e.category)));
+  const cats = {};
+  keys.forEach(k => {
+    const [cat, sub] = plSplit(k);
+    const base = baseLines.filter(b => plLineKey(b) === k).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    const al = afterLines.filter(b => plLineKey(b) === k);
+    const plan = al.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    const inst = al.filter(b => b._plInst).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    const spent = exps.filter(e => plKey(e.category, e.subcategory || e.category) === k).reduce((s, e) => s + Number(e.value || 0), 0);
+    const o = Object.prototype.hasOwnProperty.call(ov, k) ? Number(ov[k]) : undefined;
+    const removed = o === 0 && base > 0;
+    if (o === 0 && base === 0 && spent === 0 && inst === 0) return;
+    if (!cats[cat]) cats[cat] = { cat, subs: [] };
+    cats[cat].subs.push({ sub, key: k, base, plan, inst, spent, ov: o, removed, added: o > 0 && base === 0, lines: baseLines.filter(b => plLineKey(b) === k).length });
+  });
+  const list = Object.values(cats).map(g => {
+    g.subs.sort((a, b) => Math.max(b.base, b.plan) - Math.max(a.base, a.plan) || a.sub.localeCompare(b.sub));
+    g.base = g.subs.reduce((s, x) => s + x.base, 0);
+    g.plan = g.subs.reduce((s, x) => s + x.plan, 0);
+    g.inst = g.subs.reduce((s, x) => s + x.inst, 0);
+    g.spent = g.subs.reduce((s, x) => s + x.spent, 0);
+    g.changed = g.subs.some(x => x.ov !== undefined);
+    g.removed = g.subs.some(x => x.removed) && g.plan === 0 && g.subs.every(x => x.removed || (x.base === 0 && x.plan === 0));
+    g.lines = g.subs.reduce((s, x) => s + x.lines, 0);
+    return g;
+  });
+  list.sort((a, b) => Math.max(b.base, b.plan) - Math.max(a.base, a.plan) || a.cat.localeCompare(b.cat));
+  return { m, cats: list };
+}
+const PL_TRASH = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+function plRenderDrill(c) {
+  const el = document.getElementById('plDrill');
+  if (!el) return;
+  const m = plSel;
+  const row = c.rows.find(r => r.m === m);
+  if (!row) { el.innerHTML = ''; return; }
+  const det = plMonthDetail(c, m);
+  plDrillCache = det;
+  if (plOpenCat && !det.cats.some(g => g.cat === plOpenCat)) plOpenCat = null;
+  const H = 140;
+  let max = 1;
+  det.cats.forEach(g => { max = Math.max(max, g.plan, g.base, g.spent); if (g.cat === plOpenCat) g.subs.forEach(s => { max = Math.max(max, s.plan, s.base, s.spent); }); });
+  const h = v => Math.max(v > 0 ? 3 : 0, Math.round(H * v / max));
+  const future = row.future;
+  const spentCol = (spent, plan, onclick) => {
+    const na = future && spent === 0;
+    const over = !na && spent > plan + 0.005;
+    return `<button type="button" class="pl-vbtn" onclick="${onclick}" tabindex="-1"><span class="pl-v ${na ? 'na' : (over ? 'ov' : 'sp')}">${na ? '—' : plN(spent)}</span><div class="pl-b ${over ? 'ov' : 'sp'}" style="height:${h(spent)}px"></div></button>`;
+  };
+  const planLbl = (base, plan, changed) => changed && Math.round(base) !== Math.round(plan) ? `${plN(base)}→${plN(plan)}` : plN(plan);
+  const cats = det.cats.map((g, ci) => {
+    if (g.removed) {
+      return `<div class="pl-cg"><div class="pl-cbars"><div class="pl-col pl-gonecol"><button type="button" class="pl-mini" onclick="plUndoCat(${ci})">Undo</button><span class="pl-v gone">${plN(g.base)}</span><div class="pl-ghost" style="height:${h(g.base)}px"></div></div>${spentCol(g.spent, 0, '')}</div><span class="pl-cl ov">${escapeHtml(g.cat)} · removed</span></div>`;
+    }
+    if (g.cat !== plOpenCat) {
+      const over = !future && g.spent > g.plan + 0.005;
+      return `<div class="pl-cg"><div class="pl-cbars">
+          <button type="button" class="pl-vbtn" onclick="plToggleCat(${ci})" aria-label="Open ${escapeHtml(g.cat)}"><span class="pl-v${g.changed ? ' chg' : ''}">${planLbl(g.base, g.plan, g.changed)}</span><div class="pl-stack">${g.inst > 0 ? `<div class="pl-b pl-hat" style="height:${h(g.inst)}px"></div>` : ''}<div class="pl-b pl${g.changed ? ' chg' : ''}" style="height:${h(g.plan - g.inst)}px"></div></div></button>
+          ${spentCol(g.spent, g.plan, `plToggleCat(${ci})`)}
+        </div><button type="button" class="pl-cl${over ? ' ov' : ''}" onclick="plToggleCat(${ci})">${escapeHtml(g.cat)}${g.subs.length > 1 ? ' ›' : ''}</button></div>`;
+    }
+    const subs = g.subs.map((s, si) => {
+      if (s.removed) {
+        return `<div class="pl-sg"><div class="pl-cbars"><div class="pl-col pl-gonecol"><button type="button" class="pl-mini" onclick="plUndoSub(${ci},${si})">Undo</button><span class="pl-v gone">${plN(s.base)}</span><div class="pl-ghost" style="height:${h(s.base)}px"></div></div>${spentCol(s.spent, 0, '')}</div><span class="pl-cl ov">${escapeHtml(s.sub)}</span></div>`;
+      }
+      const chg = s.ov !== undefined;
+      const over = !future && s.spent > s.plan + 0.005;
+      return `<div class="pl-sg"><div class="pl-cbars">
+          <button type="button" class="pl-vbtn" onclick="plEdit(${ci},${si})" aria-label="Change planned for ${escapeHtml(s.sub)}"><span class="pl-v${chg ? ' chg' : ''}">${planLbl(s.base, s.plan, chg)}</span><div class="pl-stack">${s.inst > 0 ? `<div class="pl-b pl-hat" style="height:${h(s.inst)}px"></div>` : ''}<div class="pl-b pl${chg ? ' chg' : ''}" style="height:${h(s.plan - s.inst)}px"></div></div></button>
+          ${spentCol(s.spent, s.plan, `plEdit(${ci},${si})`)}
+        </div><button type="button" class="pl-cl${over ? ' ov' : ''}" onclick="plEdit(${ci},${si})">${escapeHtml(s.sub)}</button></div>`;
+    }).join('');
+    return `<div class="pl-cg open"><div class="pl-openhead"><button type="button" class="pl-link" onclick="plToggleCat(${ci})">${escapeHtml(g.cat)} ▾ · ${plN(g.plan)}</button>
+        <button type="button" class="pl-mini danger" onclick="plAskRemoveCat(${ci})">${PL_TRASH}Remove category</button></div>
+      <div class="pl-subs">${subs}<button type="button" class="pl-add" onclick="plAddSub(${ci})"><span style="font-size:18px;line-height:1">+</span>Add sub</button></div></div>`;
+  }).join('');
+  const planned = det.cats.reduce((s, g) => s + g.plan, 0);
+  el.innerHTML = `<div class="pl-dhead">
+      <div class="pl-crumb"><button type="button" class="pl-link" onclick="plGoAll()">All months</button><span style="color:var(--txt-dim2)">›</span><span>${escapeHtml(monthLabel(m))}</span>${row.changed ? '<span class="pl-dot"></span>' : ''}<span class="pl-st pl-${row.status}">${escapeHtml(plStatusText(row))}</span></div>
+      <button type="button" class="pl-mini" onclick="plAddLine()">+ Add line</button>
+    </div>
+    <div class="pl-sum"><span>Planned <b>${escapeHtml(fmt(planned))}</b></span><span>Spent <b>${future && row.spent === 0 ? '—' : escapeHtml(fmt(row.spent))}</b></span><span>Income <b>${escapeHtml(fmt(row.income))}</b>${row.est ? ' (est.)' : ''}</span><span>Left <b style="color:${row.left < 0 ? '#a9523f' : '#4f7d5c'}">${escapeHtml(fmt(row.left))}</b></span></div>
+    <div class="pl-hint">Tap a category to open its sub categories · tap a planned column to change it</div>
+    ${det.cats.length ? `<div class="pl-scroll"><div class="pl-cats">${cats}</div></div>` : '<div class="empty-note">Nothing planned or spent in this month yet. Use “+ Add line” to plan something.</div>'}`;
+}
+function plRenderSaveBar(c) {
+  const el = document.getElementById('plSaveBar');
+  if (!el) return;
+  const ch = plChanges(c);
+  if (!ch.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+  const shown = ch.slice(0, 4);
+  el.innerHTML = `<div class="pl-savebar">
+      <div class="pl-sb-txt"><b>Not saved yet · ${ch.length} change${ch.length === 1 ? '' : 's'}</b>
+        <div class="pl-chips">${shown.map(t => `<span class="pl-chip">${escapeHtml(t)}</span>`).join('')}${ch.length > shown.length ? `<span class="pl-chip">+${ch.length - shown.length} more</span>` : ''}</div></div>
+      <div class="pl-sb-btns"><button type="button" class="btn btn-ghost" onclick="plDiscard()">Discard</button>
+      <button type="button" class="btn btn-primary" onclick="plApply()">Add as real plan</button></div>
+    </div>`;
+}
+// Human-readable list of everything the draft would change. The same change
+// made in several months collapses into one chip.
+function plChanges(c) {
+  const p = c ? c.p : activeProfile();
+  const d = c ? c.d : plDraft();
+  const out = [];
+  if (plHasInstallment(d)) {
+    const slots = plSlots(d, p);
+    out.push(`${String(d.desc || '').trim() || 'New installment'} · ${plN(d.monthly)} × ${slots.length} from ${plMS(slots[0].m)}`);
+  }
+  const groups = {};
+  const order = [];
+  const push = (text, m) => { if (!groups[text]) { groups[text] = []; order.push(text); } groups[text].push(m); };
+  const ovs = d.overrides || {};
+  Object.keys(ovs).sort().forEach(m => {
+    const ov = ovs[m] || {};
+    const keys = Object.keys(ov);
+    if (!keys.length) return;
+    const byCat = {};
+    keys.forEach(k => { const [cat] = plSplit(k); (byCat[cat] = byCat[cat] || []).push(k); });
+    Object.keys(byCat).forEach(cat => {
+      const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat).map(plLineKey))];
+      const ks = byCat[cat];
+      const allZero = ks.every(k => Number(ov[k]) === 0);
+      if (baseKeys.length && allZero && baseKeys.every(k => ks.includes(k))) { push(`${cat} removed`, m); return; }
+      ks.forEach(k => {
+        const [, sub] = plSplit(k);
+        const base = plSumKey(p.budget || [], m, k);
+        const v = Number(ov[k]);
+        if (v === 0 && base === 0) return;
+        const lbl = plLabel(cat, sub);
+        if (v === 0) push(`${lbl} removed`, m);
+        else if (base === 0) push(`${lbl} ${plN(v)} added`, m);
+        else push(`${lbl} ${plN(base)} → ${plN(v)}`, m);
+      });
+    });
+  });
+  order.forEach(t => {
+    const ms = groups[t];
+    out.push(ms.length === 1 ? `${plMS(ms[0])} · ${t}` : `${t} · ${ms.length} months (${plMS(ms[0])} – ${plMS(ms[ms.length - 1])})`);
+  });
+  return out;
+}
+
+/* ---------- Interactions ---------- */
+function plSelectMonth(m) {
+  if (plSel !== m) plOpenCat = null;
+  plSel = m;
+  const c = plCompute();
+  plRenderVerdict(c);
+  plRenderChart(c);
+  plRenderDrill(c);
+  const dr = document.getElementById('plDrill');
+  if (dr && window.innerWidth <= 860) dr.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function plGoAll() {
+  plOpenCat = null;
+  const ch = document.getElementById('plChart');
+  if (ch) ch.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  plRenderDrill(plCompute());
+}
+function plToggleCat(ci) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  if (!g) return;
+  plOpenCat = plOpenCat === g.cat ? null : g.cat;
+  plRenderDrill(plCompute());
+}
+function plScopeSeg(m) {
+  const n = plMonths(plDraft()).length;
+  return `<div class="sheet-seg" id="plScopeSeg"><button type="button" class="sel" onclick="plPickScope(this,'one')">${escapeHtml(plMShort(m))} only</button><button type="button" onclick="plPickScope(this,'all')">All ${n} months</button></div>`;
+}
+function plPickScope(btn, scope) {
+  plEdScope = scope;
+  document.querySelectorAll('#plScopeSeg button').forEach(b => b.classList.toggle('sel', b === btn));
+}
+function plTargetMonths(m) { return plEdScope === 'all' ? plMonths(plDraft()) : [m]; }
+function plSetOverride(d, m, k, v) {
+  const p = activeProfile();
+  const base = plSumKey(p.budget || [], m, k);
+  v = plR2(v);
+  if (!d.overrides) d.overrides = {};
+  if (!d.overrides[m]) d.overrides[m] = {};
+  if (v === plR2(base) || (v === 0 && base === 0)) delete d.overrides[m][k];
+  else d.overrides[m][k] = v;
+  if (!Object.keys(d.overrides[m]).length) delete d.overrides[m];
+}
+function plEdit(ci, si) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  const s = g && g.subs[si];
+  if (!s) return;
+  if (s.base === 0 && s.ov === undefined && s.inst > 0) {
+    showToast('That column is the new installment — change it in the form above');
+    const mi = document.getElementById('plMonthly');
+    if (mi) { mi.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => mi.focus(), 300); }
+    return;
+  }
+  const m = plDrillCache.m;
+  plEdKey = { m, key: s.key, cat: g.cat, sub: s.sub };
+  plEdScope = 'one';
+  const cur = plR2(s.plan - s.inst);
+  openSheet(`${sheetHead(plLabel(g.cat, s.sub))}
+    <div class="sheet-summary"><span><span class="l">In budget</span><span class="v">${escapeHtml(fmtRaw(s.base))}</span></span><span><span class="l">Spent</span><span class="v">${escapeHtml(fmtRaw(s.spent))}</span></span><span><span class="l">In draft</span><span class="v">${escapeHtml(fmtRaw(cur))}</span></span></div>
+    <div class="sheet-field"><label for="plEdAmt">Planned for ${escapeHtml(monthLabel(m))}</label><input id="plEdAmt" class="sheet-amt" type="number" inputmode="decimal" step="0.01" min="0" value="${cur}"></div>
+    ${plScopeSeg(m)}
+    <div class="pl-sheet-links">${s.ov !== undefined ? `<button type="button" class="pl-link" onclick="plResetKey()">Back to budget value (${escapeHtml(fmtRaw(s.base))})</button>` : ''}<button type="button" class="pl-link danger" onclick="plRemoveSub()">Remove this sub category</button></div>
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" onclick="plSaveEdit()">Update</button></div>`);
+}
+function plSaveEdit() {
+  if (!plEdKey) return;
+  const raw = document.getElementById('plEdAmt').value;
+  const v = Number(raw);
+  if (raw === '' || isNaN(v) || v < 0) { alert('Enter a planned amount (0 or more).'); return; }
+  const d = plDraft();
+  plTargetMonths(plEdKey.m).forEach(m => plSetOverride(d, m, plEdKey.key, v));
+  plCommit(d);
+  closeSheet();
+  renderPlannerPage(false);
+}
+function plRemoveSub() {
+  if (!plEdKey) return;
+  const d = plDraft();
+  plTargetMonths(plEdKey.m).forEach(m => plSetOverride(d, m, plEdKey.key, 0));
+  plCommit(d);
+  closeSheet();
+  renderPlannerPage(false);
+  showToast(plEdKey.sub + ' removed in the draft');
+}
+function plResetKey() {
+  if (!plEdKey) return;
+  const d = plDraft();
+  plTargetMonths(plEdKey.m).forEach(m => { if (d.overrides[m]) { delete d.overrides[m][plEdKey.key]; if (!Object.keys(d.overrides[m]).length) delete d.overrides[m]; } });
+  plCommit(d);
+  closeSheet();
+  renderPlannerPage(false);
+}
+function plUndoSub(ci, si) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  const s = g && g.subs[si];
+  if (!s) return;
+  const d = plDraft();
+  const m = plDrillCache.m;
+  if (d.overrides[m]) { delete d.overrides[m][s.key]; if (!Object.keys(d.overrides[m]).length) delete d.overrides[m]; }
+  plCommit(d);
+  renderPlannerPage(false);
+}
+function plUndoCat(ci) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  if (!g) return;
+  const d = plDraft();
+  const m = plDrillCache.m;
+  if (d.overrides[m]) {
+    g.subs.forEach(s => { if (Number(d.overrides[m][s.key]) === 0) delete d.overrides[m][s.key]; });
+    if (!Object.keys(d.overrides[m]).length) delete d.overrides[m];
+  }
+  plCommit(d);
+  renderPlannerPage(false);
+}
+function plAskRemoveCat(ci) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  if (!g) return;
+  const m = plDrillCache.m;
+  plEdKey = { m, cat: g.cat };
+  plEdScope = 'one';
+  openSheet(`${sheetHead('Remove ' + g.cat + '?')}
+    <div class="pl-sheet-text">Takes out its ${g.lines} line${g.lines === 1 ? '' : 's'} (${escapeHtml(fmtRaw(g.plan))}) from the plan. Spending already logged stays, and the category stays in your list.</div>
+    ${plScopeSeg(m)}
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" style="background:#c0604b" onclick="plRemoveCat()">Remove</button></div>`);
+}
+function plRemoveCat() {
+  if (!plEdKey || !plEdKey.cat) return;
+  const p = activeProfile();
+  const d = plDraft();
+  const cat = plEdKey.cat;
+  plTargetMonths(plEdKey.m).forEach(m => {
+    const baseKeys = [...new Set((p.budget || []).filter(b => b.month === m && b.category === cat).map(plLineKey))];
+    baseKeys.forEach(k => plSetOverride(d, m, k, 0));
+    const ov = d.overrides[m];
+    if (ov) {
+      Object.keys(ov).forEach(k => { if (plSplit(k)[0] === cat && !baseKeys.includes(k)) delete ov[k]; });
+      if (!Object.keys(ov).length) delete d.overrides[m];
+    }
+  });
+  plCommit(d);
+  plOpenCat = null;
+  closeSheet();
+  renderPlannerPage(false);
+  showToast(cat + ' removed in the draft');
+}
+function plAddSub(ci) {
+  const g = plDrillCache && plDrillCache.cats[ci];
+  if (!g) return;
+  const m = plDrillCache.m;
+  const p = activeProfile();
+  const have = g.subs.filter(s => !s.removed).map(s => s.sub);
+  const options = (p.categories[g.cat] || []).filter(s => !have.includes(s));
+  plEdKey = { m, cat: g.cat, mode: 'addsub' };
+  plEdScope = 'one';
+  openSheet(`${sheetHead('Add to ' + g.cat)}
+    <div class="sheet-field"><label for="plNewSub">Sub category</label><input id="plNewSub" type="text" list="plSubList" placeholder="e.g. Cinema" value="${escapeHtml(options[0] || '')}"><datalist id="plSubList">${(p.categories[g.cat] || []).map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></div>
+    <div class="sheet-field"><label for="plNewAmt">Planned amount</label><input id="plNewAmt" class="sheet-amt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>
+    ${plScopeSeg(m)}
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" onclick="plSaveNew()">Add</button></div>`);
+}
+function plAddLine() {
+  const m = plSel;
+  if (!m) return;
+  plEdKey = { m, mode: 'addline' };
+  plEdScope = 'one';
+  openSheet(`${sheetHead('Add to ' + monthLabel(m))}
+    <div class="sheet-grid"><div class="sheet-field"><label for="plNewCat">Category</label><input id="plNewCat" type="text"></div>
+    <div class="sheet-field"><label for="plNewSub">Sub category</label><input id="plNewSub" type="text"></div></div>
+    <div class="sheet-field"><label for="plNewAmt">Planned amount</label><input id="plNewAmt" class="sheet-amt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>
+    ${plScopeSeg(m)}
+    <div class="sheet-actions"><button type="button" class="del" style="color:var(--txt-dim)" onclick="closeSheet()">Cancel</button><button type="button" class="save" onclick="plSaveNew()">Add</button></div>`);
+  upgradeCatSubPickers('plNewCat', 'plNewSub');
+}
+function plSaveNew() {
+  if (!plEdKey) return;
+  const catEl = document.getElementById('plNewCat');
+  const cat = plEdKey.mode === 'addsub' ? plEdKey.cat : String(catEl ? catEl.value : '').trim();
+  const subRaw = String((document.getElementById('plNewSub') || {}).value || '').trim();
+  const sub = (subRaw && subRaw !== '__new__') ? subRaw : cat;
+  const v = Number(document.getElementById('plNewAmt').value);
+  if (!cat || cat === '__new__') { alert('Choose a category.'); return; }
+  if (isIncomeCategory(cat)) { alert('Income is planned in Settings → Income, not here.'); return; }
+  if (!v || v <= 0) { alert('Enter a planned amount.'); return; }
+  const d = plDraft();
+  const k = plKey(cat, sub);
+  plTargetMonths(plEdKey.m).forEach(m => plSetOverride(d, m, k, v));
+  plCommit(d);
+  plOpenCat = cat;
+  closeSheet();
+  renderPlannerPage(false);
+}
+function plDiscard() {
+  const d = plDraft();
+  if (plHasContent(d) && !confirm('Throw away this draft? Your real budget is not affected.')) return;
+  const pid = state.activeProfileId;
+  if (state.plannerDrafts && state.plannerDrafts[pid]) { delete state.plannerDrafts[pid]; saveState(); }
+  plMem[pid] = plBlankDraft();
+  plSel = null; plOpenCat = null; plBannerHidden = true;
+  renderPlannerPage(true);
+}
+function plApply() {
+  const c = plCompute();
+  const ch = plChanges(c);
+  if (!ch.length) { showToast('Nothing to add yet'); return; }
+  if (Number(c.d.monthly) > 0 && !plHasInstallment(c.d)) { alert('Pick the first payment date and the number of installments.'); return; }
+  if (!confirm('Add these changes to your real budget?\n\n• ' + ch.join('\n• '))) return;
+  const p = c.p;
+  p.budget = plBuildBudget(p, c.d, true);
+  p.budget.forEach(b => ensureCategoryIn(p, b.category, b.subcategory));
+  const pid = state.activeProfileId;
+  if (state.plannerDrafts) delete state.plannerDrafts[pid];
+  plMem[pid] = plBlankDraft();
+  plOpenCat = null;
+  saveState();
+  renderAll();
+  plFillForm(plDraft());
+  showToast('Added to your budget');
+}
+
 function renderAll() {
   updateNavVisibility();
   refreshCurrencyLabels();
   renderDashboard();
   if (document.getElementById('page-expenses').classList.contains('on')) renderExpensesPage();
   if (document.getElementById('page-budget').classList.contains('on')) renderBudgetPage();
+  if (document.getElementById('page-planner').classList.contains('on') && !hasLedgerMode()) renderPlannerPage(false);
   if (document.getElementById('page-calendar').classList.contains('on')) renderCalendarPage();
   if (document.getElementById('page-settings').classList.contains('on')) renderSettingsPage();
 }
