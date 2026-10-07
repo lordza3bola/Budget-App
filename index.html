@@ -1056,6 +1056,16 @@
 
   /* ===== Planner tab ===== */
   body.on-planner .fab, body.on-planner .fab-desktop { display: none !important; }
+  /* V23: the phone "+" never sits on top of what you are doing. Hidden in
+     Settings, while the keyboard is up (the tab bar too), and slid away while
+     scrolling down; it comes back on scroll up or near the top/bottom of a page. */
+  body.on-settings .fab { display: none !important; }
+  @media (max-width: 860px) {
+    .fab { transition: transform .22s ease, opacity .22s ease; }
+    body.fab-away .fab { transform: translateY(150px) scale(.6); opacity: 0; pointer-events: none; }
+    body.kb-open .fab, body.kb-open .tabbar { display: none !important; }
+    .main { padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)) !important; }
+  }
   .pl-wrap { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
   .pl-wrap > .card h3 { margin-bottom: 12px; }
   .pl-form { display: grid; grid-template-columns: minmax(0,1.8fr) repeat(4, minmax(0,1fr)); gap: 12px; }
@@ -2385,7 +2395,7 @@ async function bindUserDoc(uid) {
     localStorage.setItem('ledger_state', JSON.stringify(state));
     fbState.applyingRemote = false;
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
-    const movedOnLoad = [rebucketAllProfiles(), ensureVendorDefaults()].some(Boolean);
+    const movedOnLoad = [rebucketAllProfiles(), ensureVendorDefaults(), repairPlannerInstallments()].some(Boolean);
     currentMonth = todayCycleMonth();
     selectedMonths = null;
     renderProfileTabs();
@@ -3235,6 +3245,8 @@ function goPage(name) {
   target.classList.add('on');
   document.body.classList.toggle('on-add', name === 'add');
   document.body.classList.toggle('on-planner', name === 'planner');
+  document.body.classList.toggle('on-settings', name === 'settings');
+  document.body.classList.remove('fab-away');
   document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   document.querySelectorAll('.tab').forEach(a => a.classList.toggle('on', a.dataset.page === name));
   if (name === 'dashboard') renderDashboard();
@@ -6787,6 +6799,34 @@ function plBaseSum(p, m, key) {
   const ids = plInstIds(p.budget || []);
   return (p.budget || []).filter(b => b.month === m && plLineKey(b) === key && !plIsInst(b, ids)).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
 }
+function plIsInstCat(cat) { return /^installments?$/i.test(String(cat || '').trim()); }
+// Gives lines of the same category/sub/description one installmentGroupId with
+// index/total/finish, the same shape "+ Add installment" creates.
+function plTagInstSeries(lines, prefix) {
+  const by = {};
+  lines.forEach(b => { const k = b.category + '|' + (b.subcategory || '') + '|' + (b.description || ''); (by[k] = by[k] || []).push(b); });
+  Object.keys(by).forEach((k, gi) => {
+    const rows = by[k].sort((a, b) => (a.month || '').localeCompare(b.month || ''));
+    const gid = prefix + '_' + gi;
+    const finish = rows[rows.length - 1].startDate || (rows[rows.length - 1].month + '-01');
+    rows.forEach((b, i) => {
+      delete b.oneTime;
+      b.installmentGroupId = gid; b.installmentIndex = i + 1; b.installmentTotal = rows.length; b.installmentFinish = finish;
+    });
+  });
+}
+// Repair for V22: Installments-category lines the Planner added never got an
+// installmentGroupId, so the Installments tab skipped them. Runs once per load.
+function repairPlannerInstallments() {
+  let changed = false;
+  Object.values(state.profiles || {}).forEach(p => {
+    const lost = (p.budget || []).filter(b => /_pl\d+$/.test(String(b.id || '')) && !b.installmentGroupId && !b.recurringGroupId && plIsInstCat(b.category));
+    if (!lost.length) return;
+    plTagInstSeries(lost, 'inst' + Date.now() + 'r');
+    changed = true;
+  });
+  return changed;
+}
 function plCycleStartDate(p, m) {
   const c = (p.incomeCycles || {})[m];
   return (c && c.start) ? c.start : m + '-01';
@@ -6798,6 +6838,7 @@ function plBuildBudget(p, d, forSave) {
   let out = (p.budget || []).map(b => Object.assign({}, b));
   const stamp = Date.now();
   let n = 0;
+  const newInstLines = [];
   const ovs = d.overrides || {};
   Object.keys(ovs).sort().forEach(m => {
     Object.keys(ovs[m] || {}).forEach(key => {
@@ -6818,6 +6859,7 @@ function plBuildBudget(p, d, forSave) {
         };
         if (meta.o) line.oneTime = true;
         out.push(line);
+        if (forSave && plIsInstCat(cat)) newInstLines.push(line);
       } else if (match.length === 1) {
         match[0].plannedValue = v;
       } else {
@@ -6832,6 +6874,9 @@ function plBuildBudget(p, d, forSave) {
       }
     });
   });
+  // Lines added under the "Installments" category (e.g. "+ Add line" for all
+  // months) become a real installment plan, so they show on the Installments tab.
+  if (newInstLines.length) plTagInstSeries(newInstLines, 'inst' + stamp + 'a');
   if (plHasInstallment(d)) {
     const slots = plSlots(d, p);
     const groupId = 'inst' + stamp;
@@ -7965,9 +8010,33 @@ function persistBudgetRowOrder(dragId, month, visibleIds) {
 RowDrag.register('expTableBody', { onDrop: persistExpenseRowOrder, rerender: () => renderExpensesPage(), invalidHint: 'Rows can only move within the same day' });
 RowDrag.register('budgetTableBody', { onDrop: persistBudgetRowOrder, rerender: () => renderBudgetPage(), invalidHint: 'Lines can only move within the same month' });
 
+// Phone "+" button: slide it away while scrolling down, bring it back on
+// scroll up; hide it and the tab bar while typing (keyboard up).
+(function fabGuard() {
+  const isTyping = el => el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' ||
+    (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type || '')) || el.isContentEditable);
+  document.addEventListener('focusin', e => { if (isTyping(e.target)) document.body.classList.add('kb-open'); });
+  document.addEventListener('focusout', () => setTimeout(() => { if (!isTyping(document.activeElement)) document.body.classList.remove('kb-open'); }, 80));
+  const lastY = new WeakMap();
+  let lastWin = 0;
+  document.addEventListener('scroll', e => {
+    const t = e.target;
+    const el = (t === document || t === document.documentElement || t === document.body) ? document.scrollingElement : t;
+    if (!el || el.closest && el.closest('.modal-sheet, .sheet, .tabbar')) return;
+    const y = el.scrollTop;
+    const prev = el === document.scrollingElement ? lastWin : (lastY.get(el) || 0);
+    const atEnd = y + el.clientHeight >= el.scrollHeight - 40;
+    if (y < 60 || atEnd) document.body.classList.remove('fab-away');
+    else if (y > prev + 6) document.body.classList.add('fab-away');
+    else if (y < prev - 6) document.body.classList.remove('fab-away');
+    if (el === document.scrollingElement) lastWin = y; else lastY.set(el, y);
+  }, { capture: true, passive: true });
+})();
+
 loadState();
 if (rebucketAllProfiles()) localStorage.setItem('ledger_state', JSON.stringify(state));
 if (ensureVendorDefaults()) localStorage.setItem('ledger_state', JSON.stringify(state));
+if (repairPlannerInstallments()) localStorage.setItem('ledger_state', JSON.stringify(state));
 currentMonth = todayCycleMonth();
 renderProfileTabs();
 renderAll();
