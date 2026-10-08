@@ -518,6 +518,36 @@
     transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
   }
   .drag-float-wrap.invalid .drag-float-hint { opacity: 1; transform: translateY(0); }
+  /* ===== List drag-and-drop (Settings → Categories: categories and sub categories) ===== */
+  #categoryManager, .sub-chips { position: relative; }
+  [data-ldrag] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .ldrag-handle {
+    display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 26px; margin: -4px -2px -4px -6px;
+    font-size: 14px; line-height: 1; color: var(--txt-dim2); border-radius: 6px; opacity: .55;
+    transition: opacity .15s ease, background .15s ease; cursor: grab !important; touch-action: none;
+  }
+  .cat-accordion-head:hover .ldrag-handle { opacity: .85; }
+  .ldrag-handle:hover { opacity: 1 !important; background: var(--line); color: var(--txt-dim); }
+  .cat-drag-note { font-size: 11.5px; color: var(--txt-dim2); margin: -4px 2px 10px; }
+  /* The item's original slot while it's lifted: same size, contents hidden */
+  .ldrag-placeholder { background: rgba(95,125,104,.07) !important; box-shadow: inset 0 0 0 1px rgba(95,125,104,.25) !important; }
+  .ldrag-placeholder > * { visibility: hidden; }
+  body.row-dragging .ldrag-handle { opacity: 0 !important; }
+  /* Floating copy */
+  .ldrag-wrap { position: fixed; z-index: 1000; pointer-events: none; will-change: transform; }
+  .ldrag-wrap.settling { transition: transform .2s cubic-bezier(.2,.7,.3,1); }
+  .ldrag-wrap.returning { transition: transform .26s cubic-bezier(.3,.7,.3,1); }
+  .ldrag-wrap > .ldrag-item {
+    margin: 0 !important; width: 100%; height: 100%; box-sizing: border-box;
+    transform-origin: center center; box-shadow: 0 1px 2px rgba(60,52,38,.08);
+    transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, outline-color .15s ease;
+    outline: 1.5px solid transparent; outline-offset: -1.5px;
+  }
+  .ldrag-wrap > .chip-btn.ldrag-item { background: var(--card); }
+  .ldrag-wrap.lifted > .ldrag-item { transform: scale(1.03); box-shadow: 0 14px 30px rgba(60,52,38,.16), 0 3px 8px rgba(60,52,38,.10); }
+  .ldrag-wrap.invalid > .ldrag-item { outline-color: rgba(192,96,75,.55); }
+  .ldrag-wrap.settling > .ldrag-item, .ldrag-wrap.returning > .ldrag-item { transform: scale(1); box-shadow: 0 1px 2px rgba(60,52,38,.06); outline-color: transparent; }
+  .ldrag-wrap.invalid .drag-float-hint { opacity: 1; transform: translateY(0); }
   .table td input[type=text], .table td input[type=date], .table td input[type=number] {
     width: 100%; background: var(--card); border: none; box-shadow: var(--shadow-in); border-radius: 8px;
     padding: 6px 8px; font-size: 12.5px; color: var(--txt); font-family: inherit; box-sizing: border-box;
@@ -1667,6 +1697,7 @@
           </div>
           <input type="text" id="categorySearch" placeholder="Search categories…" oninput="renderCategoryManager()"
             style="width:100%;background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:9px 12px;border-radius:9px;font-size:12.5px; margin-bottom:12px;">
+          <div class="cat-drag-note">Drag ⠿ to put categories in your own order — open one and drag its sub categories too. Lists and filters across the app follow this order. On the phone, press and hold, then drag.</div>
           <div id="categoryManager"></div>
         </div>
 
@@ -2157,8 +2188,25 @@ function ensureProfileDefaults(p) {
     p.categories['Income'] = ['Other income'];
     
   }
+  if (p.categories) catNames(p);
   return p;
 }
+// Category names in the order the user set (Settings → Categories, drag to
+// reorder). The order lives in p.categoryOrder because Firestore hands map
+// keys back A–Z, which used to make a newly added category jump on sync.
+// New names go at the end; deleted ones drop out. Also keeps the list tidy.
+function catNames(p) {
+  if (!p || !p.categories) return [];
+  const keys = Object.keys(p.categories);
+  const prev = Array.isArray(p.categoryOrder) ? p.categoryOrder : [];
+  const out = prev.filter((c, i) => keys.includes(c) && prev.indexOf(c) === i);
+  keys.forEach(c => { if (!out.includes(c)) out.push(c); });
+  if (out.length !== prev.length || out.some((c, i) => c !== prev[i])) p.categoryOrder = out;
+  return out.slice();
+}
+// Position of a category / sub category in the user's order (unknown → end).
+function catRank(p, cat) { const i = catNames(p).indexOf(cat); return i === -1 ? 1e6 : i; }
+function subRank(p, cat, sub) { const i = ((p.categories || {})[cat] || []).indexOf(sub); return i === -1 ? 1e6 : i; }
 // The icon HTML for a category / sub category (see categoryIconSlug).
 function getCategoryIcon(p, category, subcategory) {
   return thImg(categoryIconSlug(p, category, subcategory));
@@ -4142,7 +4190,7 @@ function renderAddExpensePage() {
 
   const catChipsEl = document.getElementById('expCatChips');
   const p0 = activeProfile();
-  catChipsEl.innerHTML = Object.keys(p0.categories).map(c =>
+  catChipsEl.innerHTML = catNames(p0).map(c =>
     `<button class="chip-btn" data-cat="${escapeHtml(c)}" onclick="pickCategory(this)">${getCategoryIcon(p0, c, null)} ${escapeHtml(c)}</button>`
   ).join('');
   document.getElementById('expSubField').style.display = 'none';
@@ -4631,7 +4679,8 @@ function msOptions(key) {
   if (kind === 'cats') {
     const cats = new Set(msPairs(key).map(x => x[0]).filter(c => c != null && c !== ''));
     f.cats.forEach(c => cats.add(c)); // keep picked ones visible so they can be unticked here too
-    return Array.from(cats).sort((a,b) => String(a).localeCompare(String(b))).map(c => ({ value: c, label: c }));
+    const pp = activeProfile();
+    return Array.from(cats).sort((a,b) => catRank(pp, a) - catRank(pp, b) || String(a).localeCompare(String(b))).map(c => ({ value: c, label: c }));
   }
   if (kind === 'subs') {
     const keys = new Set();
@@ -4640,7 +4689,8 @@ function msOptions(key) {
     const list = Array.from(keys).map(k => { const [c, s] = subKeyParts(k); return { value: k, cat: c, sub: s }; });
     const nameCount = {};
     list.forEach(o => { nameCount[o.sub] = (nameCount[o.sub] || 0) + 1; });
-    return list.sort((a,b) => a.sub.localeCompare(b.sub) || a.cat.localeCompare(b.cat))
+    const pp = activeProfile();
+    return list.sort((a,b) => catRank(pp, a.cat) - catRank(pp, b.cat) || a.cat.localeCompare(b.cat) || subRank(pp, a.cat, a.sub) - subRank(pp, b.cat, b.sub) || a.sub.localeCompare(b.sub))
       .map(o => ({ value: o.value, label: o.sub, hint: (nameCount[o.sub] > 1 || (f.cats.length !== 1 && o.sub !== o.cat)) ? o.cat : '' }));
   }
   // Days: whatever's in the Expenses table right now (months + category + search), newest first.
@@ -4813,7 +4863,7 @@ document.addEventListener('click', (e) => {
 });
 function populateCatListDatalist() {
   const catList = document.getElementById('catList');
-  catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  catList.innerHTML = catNames(activeProfile()).map(c => `<option value="${escapeHtml(c)}">`).join('');
 }
 function startRowEdit(key) {
   editingRowKey = key;
@@ -4912,7 +4962,7 @@ function upgradeCatSubPickers(catId, subId) {
   const catIn = document.getElementById(catId);
   if (!catIn) return;
   const p = activeProfile();
-  const cats = Object.keys(p.categories || {});
+  const cats = catNames(p);
   const catSel = buildPickerSelect(catId, cats, catIn.value.trim(), 'Choose category', 'category');
   catIn.replaceWith(catSel);
   const subIn = subId ? document.getElementById(subId) : null;
@@ -5225,7 +5275,7 @@ function openBudgetModal() {
   document.getElementById('bRepeatMonthsField').style.display = 'none';
   document.getElementById('bStatus').value = 'Not Paid Yet';
   const catList = document.getElementById('catList');
-  catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  catList.innerHTML = catNames(activeProfile()).map(c => `<option value="${escapeHtml(c)}">`).join('');
   upgradeCatSubPickers('bCategory', 'bSubCategory');
   document.getElementById('budgetModalBackdrop').classList.add('on');
 }
@@ -5300,7 +5350,7 @@ function openInstallmentModal() {
   document.getElementById('iFinishDate').value = '';
   document.getElementById('iStatus').value = 'Not Paid Yet';
   const catList = document.getElementById('catList');
-  catList.innerHTML = Object.keys(activeProfile().categories).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  catList.innerHTML = catNames(activeProfile()).map(c => `<option value="${escapeHtml(c)}">`).join('');
   upgradeCatSubPickers('iCategory', 'iSubCategory');
   document.getElementById('installmentModalBackdrop').classList.add('on');
 }
@@ -6065,7 +6115,7 @@ function renderCategoryManager() {
   const el = document.getElementById('categoryManager');
   const p = activeProfile();
   const search = (document.getElementById('categorySearch')?.value || '').trim().toLowerCase();
-  let cats = Object.keys(p.categories);
+  let cats = catNames(p);
   if (search) cats = cats.filter(c => c.toLowerCase().includes(search) ||
     (p.categories[c]||[]).some(s => s.toLowerCase().includes(search)));
   if (!cats.length) {
@@ -6076,9 +6126,10 @@ function renderCategoryManager() {
     const subs = p.categories[cat] || [];
     const isOpen = openCategoryKey === cat;
     return `
-      <div class="cat-accordion ${isOpen ? 'open' : ''}">
+      <div class="cat-accordion ${isOpen ? 'open' : ''}" data-ldrag="cat" data-ldrag-id="${escapeHtml(cat)}">
         <div class="cat-accordion-head" onclick="toggleCategory('${escapeHtml(cat)}')">
           <span style="display:flex;align-items:center;gap:8px;">
+            <span class="ldrag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>
             <button class="icon-trigger" onclick="event.stopPropagation(); openIconPicker('${escapeHtml(cat)}', null, this)" title="Change icon">${getCategoryIcon(p, cat, null)}</button>
             <span class="name">${escapeHtml(cat)}</span>
           </span>
@@ -6091,11 +6142,11 @@ function renderCategoryManager() {
           </span>
         </div>
         <div class="cat-accordion-body">
-          <div class="chips" style="margin-bottom:10px;">
-            ${subs.map(s => `<span class="chip-btn" style="display:inline-flex;align-items:center;gap:6px;">
+          <div class="chips sub-chips" style="margin-bottom:10px;">
+            ${subs.map(s => `<span class="chip-btn" data-ldrag="sub" data-ldrag-id="${escapeHtml(s)}" style="display:inline-flex;align-items:center;gap:6px;">
                 <button class="icon-trigger sm" onclick="openIconPicker('${escapeHtml(cat)}', '${escapeHtml(s)}', this)" title="Change icon">${getCategoryIcon(p, cat, s)}</button>
                 ${escapeHtml(s)}
-                <span onclick="deleteSubcategory('${escapeHtml(cat)}','${escapeHtml(s)}')" style="cursor:pointer;color:var(--txt-dim2);display:inline-flex;" title="Delete sub category">
+                <span class="no-drag" onclick="deleteSubcategory('${escapeHtml(cat)}','${escapeHtml(s)}')" style="cursor:pointer;color:var(--txt-dim2);display:inline-flex;" title="Delete sub category">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
                 </span>
               </span>`).join('') || '<span style="font-size:12px;color:var(--txt-dim2);">No sub categories yet</span>'}
@@ -6675,7 +6726,7 @@ function renderVdScope() {
   el.innerHTML = cards.length ? `<button class="${vdScope ? '' : 'on'}" onclick="setVdScope('')">Bank card rules</button>` +
     cards.map(l4 => `<button class="${vdScope === l4 ? 'on' : ''}" onclick="setVdScope('${escapeHtml(l4)}')">${escapeHtml(state.profiles[state.cardRoutes[l4]].name)} •••• ${escapeHtml(l4)}</button>`).join('') : '';
   const dl = document.getElementById('vdCatList');
-  if (dl) dl.innerHTML = Object.keys(vdScopeProfile().categories || {}).map(c => `<option value="${escapeHtml(c)}">`).join('');
+  if (dl) dl.innerHTML = catNames(vdScopeProfile()).map(c => `<option value="${escapeHtml(c)}">`).join('');
 }
 function vdInScope(r) { return r && (vdScope ? r.card === vdScope : !r.card); }
 function vdSubsFor(cat) { return (vdScopeProfile().categories || {})[cat] || []; }
@@ -8134,6 +8185,272 @@ function persistBudgetRowOrder(dragId, month, visibleIds) {
 }
 RowDrag.register('expTableBody', { onDrop: persistExpenseRowOrder, rerender: () => renderExpensesPage(), invalidHint: 'Rows can only move within the same day' });
 RowDrag.register('budgetTableBody', { onDrop: persistBudgetRowOrder, rerender: () => renderBudgetPage(), invalidHint: 'Lines can only move within the same month' });
+
+// ============================================================
+// List drag-and-drop for Settings → Categories — the same feel as the table
+// rows above (RowDrag): lifts after a small move (mouse / the ⠿ handle) or a
+// short press-and-hold (touch); the item's own element stays as a same-size
+// placeholder and slides to the drop slot while the others glide aside; a
+// floating copy follows the pointer, then settles into place (or glides back).
+//   [data-ldrag="cat"]  category cards — one vertical list
+//   [data-ldrag="sub"]  sub category chips — wrap across lines, and only move
+//                       within their own category
+// Nothing is written until a successful drop, and a drop only changes order.
+// ============================================================
+const ListDrag = (() => {
+  const MOUSE_THRESHOLD = 5, TOUCH_HOLD_MS = 240, TOUCH_SLOP = 8;
+  let pend = null, d = null;
+  let cfg = {};
+  function register(containerId, config) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    cfg = config;
+    el.addEventListener('pointerdown', onDown);
+  }
+  function blockedTarget(t) {
+    if (t.closest('.ldrag-handle')) return false;
+    return !!t.closest('button, input, select, textarea, a, label, [contenteditable], .no-drag, .cat-accordion-body > div:last-child');
+  }
+  function onDown(e) {
+    if (d || pend || (typeof RowDrag !== 'undefined' && RowDrag.isDragging())) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // the innermost draggable: a chip inside an open category wins over the category
+    const item = e.target.closest('[data-ldrag]');
+    if (!item || blockedTarget(e.target)) return;
+    const fromHandle = !!e.target.closest('.ldrag-handle');
+    // A category moves from its handle or its header — not from inside its open body
+    if (item.dataset.ldrag === 'cat' && !fromHandle && !e.target.closest('.cat-accordion-head')) return;
+    pend = { item, x: e.clientX, y: e.clientY, id: e.pointerId, type: e.pointerType, fromHandle, timer: null };
+    if (e.pointerType !== 'mouse' && !fromHandle) {
+      pend.timer = setTimeout(() => { if (pend) activate(pend.x, pend.y); }, TOUCH_HOLD_MS);
+    }
+    if (fromHandle) e.preventDefault();
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  }
+  function onMove(e) {
+    if (pend && e.pointerId === pend.id) {
+      const dist = Math.hypot(e.clientX - pend.x, e.clientY - pend.y);
+      if (pend.type === 'mouse' || pend.fromHandle) { if (dist > MOUSE_THRESHOLD) activate(e.clientX, e.clientY); }
+      else if (dist > TOUCH_SLOP) abortPending(); // a scroll, not a drag
+      return;
+    }
+    if (!d || e.pointerId !== d.pointerId) return;
+    e.preventDefault();
+    d.px = e.clientX; d.py = e.clientY;
+    positionFloat();
+    place();
+  }
+  function onUp(e) {
+    if (pend && e.pointerId === pend.id) { abortPending(); return; }
+    if (!d || e.pointerId !== d.pointerId) return;
+    swallowNextClick();
+    finish(false);
+  }
+  function onCancel(e) {
+    if (pend && e.pointerId === pend.id) { abortPending(); return; }
+    if (d && e.pointerId === d.pointerId) finish(true);
+  }
+  function onKey(e) { if (d && e.key === 'Escape') { e.preventDefault(); finish(true); } }
+  function onTouchMove(e) { if (d) e.preventDefault(); }
+  function onCtxMenu(e) { if (d || pend) e.preventDefault(); }
+  function abortPending() {
+    if (pend && pend.timer) clearTimeout(pend.timer);
+    pend = null;
+    if (!d) removeWindowListeners();
+  }
+  function removeWindowListeners() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onCancel);
+  }
+  function swallowNextClick() {
+    const stop = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 60);
+  }
+  const siblingsOf = (list, kind) => [...list.children].filter(n => n.dataset && n.dataset.ldrag === kind);
+
+  function activate(px, py) {
+    const p0 = pend; if (!p0) return;
+    if (p0.timer) clearTimeout(p0.timer);
+    pend = null;
+    const item = p0.item, list = item.parentElement, kind = item.dataset.ldrag;
+    if (!item.isConnected) { removeWindowListeners(); return; }
+    const rect = item.getBoundingClientRect();
+    const wrap = document.createElement('div');
+    wrap.className = 'ldrag-wrap';
+    wrap.style.left = rect.left + 'px'; wrap.style.top = rect.top + 'px';
+    wrap.style.width = rect.width + 'px'; wrap.style.height = rect.height + 'px';
+    const clone = item.cloneNode(true);
+    clone.classList.add('ldrag-item');
+    clone.removeAttribute('data-ldrag');
+    clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    clone.querySelectorAll('[onclick],[onchange],[oninput]').forEach(n => { n.removeAttribute('onclick'); n.removeAttribute('onchange'); n.removeAttribute('oninput'); });
+    clone.removeAttribute('onclick');
+    wrap.appendChild(clone);
+    const hint = document.createElement('div');
+    hint.className = 'drag-float-hint';
+    hint.textContent = kind === 'sub' ? 'Sub categories stay in their own category' : "Can't move here";
+    wrap.appendChild(hint);
+    document.body.appendChild(wrap);
+    item.classList.add('ldrag-placeholder');
+    document.body.classList.add('row-dragging');
+    d = {
+      item, list, kind, rect, wrap, pointerId: p0.id, sx: p0.x, sy: p0.y, px, py,
+      group: kind === 'sub' ? (item.closest('[data-ldrag="cat"]') || {}).dataset?.ldragId : '',
+      origNext: item.nextElementSibling, origPrev: item.previousElementSibling, valid: true, raf: 0
+    };
+    window.addEventListener('keydown', onKey, true);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('contextmenu', onCtxMenu, true);
+    positionFloat();
+    requestAnimationFrame(() => { if (d && d.wrap === wrap) wrap.classList.add('lifted'); });
+    d.raf = requestAnimationFrame(autoScrollLoop);
+    if (navigator.vibrate && p0.type === 'touch') { try { navigator.vibrate(8); } catch (e) {} }
+  }
+  function positionFloat() {
+    const dx = d.px - d.sx, dy = d.py - d.sy;
+    // categories move mostly up/down (slight sideways give); chips move freely
+    const fx = d.kind === 'cat' ? Math.max(-24, Math.min(24, dx * 0.3)) : dx;
+    d.wrap.style.transform = `translate3d(${fx}px, ${dy}px, 0)`;
+  }
+  // Positions from layout (offsets inside the list), not live rects, so items
+  // that are mid-animation don't make the insertion point flicker.
+  function box(n) {
+    const lr = d.list.getBoundingClientRect();
+    return { left: lr.left + n.offsetLeft, top: lr.top + n.offsetTop, w: n.offsetWidth, h: n.offsetHeight };
+  }
+  function place() {
+    if (!d) return;
+    if (!d.item.isConnected) { hardReset(); return; } // list re-rendered (e.g. cloud sync) mid-drag
+    const cx = d.rect.left + d.rect.width / 2 + (d.kind === 'cat' ? 0 : d.px - d.sx);
+    const cy = d.rect.top + d.rect.height / 2 + (d.py - d.sy);
+    const all = siblingsOf(d.list, d.kind);
+    const others = all.filter(n => n !== d.item);
+    // valid while the floating copy is over (or close to) its own list
+    const lr = d.list.getBoundingClientRect();
+    const mY = d.kind === 'cat' ? d.rect.height * 0.9 : d.rect.height * 1.2;
+    const mX = d.kind === 'cat' ? Infinity : 40;
+    const valid = cy >= lr.top - mY && cy <= lr.bottom + mY && cx >= lr.left - mX && cx <= lr.right + mX;
+    if (valid && others.length) {
+      let target = null;
+      for (const n of others) {
+        const b = box(n);
+        const after = d.kind === 'cat'
+          ? b.top + b.h / 2 > cy
+          : (cy < b.top) || (cy <= b.top + b.h && cx < b.left + b.w / 2);
+        if (after) { target = n; break; }
+      }
+      if (target) { if (d.item.nextElementSibling !== target) flipMove(() => d.list.insertBefore(d.item, target)); }
+      else {
+        const lastN = others[others.length - 1];
+        if (d.item.previousElementSibling !== lastN) flipMove(() => d.list.insertBefore(d.item, lastN.nextElementSibling));
+      }
+    } else if (!valid) restoreSlot();
+    if (valid !== d.valid) { d.valid = valid; d.wrap.classList.toggle('invalid', !valid); }
+  }
+  function restoreSlot() {
+    if (!d) return;
+    if (d.origNext && d.origNext.isConnected) { if (d.item.nextElementSibling !== d.origNext) flipMove(() => d.list.insertBefore(d.item, d.origNext)); }
+    else if (d.origPrev && d.origPrev.isConnected) { if (d.item.previousElementSibling !== d.origPrev) flipMove(() => d.list.insertBefore(d.item, d.origPrev.nextElementSibling)); }
+  }
+  // Smoothly slide the items that shift when the placeholder moves (FLIP).
+  function flipMove(mutate) {
+    const items = [...d.list.children];
+    const before = new Map(items.map(n => [n, [n.offsetLeft, n.offsetTop]]));
+    mutate();
+    items.forEach(n => {
+      const [l0, t0] = before.get(n);
+      const dx = l0 - n.offsetLeft, dy = t0 - n.offsetTop;
+      if (!dx && !dy) return;
+      n.style.transition = 'none';
+      n.style.transform = `translate(${dx}px, ${dy}px)`;
+      n.getBoundingClientRect();
+      n.style.transition = 'transform .16s cubic-bezier(.2,.7,.3,1)';
+      n.style.transform = '';
+      clearTimeout(n._flipT);
+      n._flipT = setTimeout(() => { n.style.transition = ''; }, 200);
+    });
+  }
+  function autoScrollLoop() {
+    if (!d) return;
+    const zone = 56;
+    let v = 0;
+    if (d.py < zone) v = -Math.ceil(((zone - d.py) / zone) * 14);
+    else if (d.py > window.innerHeight - zone) v = Math.ceil(((d.py - (window.innerHeight - zone)) / zone) * 14);
+    if (v) { const before = window.scrollY; window.scrollBy(0, v); if (window.scrollY !== before) place(); }
+    d.raf = requestAnimationFrame(autoScrollLoop);
+  }
+  function cleanupListeners() {
+    removeWindowListeners();
+    window.removeEventListener('keydown', onKey, true);
+    document.removeEventListener('touchmove', onTouchMove, { passive: false });
+    document.removeEventListener('contextmenu', onCtxMenu, true);
+  }
+  function hardReset() {
+    const s = d; if (!s) return;
+    cancelAnimationFrame(s.raf);
+    cleanupListeners();
+    s.wrap.remove();
+    document.body.classList.remove('row-dragging');
+    d = null;
+  }
+  function finish(cancelled) {
+    const s = d; if (!s) return;
+    if (!s.item.isConnected) { hardReset(); return; }
+    cancelAnimationFrame(s.raf);
+    cleanupListeners();
+    const moved = s.item.nextElementSibling !== s.origNext || s.item.previousElementSibling !== s.origPrev;
+    const commit = !cancelled && s.valid && moved;
+    if (!commit) restoreSlot();
+    // Glide the floating copy into the placeholder's final slot.
+    const b = box(s.item);
+    s.wrap.classList.remove('lifted', 'invalid');
+    s.wrap.classList.add(commit ? 'settling' : 'returning');
+    s.wrap.style.transform = `translate3d(${b.left - s.rect.left}px, ${b.top - s.rect.top}px, 0)`;
+    const ms = commit ? 210 : 270;
+    d = null;
+    const order = commit ? siblingsOf(s.list, s.kind).map(n => n.dataset.ldragId) : null;
+    setTimeout(() => {
+      s.wrap.remove();
+      s.item.classList.remove('ldrag-placeholder');
+      document.body.classList.remove('row-dragging');
+      if (commit && cfg.onDrop) {
+        let ok = false;
+        try { ok = cfg.onDrop(s.kind, s.item.dataset.ldragId, s.group, order); }
+        catch (err) { console.error('list drop failed', err); ok = false; }
+        if (!ok) { showToast("Couldn't move that — nothing was changed.", true); cfg.rerender && cfg.rerender(); }
+      }
+    }, ms);
+  }
+  return { register, isDragging: () => !!d };
+})();
+// A drop only rewrites the order: p.categoryOrder for categories, the order of
+// the sub category list for sub categories. Items hidden by the search box
+// keep their place relative to the others (mergeVisibleOrder).
+function persistCategoryOrder(kind, id, group, visible) {
+  const p = activeProfile();
+  if (kind === 'cat') {
+    const full = catNames(p);
+    const next = mergeVisibleOrder(full, id, visible);
+    if (!next) return true;
+    if (next.length !== full.length || next.some(c => !p.categories[c])) return false;
+    p.categoryOrder = next;
+  } else {
+    const full = (p.categories[group] || []).slice();
+    const next = mergeVisibleOrder(full, id, visible);
+    if (!next) return true;
+    if (next.length !== full.length) return false;
+    p.categories[group] = next;
+  }
+  saveState();
+  renderCategoryManager();
+  populateCatListDatalist();
+  return true;
+}
+ListDrag.register('categoryManager', { onDrop: persistCategoryOrder, rerender: () => renderCategoryManager() });
 
 // Phone "+" button: slide it away while scrolling down, bring it back on
 // scroll up; hide it and the tab bar while typing (keyboard up).

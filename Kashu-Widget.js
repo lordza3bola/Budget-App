@@ -247,6 +247,15 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
 // Taken from the profile currently active in the app, in the app's own order.
 // On a problem it still returns a Dictionary, with the message as the only
 // "category", so the Shortcut shows it instead of failing.
+// Category names in the order set in the app (Settings → Categories, drag to
+// reorder). Firestore returns map keys A–Z, so the order is kept separately in
+// the profile's categoryOrder list; anything not in it goes at the end.
+function orderedCatNames(cats, order) {
+  const keys = Object.keys(cats || {});
+  const out = (Array.isArray(order) ? order : []).filter((c, i, a) => keys.includes(c) && a.indexOf(c) === i);
+  keys.forEach(c => { if (!out.includes(c)) out.push(c); });
+  return out;
+}
 async function categoriesForShortcut() {
   try {
     if (!configIsFilledIn()) throw new Error('Put your email and password into CONFIG in the Kashu script.');
@@ -254,9 +263,9 @@ async function categoriesForShortcut() {
     const d1 = await fetchMaskedFields(CONFIG.projectId, uid, idToken, ['state.activeProfileId']);
     const profileId = d1.state && d1.state.activeProfileId;
     if (!profileId) throw new Error('No synced profile yet — open the app once to sync.');
-    const d2 = await fetchMaskedFields(CONFIG.projectId, uid, idToken, [`state.profiles.\`${profileId}\`.categories`]);
+    const d2 = await fetchMaskedFields(CONFIG.projectId, uid, idToken, [`state.profiles.\`${profileId}\`.categories`, `state.profiles.\`${profileId}\`.categoryOrder`]);
     const cats = (d2.state && d2.state.profiles && d2.state.profiles[profileId] && d2.state.profiles[profileId].categories) || {};
-    const names = Object.keys(cats);
+    const names = orderedCatNames(cats, d2.state && d2.state.profiles && d2.state.profiles[profileId] && d2.state.profiles[profileId].categoryOrder);
     if (!names.length) throw new Error('No categories found in the active profile.');
     const subs = {};
     names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
@@ -390,7 +399,7 @@ async function loadTargetProfile(ctx, last4, withCategories) {
   if (last4 && ctx.routes[last4]) tryIds.push(ctx.routes[last4]);
   if (ctx.activeProfileId) tryIds.push(ctx.activeProfileId);
   for (const pid of tryIds) {
-    const fields = ['incomeCycles', 'currency', 'name', 'cardType'].concat(withCategories ? ['categories'] : []);
+    const fields = ['incomeCycles', 'currency', 'name', 'cardType'].concat(withCategories ? ['categories', 'categoryOrder'] : []);
     const d = await fetchMaskedFields(CONFIG.projectId, ctx.uid, ctx.idToken, fields.map(f => `state.profiles.\`${pid}\`.${f}`));
     const prof = d.state && d.state.profiles && d.state.profiles[pid];
     if (prof && prof.name !== undefined) return { id: pid, prof };
@@ -515,7 +524,7 @@ async function handleCardMessage(ctx, target, parsed, chosen) {
   else if (rule && !rule.ask && rule.category) { category = rule.category; subcategory = rule.subcategory || rule.category; }
   else {
     const cats = prof.categories || {};
-    const names = Object.keys(cats);
+    const names = orderedCatNames(cats, prof.categoryOrder);
     if (!names.length) return smsReply('error', 'No categories found in the ' + name + ' profile.');
     const subs = {};
     names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
@@ -553,7 +562,7 @@ async function handleBankMessage(text) {
       return smsReply('added', note + ' · ' + (vendorKey(parsed.vendor) || rule.match));
     }
     const cats = target.prof.categories || {};
-    const names = Object.keys(cats);
+    const names = orderedCatNames(cats, target.prof.categoryOrder);
     if (!names.length) return smsReply('error', 'No categories found in the profile for this card.');
     const subs = {};
     names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
