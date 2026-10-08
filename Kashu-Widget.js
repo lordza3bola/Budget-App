@@ -49,6 +49,11 @@
 // Known vendors are added silently; unknown ones ask and are saved to
 // Settings → Vendors with "Always ask" on (switch it off there to make one
 // automatic); IPN transfers always ask; declined messages are ignored.
+// CREDIT CARD messages (card 5931 → Credit Card profile, set in Settings →
+// Vendors → Cards) use the SAME Shortcut steps — add a second automation
+// "When I get a message containing 5931" with those steps. Charges use the
+// card's own vendor rules; card payments (IPN inward) are added with no
+// question; USD charges are estimated in EGP from the available-limit drop.
 //
 // SECURITY NOTE: your password is only ever sent straight to Google's own
 // Firebase Auth endpoint (identitytoolkit.googleapis.com) to get a fresh
@@ -308,12 +313,12 @@ async function runFromShortcut(param) {
 // Settings → Vendors → Cards (e.g. **6065 → Main), else the open profile.
 // ============================================================
 // ---- Bank message parsing (identical copy in the app and in Kashu-Widget.js) ----
-// Reads one bank SMS: amount, currency, card last 4, vendor, and whether it's
-// an IPN transfer, money coming in, or a declined transaction.
+// Reads one bank SMS: amount, currency, card last 4, vendor, date, available
+// limit, and whether it's an IPN transfer, money coming in, or declined.
 function parseBankMessage(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const out = {
-    text: t, amount: null, currency: '', vendor: '', last4: '',
+    text: t, amount: null, currency: '', vendor: '', last4: '', date: '', availLimit: null,
     isIPN: /\bIPN\b/i.test(t),
     declined: /\b(declined|unsuccessful|failed|rejected|insufficient)\b/i.test(t),
     incoming: /\b(received|credited|deposited|refund(?:ed)?|reversal|reversed)\b/i.test(t) && !/\bdebited\b/i.test(t)
@@ -324,8 +329,15 @@ function parseBankMessage(text) {
   let m = t.match(new RegExp('\\b' + CUR + '\\s?([\\d,]+(?:\\.\\d+)?)', 'i'));
   if (m) { out.currency = m[1].toUpperCase(); out.amount = Number(m[2].replace(/,/g, '')); }
   else if ((m = t.match(new RegExp('([\\d,]+(?:\\.\\d+)?)\\s?' + CUR + '\\b', 'i')))) { out.currency = m[2].toUpperCase(); out.amount = Number(m[1].replace(/,/g, '')); }
-  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(/\bat\s+([^,]+?)\s*(?:,|$)/i) || t.match(/\b(?:to|from)\s+([^,]+?)\s*(?:,|$)/i);
-  if (v) out.vendor = v[1].trim();
+  // "on 05/09/2026" or "on 30-09-2026 22:22" — day first.
+  const d = t.match(/\bon\s+(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/i);
+  if (d && +d[2] >= 1 && +d[2] <= 12 && +d[1] >= 1 && +d[1] <= 31) out.date = d[3] + '-' + String(d[2]).padStart(2, '0') + '-' + String(d[1]).padStart(2, '0');
+  const al = t.match(/available (?:credit )?limit is\s*(?:EGP|LE)?\s*([\d,]+(?:\.\d+)?)/i);
+  if (al) out.availLimit = Number(al[1].replace(/,/g, ''));
+  // The vendor ends at ". Your …", a comma, "with reference" or the end.
+  const END = '(?=\\.\\s+(?:Your|For|Please)\\b|,|\\s+with reference\\b|$)';
+  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(new RegExp('\\bat\\s+(.+?)\\s*' + END, 'i')) || t.match(new RegExp('\\b(?:to|from)\\s+(.+?)\\s*' + END, 'i'));
+  if (v) out.vendor = v[1].trim().replace(/\.$/, '');
   return out;
 }
 // "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
@@ -343,6 +355,26 @@ function matchVendorRule(rules, parsed) {
     if (k && hay.includes(k) && (!best || k.length > String(best.match).trim().length)) best = r;
   });
   return best;
+}
+// Vendor rules are kept per card: rules with a `card` (last 4 digits) belong to
+// that credit card; rules without one are the bank / debit card rules.
+function rulesForCard(rules, last4, isCreditCard) {
+  return (rules || []).filter(r => r && (isCreditCard ? r.card === last4 : !r.card));
+}
+// Card SMS <-> statement line. Same vendor word, dates within 4 days, and the
+// amount close (bank adds ~3% on foreign merchants; USD entries are estimates).
+// Returns a score (lower = better) or null. Payments: vendor null, exact amount.
+function cardEntryScore(sms, line) {
+  const days = Math.abs((new Date(sms.date + 'T00:00:00') - new Date(line.date + 'T00:00:00')) / 86400000);
+  if (!(days <= 4) || !(sms.amount > 0) || !(line.amount > 0)) return null;
+  const r = line.amount / sms.amount;
+  if (sms.vendor == null) return Math.abs(line.amount - sms.amount) < 0.01 ? days : null;
+  if (sms.estimated ? !(r > 0.8 && r < 1.25) : !(r >= 0.97 && r <= 1.12)) return null;
+  const stop = { com: 1, bill: 1, www: 1, the: 1, and: 1, sub: 1, egy: 1, irl: 1, usd: 1, egp: 1, ltd: 1, inc: 1, maadi: 1, cairo: 1, services: 1 };
+  const words = s => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stop[w]);
+  const lw = words(line.vendor);
+  if (!words(sms.vendor).some(w => lw.some(x => x.includes(w) || w.includes(x)))) return null;
+  return days + Math.abs(1 - r) * 10;
 }
 
 // One small read: the rules, card routes and open profile.
@@ -378,7 +410,7 @@ async function commitAppendRule(ctx, rule) {
   if (res.error) throw new Error(res.error.message || 'Saving the vendor rule failed.');
 }
 async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
-  const day = isoDateToday();
+  const day = parsed.date || isoDateToday();
   const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount);
   const expense = {
     id: 'e_sms_' + Date.now(),
@@ -388,10 +420,120 @@ async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
     subcategory: subcategory || category,
     method: parsed.last4 ? 'Card ' + parsed.last4 : 'Card',
     description: vendorKey(parsed.vendor) || (parsed.isIPN ? 'IPN transfer' : ''),
-    value: amount
+    value: amount,
+    src: 'sms'
   };
   await commitAddExpense(CONFIG.projectId, ctx.uid, ctx.idToken, target.id, expense);
   return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, target.prof.currency || 'EGP')} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''}${target.prof.name ? ' (' + target.prof.name + ')' : ''}`;
+}
+// ============================================================
+// CREDIT CARD MESSAGES (a card routed to a Mastercard / credit card profile)
+//   • "has been used for …"            → a charge on the card. Category from
+//     that card's own vendor rules; unknown vendors ask and are saved there.
+//   • "credited with IPN inward transfer" (any money in) → a payment on the
+//     card, never asks for a category.
+//   • Foreign-currency charges (USD 22.80) are estimated in EGP from the drop
+//     in "available limit" since the last message; the statement PDF import
+//     later replaces the estimate with the bank's exact amount.
+//   • Already on an imported statement, or the same SMS run twice → skipped.
+// ============================================================
+function hashStr(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function r2(n) { return Math.round(Number(n || 0) * 100) / 100; }
+async function loadCardExtras(ctx, pid) {
+  const fields = ['expenses', 'payments', 'creditLimit', 'lastAvail'];
+  const d = await fetchMaskedFields(CONFIG.projectId, ctx.uid, ctx.idToken, fields.map(f => `state.profiles.\`${pid}\`.${f}`));
+  const p = (d.state && d.state.profiles && d.state.profiles[pid]) || {};
+  return { expenses: p.expenses || [], payments: p.payments || [], creditLimit: Number(p.creditLimit) || 0, lastAvail: p.lastAvail || null };
+}
+// EGP amount for a charge. Local currency: as written. Foreign: the drop in
+// available limit since the last message, else limit − balance − available
+// now, else the last rate used (52 if none yet).
+function cardAmountLocal(parsed, prof, card) {
+  const cur = prof.currency || 'EGP';
+  const c = parsed.currency === 'LE' ? 'EGP' : parsed.currency;
+  if (!c || c === cur) return { amount: r2(parsed.amount), estimated: false };
+  const fx = parsed.amount;
+  const plausible = v => v > 0 && (['USD', 'EUR', 'GBP'].includes(c) ? (v / fx >= 25 && v / fx <= 120) : true);
+  let est = null;
+  if (card.lastAvail && parsed.availLimit != null) { const v = Number(card.lastAvail.value) - parsed.availLimit; if (plausible(v)) est = v; }
+  if (est == null && parsed.availLimit != null && card.creditLimit > 0) {
+    const bal = card.expenses.reduce((s, e) => s + Number(e.value || 0), 0) - card.payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+    const v = card.creditLimit - bal - parsed.availLimit; if (plausible(v)) est = v;
+  }
+  if (est == null) est = fx * Number((card.lastAvail && card.lastAvail.rate) || 52);
+  return { amount: r2(est), estimated: true, rate: Math.round(est / fx * 10000) / 10000 };
+}
+// One atomic write: append to a profile array (+ optionally a vendor rule),
+// and set the card's last known available limit.
+async function commitCardWrite(ctx, pid, arrayName, item, lastAvail, rule) {
+  const docName = `projects/${CONFIG.projectId}/databases/(default)/documents/users/${ctx.uid}`;
+  const transforms = [{ fieldPath: `state.profiles.\`${pid}\`.${arrayName}`, appendMissingElements: { values: [encodeFirestoreValue(item)] } }];
+  if (rule) transforms.push({ fieldPath: 'state.vendorRules', appendMissingElements: { values: [encodeFirestoreValue(rule)] } });
+  transforms.push({ fieldPath: 'updatedAt', setToServerValue: 'REQUEST_TIME' });
+  const write = lastAvail
+    ? { update: { name: docName, fields: encodeFirestoreValue({ state: { profiles: { [pid]: { lastAvail } } } }).mapValue.fields },
+        updateMask: { fieldPaths: [`state.profiles.\`${pid}\`.lastAvail`] }, updateTransforms: transforms }
+    : { transform: { document: docName, fieldTransforms: transforms } };
+  const req = new Request(`https://firestore.googleapis.com/v1/projects/${CONFIG.projectId}/databases/(default)/documents:commit`);
+  req.method = 'POST';
+  req.headers = { 'Authorization': `Bearer ${ctx.idToken}`, 'Content-Type': 'application/json' };
+  req.body = JSON.stringify({ writes: [write] });
+  const res = await req.loadJSON();
+  if (res.error) throw new Error(res.error.message || 'Firestore write failed.');
+}
+async function handleCardMessage(ctx, target, parsed, chosen) {
+  const prof = target.prof, code = prof.currency || 'EGP';
+  const card = await loadCardExtras(ctx, target.id);
+  const day = parsed.date || isoDateToday();
+  const name = prof.name || 'Credit Card';
+  if (parsed.incoming) {
+    const amount = r2(Math.abs(parsed.amount));
+    const id = 'pm_sms_' + hashStr(parsed.text);
+    if (card.payments.some(p => p.id === id)) return smsReply('skipped', 'Already added — ' + fmtCur(amount, code) + ' payment to ' + name + '.');
+    if (card.payments.some(p => String(p.id || '').startsWith('pm_stmt_') && cardEntryScore({ date: day, amount, vendor: null }, { date: p.date, amount: Number(p.amount) }) != null))
+      return smsReply('skipped', 'Already on your statement — ' + fmtCur(amount, code) + ' payment not added again.');
+    const payment = { id, date: day, amount, note: parsed.isIPN ? 'IPN transfer' : (vendorKey(parsed.vendor) || 'Card credit'), src: 'sms' };
+    const la = card.lastAvail ? Object.assign({}, card.lastAvail, { value: r2(Number(card.lastAvail.value) + amount), date: day }) : null;
+    await commitCardWrite(ctx, target.id, 'payments', payment, la, null);
+    return smsReply('added', `Card payment: ${fmtCur(amount, code)} → ${name}`);
+  }
+  const rules = rulesForCard(ctx.rules, parsed.last4, true);
+  const rule = matchVendorRule(rules, parsed);
+  const amt = cardAmountLocal(parsed, prof, card);
+  const fxNote = amt.estimated ? ` (${parsed.currency} ${fmt(parsed.amount)}, est.)` : '';
+  const id = 'e_sms_' + hashStr(parsed.text);
+  if (card.expenses.some(e => e.id === id)) return smsReply('skipped', 'Already added — ' + (vendorKey(parsed.vendor) || 'charge') + ' ' + fmtCur(amt.amount, code) + '.');
+  const smsSide = { date: day, amount: amt.amount, vendor: parsed.vendor, estimated: amt.estimated };
+  if (card.expenses.some(e => String(e.id || '').startsWith('e_stmt_') && cardEntryScore(smsSide, { date: e.date, amount: Number(e.value), vendor: e.description }) != null))
+    return smsReply('skipped', 'Already on your statement — ' + (vendorKey(parsed.vendor) || 'charge') + ' not added again.');
+  let category, subcategory;
+  if (chosen) { category = chosen.category; subcategory = chosen.subcategory || chosen.category; }
+  else if (rule && !rule.ask && rule.category) { category = rule.category; subcategory = rule.subcategory || rule.category; }
+  else {
+    const cats = prof.categories || {};
+    const names = Object.keys(cats);
+    if (!names.length) return smsReply('error', 'No categories found in the ' + name + ' profile.');
+    const subs = {};
+    names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
+    const label = vendorKey(parsed.vendor) || 'Unknown vendor';
+    return smsReply('ask', '', { prompt: `${label} · ${fmtCur(amt.amount, code)}${fxNote} · ${name}`, vendor: label, amount: amt.amount, isIPN: false, message: parsed.text, categories: names, subs });
+  }
+  const expense = {
+    id, month: monthForDateOffline(day, prof.incomeCycles || {}), date: day,
+    category, subcategory, method: 'Card ' + parsed.last4,
+    description: (vendorKey(parsed.vendor) || parsed.vendor || '') + (amt.estimated ? ` · ${parsed.currency} ${fmt(parsed.amount)} est.` : ''),
+    value: amt.amount, src: 'sms', smsVendor: parsed.vendor || ''
+  };
+  if (amt.estimated) { expense.estimated = true; expense.origAmount = parsed.amount; expense.origCurrency = parsed.currency; }
+  const la = parsed.availLimit != null ? { value: parsed.availLimit, date: day, rate: amt.rate || (card.lastAvail && card.lastAvail.rate) || null } : null;
+  const key = vendorKey(parsed.vendor);
+  const newRule = chosen && key && !rule ? { id: 'v_sms_' + Date.now(), match: key, category, subcategory, ask: true, learned: true, card: parsed.last4 } : null;
+  await commitCardWrite(ctx, target.id, 'expenses', expense, la, newRule);
+  return smsReply('added', `Card: ${fmtCur(amt.amount, code)}${fxNote} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''} (${name})${newRule ? ' · saved ' + key + ' to Vendors' : ''}`);
 }
 function smsReply(status, notification, extra) {
   return Object.assign({ status, notification }, extra || {});
@@ -403,13 +545,13 @@ async function handleBankMessage(text) {
     if (parsed.declined) return smsReply('skipped', 'Declined transaction — nothing added.');
     if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
     const ctx = await loadSmsContext();
-    const rule = parsed.isIPN ? null : matchVendorRule(ctx.rules, parsed);
+    const target = await loadTargetProfile(ctx, parsed.last4, true);
+    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, null);
+    const rule = parsed.isIPN ? null : matchVendorRule(rulesForCard(ctx.rules, parsed.last4, false), parsed);
     if (rule && !rule.ask && rule.category) {
-      const target = await loadTargetProfile(ctx, parsed.last4, false);
       const note = await fileSmsExpense(ctx, target, parsed, rule.category, rule.subcategory);
       return smsReply('added', note + ' · ' + (vendorKey(parsed.vendor) || rule.match));
     }
-    const target = await loadTargetProfile(ctx, parsed.last4, true);
     const cats = target.prof.categories || {};
     const names = Object.keys(cats);
     if (!names.length) return smsReply('error', 'No categories found in the profile for this card.');
@@ -436,11 +578,12 @@ async function handleResolve(p) {
     if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
     if (!category) return smsReply('error', 'No category was chosen — nothing added.');
     const ctx = await loadSmsContext();
-    const target = await loadTargetProfile(ctx, parsed.last4, false);
+    const target = await loadTargetProfile(ctx, parsed.last4, true);
+    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, { category, subcategory });
     let note = await fileSmsExpense(ctx, target, parsed, category, subcategory);
     const key = vendorKey(parsed.vendor);
     // Remember the vendor — never for IPN transfers, and never over an existing rule.
-    if (!parsed.isIPN && key && !matchVendorRule(ctx.rules, parsed)) {
+    if (!parsed.isIPN && key && !matchVendorRule(rulesForCard(ctx.rules, parsed.last4, false), parsed)) {
       try {
         await commitAppendRule(ctx, { id: 'v_sms_' + Date.now(), match: key, category, subcategory: subcategory || category, ask: true, learned: true });
         note += ' · saved ' + key + ' to Vendors';
@@ -454,7 +597,7 @@ async function handleResolve(p) {
 function looksLikeBankMessage(s) {
   const t = String(s || '').trim();
   if (!t || /^[{\[]/.test(t) || /^[^ ]*=/.test(t)) return false;
-  return /@/.test(t) || /19700/.test(t) || /\b(transaction|transfer|IPN|debited|credited)\b/i.test(t);
+  return /@/.test(t) || /19700/.test(t) || /\*{3}\s?\d{4}/.test(t) || /\b(transaction|transfer|IPN|debited|credited|used for)\b/i.test(t);
 }
 async function fetchSyncedState(projectId, apiKey, email, password) {
   const { idToken, uid } = await signInWithPassword(apiKey, email, password);

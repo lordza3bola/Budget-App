@@ -1672,12 +1672,15 @@
 
         <div class="settings-panel" id="settingsPanel-vendors">
           <p class="vd-note">When a bank message arrives, your Shortcut sends it to the Kashu script. A vendor with a rule here is added straight away; anything else (and every <b>IPN</b> transfer) asks you for the category. A new vendor you categorize is saved here with <b>Always ask</b> on, so it keeps asking — switch that off once a vendor is always the same category.</p>
+          <p class="vd-note">A <b>credit card</b> (a card below that goes to a Mastercard profile) has its own rule list. Its charges are filed by those rules, payments to it are added with no question, and charges in USD are estimated in EGP from the drop in available limit — importing the statement PDF later puts in the bank's exact amounts.</p>
           <h3>Cards</h3>
           <div class="vd-list" id="vdCards"></div>
           <h3 style="margin-top:22px;">Vendor rules <span class="vd-count" id="vdCount"></span></h3>
+          <div class="budget-filter" id="vdScope"></div>
+          <datalist id="vdCatList"></datalist>
           <div class="vd-add">
             <input type="text" id="vdNewMatch" placeholder="Text in the message, e.g. Uber">
-            <input type="text" id="vdNewCat" placeholder="Category" list="catList" oninput="vdFillSubs('vdNewSubList', this.value)">
+            <input type="text" id="vdNewCat" placeholder="Category" list="vdCatList" oninput="vdFillSubs('vdNewSubList', this.value)">
             <input type="text" id="vdNewSub" placeholder="Sub category" list="vdNewSubList"><datalist id="vdNewSubList"></datalist>
             <button class="btn btn-primary" onclick="addVendorRule()">+ Add</button>
           </div>
@@ -2215,6 +2218,29 @@ function statementBalanceAsOf(p, closeDate) {
   const charges = p.expenses.filter(e => e.date <= closeStr).reduce((s,e)=>s+Number(e.value||0),0);
   const paid = p.payments.filter(pm => pm.date <= closeStr).reduce((s,pm)=>s+Number(pm.amount||0),0);
   return charges - paid;
+}
+// The statement that's currently due, and what's still left to pay on it.
+// If a bank statement PDF was imported, its own figures win (statement date,
+// closing balance, due date) — the bank's number is the real one. Otherwise
+// it's worked out from the statement / due days. Either way, payments made
+// after the statement closed are taken off what's due, so a statement you've
+// already paid stops showing as owed.
+function currentStatement(p) {
+  let close = lastStatementClose(p);
+  let due = statementDueDate(p, close);
+  let balance = statementBalanceAsOf(p, close);
+  let minDue = null;
+  const ls = p.lastStatement;
+  if (ls && ls.date && ls.date >= isoDate(close)) {
+    close = new Date(ls.date + 'T00:00:00');
+    due = ls.dueDate ? new Date(ls.dueDate + 'T00:00:00') : statementDueDate(p, close);
+    balance = Number(ls.closingBalance) || 0;
+    minDue = ls.minDue != null ? Number(ls.minDue) : null;
+  }
+  const closeStr = isoDate(close);
+  const paidSince = p.payments.filter(pm => pm.date > closeStr).reduce((s,pm)=>s+Number(pm.amount||0),0);
+  const owed = Math.max(0, Math.round((balance - paidSince) * 100) / 100);
+  return { close, due, balance, paidSince, owed, minDue };
 }
 
 function loadState() {
@@ -3614,11 +3640,10 @@ function trCycleHtml() {
   const today = localIso(new Date());
   if (isSavings(p)) return '';
   if (isCredit(p)) {
-    const close = lastStatementClose(p);
+    const st = currentStatement(p);
+    const close = st.close, due = st.due, owed = st.owed;
     const day = clampDay(p.statementDay);
     const nextClose = new Date(close.getFullYear(), close.getMonth() + 1, day);
-    const due = statementDueDate(p, close);
-    const owed = statementBalanceAsOf(p, close);
     if (owed > 0 && isoDate(due) < today) {
       return `<div class="tr-cycle">${trRing(0, 1)}<div class="tr-text">
         <span class="tr-k">Card payment overdue</span><span class="tr-range">Was due ${escapeHtml(trShort(isoDate(due)))}</span>
@@ -3873,9 +3898,8 @@ function renderCreditDashboard() {
   utilEl.className = 'v ' + (util >= 90 ? 'neg' : util >= 70 ? 'warn' : 'pos');
 
   // ---- Payment due (based on the most recently closed statement) ----
-  const close = lastStatementClose(p);
-  const due = statementDueDate(p, close);
-  const owed = statementBalanceAsOf(p, close);
+  const st = currentStatement(p);
+  const close = st.close, due = st.due, owed = st.owed;
   const today = new Date();
   today.setHours(0,0,0,0);
   const daysLeft = Math.round((due - today) / 86400000);
@@ -3891,7 +3915,7 @@ function renderCreditDashboard() {
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
         <div>
           <div style="font-family:var(--font-display); font-size:24px; font-weight:700;">${fmt(owed)}</div>
-          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">Statement closed ${isoDate(close)} · due ${isoDate(due)}</div>
+          <div style="font-size:12px; color:var(--txt-dim); margin-top:2px;">Statement closed ${isoDate(close)} · due ${isoDate(due)}${st.paidSince > 0 ? ` · statement ${fmt(st.balance)}, paid ${fmt(st.paidSince)} since` : ''}${st.minDue ? ` · minimum ${fmt(st.minDue)}` : ''}</div>
         </div>
         <span class="chip due-chip ${chipCls}">${label}</span>
       </div>
@@ -5862,6 +5886,8 @@ async function handleStatementImport(evt) {
     const dueDateMatch = /Due By\s+(\d{2}[A-Z]{3}\d{4})/i.exec(fullText);
     const limitMatch = /Credit Limit\s+([\d,]+\.\d{2})/i.exec(fullText);
     const last4Match = /Card Number\s+((?:\d{4}\s*){3}\d{4})/i.exec(fullText);
+    const closingMatch = /Statement Closing Balance\s+([\d,]+\.\d{2})/i.exec(fullText);
+    const minDueMatch = /Current Minimum Payment\s+([\d,]+\.\d{2})/i.exec(fullText);
     if (!stmtDateMatch) throw new Error("Couldn't find a Statement Date in this PDF — is it a supported bank statement?");
     const statementDate = parseStatementFullDate(stmtDateMatch[1]);
 
@@ -5892,14 +5918,29 @@ async function handleStatementImport(evt) {
     if (!parsed.length) throw new Error("Didn't find any transaction rows in this PDF — it may be in a format this importer doesn't recognize yet.");
     if (!p.categories['Uncategorized']) p.categories['Uncategorized'] = [];
 
-    let addedCharges = 0, addedPayments = 0, skipped = 0;
+    let addedCharges = 0, addedPayments = 0, skipped = 0, replaced = 0;
+    // An entry the bank-SMS Shortcut already added is replaced by its statement
+    // line (bank's exact amount, date and wording) and keeps its category.
+    const bestSms = (list, sideOf, line) => {
+      let best = null, bestScore = Infinity;
+      list.forEach(x => { if (x.src !== 'sms' || x.reconciled) return; const sc = cardEntryScore(sideOf(x), line); if (sc != null && sc < bestScore) { best = x; bestScore = sc; } });
+      return best;
+    };
     parsed.forEach(t => {
       if (t.isCredit) {
         if (p.payments.some(pm => pm.date === t.date && Math.abs(pm.amount - t.amount) < 0.005 && pm.note === t.details)) { skipped++; return; }
+        const smsPm = bestSms(p.payments, pm => ({ date: pm.date, amount: Number(pm.amount), vendor: null }), { date: t.date, amount: t.amount });
+        if (smsPm) { smsPm.date = t.date; smsPm.note = t.details; smsPm.reconciled = true; replaced++; return; }
         p.payments.push({ id: 'pm_stmt_' + Date.now() + Math.random().toString(36).slice(2,6), date: t.date, amount: t.amount, note: t.details });
         addedPayments++;
       } else {
         if (p.expenses.some(e => e.date === t.date && Math.abs(e.value - t.amount) < 0.005 && e.description === t.details)) { skipped++; return; }
+        const smsE = bestSms(p.expenses, e => ({ date: e.date, amount: Number(e.value), vendor: e.smsVendor || e.description, estimated: !!e.estimated }), { date: t.date, amount: t.amount, vendor: t.details });
+        if (smsE) {
+          smsE.value = t.amount; smsE.date = t.date; smsE.month = monthForDate(t.date, p);
+          smsE.description = t.details; smsE.reconciled = true; delete smsE.estimated;
+          replaced++; return;
+        }
         p.expenses.push({
           id: 'e_stmt_' + Date.now() + Math.random().toString(36).slice(2,6),
           month: monthForDate(t.date, p), date: t.date,
@@ -5913,11 +5954,26 @@ async function handleStatementImport(evt) {
     if (limitMatch) p.creditLimit = Number(limitMatch[1].replace(/,/g,''));
     p.statementDay = clampDay(statementDate.getDate());
     if (dueDateMatch) { const dd = parseStatementFullDate(dueDateMatch[1]); if (dd) p.dueDay = clampDay(dd.getDate()); }
+    // Keep the bank's own figures for this statement: what's due is the
+    // statement's closing balance (minus any payment made after it), not a
+    // recalculation from whichever transactions happen to be in the app.
+    if (closingMatch) {
+      const dd = dueDateMatch ? parseStatementFullDate(dueDateMatch[1]) : null;
+      const prev = p.lastStatement;
+      if (!prev || !prev.date || prev.date <= isoDate(statementDate)) {
+        p.lastStatement = {
+          date: isoDate(statementDate),
+          closingBalance: Number(closingMatch[1].replace(/,/g,'')),
+          dueDate: dd ? isoDate(dd) : null,
+          minDue: minDueMatch ? Number(minDueMatch[1].replace(/,/g,'')) : null
+        };
+      }
+    }
     if (!p.cardLast4 && last4Match) p.cardLast4 = last4Match[1].replace(/\s/g,'').slice(-4);
 
     saveState();
     renderProfileTabs();
-    statusEl.innerHTML = `<div class="status-msg ok">Imported ${addedCharges} transaction${addedCharges===1?'':'s'} and ${addedPayments} payment${addedPayments===1?'':'s'} from the statement dated ${isoDate(statementDate)}.${skipped?` (${skipped} row${skipped===1?'':'s'} already imported, skipped.)`:''} Credit limit and billing days updated from the statement. New charges are filed under "Uncategorized" — recategorize them from the Expenses tab whenever you like.</div>`;
+    statusEl.innerHTML = `<div class="status-msg ok">Imported ${addedCharges} transaction${addedCharges===1?'':'s'} and ${addedPayments} payment${addedPayments===1?'':'s'} from the statement dated ${isoDate(statementDate)}.${replaced ? ` ${replaced} entr${replaced===1?'y':'ies'} from your bank messages updated to the statement's exact amounts (categories kept).` : ''}${skipped?` (${skipped} row${skipped===1?'':'s'} already imported, skipped.)`:''} Credit limit and billing days updated from the statement. New charges are filed under "Uncategorized" — recategorize them from the Expenses tab whenever you like.</div>`;
     renderAll();
   } catch (err) {
     console.error(err);
@@ -6476,12 +6532,12 @@ function exportReportPDF() {
 }
 
 // ---- Bank message parsing (identical copy in the app and in Kashu-Widget.js) ----
-// Reads one bank SMS: amount, currency, card last 4, vendor, and whether it's
-// an IPN transfer, money coming in, or a declined transaction.
+// Reads one bank SMS: amount, currency, card last 4, vendor, date, available
+// limit, and whether it's an IPN transfer, money coming in, or declined.
 function parseBankMessage(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const out = {
-    text: t, amount: null, currency: '', vendor: '', last4: '',
+    text: t, amount: null, currency: '', vendor: '', last4: '', date: '', availLimit: null,
     isIPN: /\bIPN\b/i.test(t),
     declined: /\b(declined|unsuccessful|failed|rejected|insufficient)\b/i.test(t),
     incoming: /\b(received|credited|deposited|refund(?:ed)?|reversal|reversed)\b/i.test(t) && !/\bdebited\b/i.test(t)
@@ -6492,8 +6548,15 @@ function parseBankMessage(text) {
   let m = t.match(new RegExp('\\b' + CUR + '\\s?([\\d,]+(?:\\.\\d+)?)', 'i'));
   if (m) { out.currency = m[1].toUpperCase(); out.amount = Number(m[2].replace(/,/g, '')); }
   else if ((m = t.match(new RegExp('([\\d,]+(?:\\.\\d+)?)\\s?' + CUR + '\\b', 'i')))) { out.currency = m[2].toUpperCase(); out.amount = Number(m[1].replace(/,/g, '')); }
-  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(/\bat\s+([^,]+?)\s*(?:,|$)/i) || t.match(/\b(?:to|from)\s+([^,]+?)\s*(?:,|$)/i);
-  if (v) out.vendor = v[1].trim();
+  // "on 05/09/2026" or "on 30-09-2026 22:22" — day first.
+  const d = t.match(/\bon\s+(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/i);
+  if (d && +d[2] >= 1 && +d[2] <= 12 && +d[1] >= 1 && +d[1] <= 31) out.date = d[3] + '-' + String(d[2]).padStart(2, '0') + '-' + String(d[1]).padStart(2, '0');
+  const al = t.match(/available (?:credit )?limit is\s*(?:EGP|LE)?\s*([\d,]+(?:\.\d+)?)/i);
+  if (al) out.availLimit = Number(al[1].replace(/,/g, ''));
+  // The vendor ends at ". Your …", a comma, "with reference" or the end.
+  const END = '(?=\\.\\s+(?:Your|For|Please)\\b|,|\\s+with reference\\b|$)';
+  let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(new RegExp('\\bat\\s+(.+?)\\s*' + END, 'i')) || t.match(new RegExp('\\b(?:to|from)\\s+(.+?)\\s*' + END, 'i'));
+  if (v) out.vendor = v[1].trim().replace(/\.$/, '');
   return out;
 }
 // "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
@@ -6511,6 +6574,26 @@ function matchVendorRule(rules, parsed) {
     if (k && hay.includes(k) && (!best || k.length > String(best.match).trim().length)) best = r;
   });
   return best;
+}
+// Vendor rules are kept per card: rules with a `card` (last 4 digits) belong to
+// that credit card; rules without one are the bank / debit card rules.
+function rulesForCard(rules, last4, isCreditCard) {
+  return (rules || []).filter(r => r && (isCreditCard ? r.card === last4 : !r.card));
+}
+// Card SMS <-> statement line. Same vendor word, dates within 4 days, and the
+// amount close (bank adds ~3% on foreign merchants; USD entries are estimates).
+// Returns a score (lower = better) or null. Payments: vendor null, exact amount.
+function cardEntryScore(sms, line) {
+  const days = Math.abs((new Date(sms.date + 'T00:00:00') - new Date(line.date + 'T00:00:00')) / 86400000);
+  if (!(days <= 4) || !(sms.amount > 0) || !(line.amount > 0)) return null;
+  const r = line.amount / sms.amount;
+  if (sms.vendor == null) return Math.abs(line.amount - sms.amount) < 0.01 ? days : null;
+  if (sms.estimated ? !(r > 0.8 && r < 1.25) : !(r >= 0.97 && r <= 1.12)) return null;
+  const stop = { com: 1, bill: 1, www: 1, the: 1, and: 1, sub: 1, egy: 1, irl: 1, usd: 1, egp: 1, ltd: 1, inc: 1, maadi: 1, cairo: 1, services: 1 };
+  const words = s => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w) && !stop[w]);
+  const lw = words(line.vendor);
+  if (!words(sms.vendor).some(w => lw.some(x => x.includes(w) || w.includes(x)))) return null;
+  return days + Math.abs(1 - r) * 10;
 }
 
 /* ============================================================
@@ -6561,9 +6644,41 @@ function ensureVendorDefaults() {
     state.vendorSeedV1 = true;
     changed = true;
   }
+  // Credit card 5931 → the profile whose card ends in 5931 (only if one does).
+  if (!state.vendorSeedV2) {
+    const cc = (state.profileOrder || []).find(id => state.profiles[id] && state.profiles[id].cardLast4 === '5931');
+    if (cc && !state.cardRoutes['5931']) state.cardRoutes['5931'] = cc;
+    state.vendorSeedV2 = true;
+    changed = true;
+  }
   return changed;
 }
-function vdSubsFor(cat) { return (activeProfile().categories || {})[cat] || []; }
+// Which rule list Settings → Vendors is showing: '' = bank / debit card rules,
+// or a credit card's last 4 digits for that card's own list.
+let vdScope = '';
+function vdCreditCards() {
+  const routes = state.cardRoutes || {};
+  return Object.keys(routes).filter(l4 => { const p = state.profiles[routes[l4]]; return p && p.cardType === 'mastercard'; }).sort();
+}
+function vdScopeProfile() {
+  const routes = state.cardRoutes || {};
+  if (vdScope && state.profiles[routes[vdScope]]) return ensureProfileDefaults(state.profiles[routes[vdScope]]);
+  const pid = Object.keys(routes).map(l => routes[l]).find(id => state.profiles[id] && state.profiles[id].cardType !== 'mastercard');
+  return state.profiles[pid] ? ensureProfileDefaults(state.profiles[pid]) : activeProfile();
+}
+function setVdScope(l4) { vdScope = l4; renderVdScope(); renderVendorRules(); }
+function renderVdScope() {
+  const el = document.getElementById('vdScope');
+  if (!el) return;
+  const cards = vdCreditCards();
+  if (vdScope && !cards.includes(vdScope)) vdScope = '';
+  el.innerHTML = cards.length ? `<button class="${vdScope ? '' : 'on'}" onclick="setVdScope('')">Bank card rules</button>` +
+    cards.map(l4 => `<button class="${vdScope === l4 ? 'on' : ''}" onclick="setVdScope('${escapeHtml(l4)}')">${escapeHtml(state.profiles[state.cardRoutes[l4]].name)} •••• ${escapeHtml(l4)}</button>`).join('') : '';
+  const dl = document.getElementById('vdCatList');
+  if (dl) dl.innerHTML = Object.keys(vdScopeProfile().categories || {}).map(c => `<option value="${escapeHtml(c)}">`).join('');
+}
+function vdInScope(r) { return r && (vdScope ? r.card === vdScope : !r.card); }
+function vdSubsFor(cat) { return (vdScopeProfile().categories || {})[cat] || []; }
 function vdFillSubs(listId, cat) {
   const dl = document.getElementById(listId);
   if (dl) dl.innerHTML = vdSubsFor(cat).map(s => `<option value="${escapeHtml(s)}">`).join('');
@@ -6573,6 +6688,7 @@ function renderVendorsPanel() {
   ensureVendorDefaults();
   populateCatListDatalist();
   renderVendorCards();
+  renderVdScope();
   renderVendorRules();
 }
 function renderVendorCards() {
@@ -6592,8 +6708,8 @@ function renderVendorCards() {
       <button class="del-btn save" onclick="addCardRoute()" title="Add card" aria-label="Add card">＋</button>
     </div>`;
 }
-function setCardRoute(l4, pid) { state.cardRoutes[l4] = pid; saveState(); }
-function removeCardRoute(l4) { delete state.cardRoutes[l4]; saveState(); renderVendorCards(); }
+function setCardRoute(l4, pid) { state.cardRoutes[l4] = pid; saveState(); renderVdScope(); renderVendorRules(); }
+function removeCardRoute(l4) { delete state.cardRoutes[l4]; saveState(); renderVendorCards(); renderVdScope(); renderVendorRules(); }
 function addCardRoute() {
   const l4 = (document.getElementById('vdNewCard').value || '').trim();
   if (!/^\d{4}$/.test(l4)) { alert('Enter the card\'s last 4 digits.'); return; }
@@ -6605,17 +6721,19 @@ function renderVendorRules() {
   const el = document.getElementById('vdRules');
   const q = vdNorm((document.getElementById('vdSearch') || {}).value);
   const rules = (state.vendorRules || []).map((r, i) => ({ r, i }))
+    .filter(({ r }) => vdInScope(r))
     .filter(({ r }) => !q || [r.match, r.category, r.subcategory].some(x => vdNorm(x).includes(q)))
     .sort((a, b) => String(a.r.match).localeCompare(String(b.r.match)));
-  document.getElementById('vdCount').textContent = (state.vendorRules || []).length ? '· ' + state.vendorRules.length : '';
+  const inScope = (state.vendorRules || []).filter(vdInScope).length;
+  document.getElementById('vdCount').textContent = inScope ? '· ' + inScope : '';
   el.innerHTML = rules.length ? rules.map(({ r, i }) => `
     <div class="vd-row${r.ask ? ' is-ask' : ''}">
       <input class="vd-match" type="text" value="${escapeHtml(r.match)}" aria-label="Text to match" onchange="updateVendorRule(${i}, 'match', this.value)">
-      <input class="vd-cat" type="text" value="${escapeHtml(r.category || '')}" list="catList" placeholder="Category" aria-label="Category" oninput="vdFillSubs('vdSub_${i}', this.value)" onchange="updateVendorRule(${i}, 'category', this.value)">
+      <input class="vd-cat" type="text" value="${escapeHtml(r.category || '')}" list="vdCatList" placeholder="Category" aria-label="Category" oninput="vdFillSubs('vdSub_${i}', this.value)" onchange="updateVendorRule(${i}, 'category', this.value)">
       <span class="vd-sub"><input type="text" value="${escapeHtml(r.subcategory || '')}" list="vdSub_${i}" placeholder="Sub category" aria-label="Sub category" onchange="updateVendorRule(${i}, 'subcategory', this.value)"><datalist id="vdSub_${i}">${vdSubsFor(r.category).map(s => `<option value="${escapeHtml(s)}">`).join('')}</datalist></span>
       <label class="vd-ask" title="Always ask for the category, even though this vendor is known"><input type="checkbox" ${r.ask ? 'checked' : ''} onchange="updateVendorRule(${i}, 'ask', this.checked)">Always ask${r.learned ? '<span class="vd-tag">new</span>' : ''}</label>
       <button class="del-btn" onclick="deleteVendorRule(${i})" title="Delete rule" aria-label="Delete rule ${escapeHtml(r.match)}">✕</button>
-    </div>`).join('') : `<div class="vd-empty">${q ? 'No rules match.' : 'No vendor rules yet.'}</div>`;
+    </div>`).join('') : `<div class="vd-empty">${q ? 'No rules match.' : (vdScope ? 'No rules for this card yet — the first message from each shop will ask you.' : 'No vendor rules yet.')}</div>`;
 }
 function updateVendorRule(i, field, val) {
   const r = state.vendorRules[i];
@@ -6625,7 +6743,7 @@ function updateVendorRule(i, field, val) {
     val = String(val || '').trim();
     if (field === 'match' && !val) { alert('The match text can\'t be empty — delete the rule instead.'); renderVendorRules(); return; }
     r[field] = val;
-    if (field === 'category' || field === 'subcategory') ensureCategoryIn(activeProfile(), r.category, r.subcategory);
+    if (field === 'category' || field === 'subcategory') ensureCategoryIn(vdScopeProfile(), r.category, r.subcategory);
   }
   saveState();
   renderVendorRules();
@@ -6643,9 +6761,12 @@ function addVendorRule() {
   const subcategory = document.getElementById('vdNewSub').value.trim() || category;
   if (!match) { alert('Enter the text to look for in the message, e.g. Uber.'); return; }
   if (!category) { alert('Pick a category.'); return; }
-  if (state.vendorRules.some(r => vdNorm(r.match) === vdNorm(match))) { alert(`There's already a rule for "${match}".`); return; }
-  state.vendorRules.push({ id: newVendorId(), match, category, subcategory, ask: false });
-  ensureCategoryIn(activeProfile(), category, subcategory);
+  if (state.vendorRules.some(r => vdInScope(r) && vdNorm(r.match) === vdNorm(match))) { alert(`There's already a rule for "${match}" in this list.`); return; }
+  const rule = { id: newVendorId(), match, category, subcategory, ask: false };
+  if (vdScope) rule.card = vdScope;
+  state.vendorRules.push(rule);
+  ensureCategoryIn(vdScopeProfile(), category, subcategory);
+  renderVdScope();
   ['vdNewMatch', 'vdNewCat', 'vdNewSub'].forEach(id => { document.getElementById(id).value = ''; });
   saveState();
   renderVendorRules();
@@ -6656,20 +6777,24 @@ function testVendorMessage() {
   if (!m.text) { out.innerHTML = ''; return; }
   const pid = (m.last4 && state.cardRoutes[m.last4]) || state.activeProfileId;
   const prof = state.profiles[pid] || activeProfile();
-  const rule = m.isIPN ? null : matchVendorRule(state.vendorRules, m);
+  const isCC = prof.cardType === 'mastercard';
+  const rule = (m.isIPN || (isCC && m.incoming)) ? null : matchVendorRule(rulesForCard(state.vendorRules, m.last4, isCC), m);
+  const fx = isCC && m.currency && m.currency !== 'EGP';
   let verdict;
   if (m.declined) verdict = '<span class="bad">Declined — nothing is added.</span>';
   else if (m.amount == null) verdict = '<span class="bad">No amount found — the script would return an error.</span>';
+  else if (isCC && m.incoming) verdict = '<span class="ok">Card payment — added to the card\'s payments with no question.</span>';
   else if (m.isIPN) verdict = '<span class="ask">IPN transfer — asks you for the category every time.</span>';
   else if (rule && rule.ask) verdict = `<span class="ask">Known vendor set to "Always ask" — asks you for the category.</span>`;
   else if (rule) verdict = `<span class="ok">Added automatically → <b>${escapeHtml(rule.category)} / ${escapeHtml(rule.subcategory || rule.category)}</b></span>`;
   else verdict = `<span class="ask">Unknown vendor — asks you, then saves "${escapeHtml(vendorKey(m.vendor) || '—')}" here with Always ask on.</span>`;
   const amt = m.amount == null ? '—' : fmt((m.incoming ? -1 : 1) * m.amount, prof);
+  const fxNote = fx && !m.incoming ? `<br><span class="ask">Charged in ${escapeHtml(m.currency)} — the EGP amount is estimated from the drop in your available limit, then fixed when you import the statement.</span>` : '';
   out.innerHTML = `<div class="vd-result">
-    Amount <b>${escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}<br>
+    Amount <b>${fx ? escapeHtml(m.currency + ' ' + Number(m.amount).toFixed(2)) : escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}${m.date ? ` · on <b>${escapeHtml(m.date)}</b>` : ''}<br>
     Vendor <b>${escapeHtml(m.vendor || '—')}</b>${m.last4 ? ` · card <b>•••• ${escapeHtml(m.last4)}</b>` : ''}<br>
     Goes to <b>${escapeHtml(prof.name)}</b>${m.last4 && state.cardRoutes[m.last4] ? '' : ' (the profile open in the app)'}<br>
-    ${verdict}</div>`;
+    ${verdict}${fxNote}</div>`;
 }
 
 /* ============================================================
