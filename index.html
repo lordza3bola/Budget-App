@@ -6834,7 +6834,21 @@ function parseBankMessage(text) {
   const END = '(?=\\.\\s+(?:Your|For|Please)\\b|,|\\s+with reference\\b|$)';
   let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(new RegExp('\\bat\\s+(.+?)\\s*' + END, 'i')) || t.match(new RegExp('\\b(?:to|from)\\s+(.+?)\\s*' + END, 'i'));
   if (v) out.vendor = v[1].trim().replace(/\.$/, '');
+  // IPN (InstaPay) transfer sent: the bank's amount leaves out InstaPay's fee
+  // (0.1% of the amount, at least 0.50, at most 20.00), so it's added here.
+  // A transfer received is already the true amount — no fee.
+  if (out.isIPN && !out.incoming && !out.declined && out.amount) {
+    out.ipnSent = true;
+    out.transferAmount = out.amount;
+    out.fee = instapayFee(out.amount);
+    out.amount = Math.round((out.amount + out.fee) * 100) / 100;
+  }
   return out;
+}
+// InstaPay money-transfer fee: 0.1% of the transfer, min EGP 0.50, max EGP 20.00.
+function instapayFee(amount) {
+  const fee = Math.round(Math.abs(Number(amount) || 0) * 0.001 * 100) / 100;
+  return Math.min(20, Math.max(0.5, fee));
 }
 // "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
 // (drops the payment-gateway prefix so the remembered rule matches every gateway).
@@ -7061,14 +7075,14 @@ function testVendorMessage() {
   if (m.declined) verdict = '<span class="bad">Declined — nothing is added.</span>';
   else if (m.amount == null) verdict = '<span class="bad">No amount found — the script would return an error.</span>';
   else if (isCC && m.incoming) verdict = '<span class="ok">Card payment — added to the card\'s payments with no question.</span>';
-  else if (m.isIPN) verdict = '<span class="ask">IPN transfer — asks you for the category every time.</span>';
+  else if (m.isIPN) verdict = `<span class="ask">IPN transfer ${m.ipnSent ? 'sent — InstaPay fee added; ' : 'received — '}asks you for the category every time.</span>`;
   else if (rule && rule.ask) verdict = `<span class="ask">Known vendor set to "Always ask" — asks you for the category.</span>`;
   else if (rule) verdict = `<span class="ok">Added automatically → <b>${escapeHtml(rule.category)} / ${escapeHtml(rule.subcategory || rule.category)}</b></span>`;
   else verdict = `<span class="ask">Unknown vendor — asks you, then saves "${escapeHtml(vendorKey(m.vendor) || '—')}" here with Always ask on.</span>`;
   const amt = m.amount == null ? '—' : fmt((m.incoming ? -1 : 1) * m.amount, prof);
   const fxNote = fx && !m.incoming ? `<br><span class="ask">Charged in ${escapeHtml(m.currency)} — the EGP amount is estimated from the drop in your available limit, then fixed when you import the statement.</span>` : '';
   out.innerHTML = `<div class="vd-result">
-    Amount <b>${fx ? escapeHtml(m.currency + ' ' + Number(m.amount).toFixed(2)) : escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}${m.date ? ` · on <b>${escapeHtml(m.date)}</b>` : ''}<br>
+    Amount <b>${fx ? escapeHtml(m.currency + ' ' + Number(m.amount).toFixed(2)) : escapeHtml(amt)}</b>${m.incoming ? ' (money in)' : ''}${m.ipnSent ? ` (transfer ${escapeHtml(fmt(m.transferAmount, prof))} + InstaPay fee ${escapeHtml(fmt(m.fee, prof))})` : ''}${m.date ? ` · on <b>${escapeHtml(m.date)}</b>` : ''}<br>
     Vendor <b>${escapeHtml(m.vendor || '—')}</b>${m.last4 ? ` · card <b>•••• ${escapeHtml(m.last4)}</b>` : ''}<br>
     Goes to <b>${escapeHtml(prof.name)}</b>${m.last4 && state.cardRoutes[m.last4] ? '' : ' (the profile open in the app)'}<br>
     ${verdict}${fxNote}</div>`;

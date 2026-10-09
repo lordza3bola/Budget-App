@@ -52,7 +52,8 @@
 //      Otherwise: Show Notification [notification]
 // Known vendors are added silently; unknown ones ask and are saved to
 // Settings → Vendors with "Always ask" on (switch it off there to make one
-// automatic); IPN transfers always ask; declined messages are ignored.
+// automatic); IPN transfers always ask (a transfer SENT gets the
+// InstaPay fee added: 0.1%, min 0.50, max 20.00 EGP); declined messages are ignored.
 // CREDIT CARD messages (card 5931 → Credit Card profile, set in Settings →
 // Vendors → Cards) use the SAME Shortcut steps — add a second automation
 // "When I get a message containing 5931" with those steps. Charges use the
@@ -357,7 +358,21 @@ function parseBankMessage(text) {
   const END = '(?=\\.\\s+(?:Your|For|Please)\\b|,|\\s+with reference\\b|$)';
   let v = t.match(/@\s*([^,]+?)\s*(?:,|$)/) || t.match(new RegExp('\\bat\\s+(.+?)\\s*' + END, 'i')) || t.match(new RegExp('\\b(?:to|from)\\s+(.+?)\\s*' + END, 'i'));
   if (v) out.vendor = v[1].trim().replace(/\.$/, '');
+  // IPN (InstaPay) transfer sent: the bank's amount leaves out InstaPay's fee
+  // (0.1% of the amount, at least 0.50, at most 20.00), so it's added here.
+  // A transfer received is already the true amount — no fee.
+  if (out.isIPN && !out.incoming && !out.declined && out.amount) {
+    out.ipnSent = true;
+    out.transferAmount = out.amount;
+    out.fee = instapayFee(out.amount);
+    out.amount = Math.round((out.amount + out.fee) * 100) / 100;
+  }
   return out;
+}
+// InstaPay money-transfer fee: 0.1% of the transfer, min EGP 0.50, max EGP 20.00.
+function instapayFee(amount) {
+  const fee = Math.round(Math.abs(Number(amount) || 0) * 0.001 * 100) / 100;
+  return Math.min(20, Math.max(0.5, fee));
 }
 // "GEIDEAE*ALBAN ZIDAN" -> "ALBAN ZIDAN", "PAYMOB-*OCEAN MART GROCE" -> "OCEAN MART GROCE"
 // (drops the payment-gateway prefix so the remembered rule matches every gateway).
@@ -438,7 +453,7 @@ async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
     category,
     subcategory: subcategory || category,
     method: parsed.last4 ? 'Card ' + parsed.last4 : 'Card',
-    description: vendorKey(parsed.vendor) || (parsed.isIPN ? 'IPN transfer' : ''),
+    description: (vendorKey(parsed.vendor) || (parsed.isIPN ? 'IPN transfer' : '')) + (parsed.ipnSent ? ` · incl. ${parsed.fee.toFixed(2)} InstaPay fee` : ''),
     value: amount,
     src: 'sms'
   };
@@ -581,7 +596,7 @@ async function handleBankMessage(text) {
     const label = parsed.isIPN ? 'IPN transfer' : (vendorKey(parsed.vendor) || 'Unknown vendor');
     const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount);
     return smsReply('ask', '', {
-      prompt: `${label} · ${fmtCur(amount, target.prof.currency || 'EGP')}`,
+      prompt: `${label} · ${fmtCur(amount, target.prof.currency || 'EGP')}${parsed.ipnSent ? ` (${parsed.transferAmount.toFixed(2)} + ${parsed.fee.toFixed(2)} fee)` : ''}`,
       vendor: label, amount, isIPN: parsed.isIPN, message: parsed.text,
       categories: names, subs
     });
