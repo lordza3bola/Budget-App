@@ -27,7 +27,11 @@
 //                    (optional keys: subcategory, description, method, date YYYY-MM-DD)
 //   2. Scriptable → "Run Script": Script = this script, Parameter = Dictionary,
 //      and switch "Run In App" OFF so it runs in the background.
-//   3. Show Notification → the Run Script output ("Added 50 E£ → Food").
+//   3. Show Notification → the Run Script output:
+//        Added: 50.00 E£ → Food / Groceries
+//        Available: 18,240.50 E£
+//        Food / Groceries: 1,250.00 E£ left of 3,000.00 E£
+//      (budgetInNotifications in CONFIG turns the last two lines off).
 // Writes straight to your synced Firestore data under the app's active
 // profile. A negative amount = income.
 //   To fill a "Choose from List" with your categories, run this script with
@@ -71,7 +75,12 @@ const CONFIG = {
 
   // Optional — only needed if you have more than one regular budget
   // profile and want a specific one. Leave "" to auto-pick the first one.
-  budgetProfileName: ""
+  budgetProfileName: "",
+
+  // Adds your Available balance and what's left in that expense's budget
+  // (category / sub category, this month) to every "Added …" notification.
+  // Set to false to keep the notifications to one line.
+  budgetInNotifications: true
 };
 
 // ---- Firebase Auth (email/password) ---------------------------------------
@@ -238,6 +247,7 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
     value: amount
   };
   await commitAddExpense(CONFIG.projectId, docId, idToken, profileId, expense);
+  LAST_ADDED = { profileId, expense };
   return { expense, currencyCode, profileName: prof.name || '' };
 }
 // Shortcuts "categories" mode: Run Script with the text "categories" returns a
@@ -433,6 +443,7 @@ async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
     src: 'sms'
   };
   await commitAddExpense(CONFIG.projectId, ctx.uid, ctx.idToken, target.id, expense);
+  LAST_ADDED = { profileId: target.id, expense };
   return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, target.prof.currency || 'EGP')} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''}${target.prof.name ? ' (' + target.prof.name + ')' : ''}`;
 }
 // ============================================================
@@ -542,6 +553,7 @@ async function handleCardMessage(ctx, target, parsed, chosen) {
   const key = vendorKey(parsed.vendor);
   const newRule = chosen && key && !rule ? { id: 'v_sms_' + Date.now(), match: key, category, subcategory, ask: true, learned: true, card: parsed.last4 } : null;
   await commitCardWrite(ctx, target.id, 'expenses', expense, la, newRule);
+  LAST_ADDED = { profileId: target.id, expense };
   return smsReply('added', `Card: ${fmtCur(amt.amount, code)}${fxNote} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''} (${name})${newRule ? ' · saved ' + key + ' to Vendors' : ''}`);
 }
 function smsReply(status, notification, extra) {
@@ -603,6 +615,56 @@ async function handleResolve(p) {
     return smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err)));
   }
 }
+// ---- Budget lines for "Added …" notifications -----------------------------
+// After an expense is saved, two more lines are added to its notification:
+//   Available: 18,240.50 E£
+//   Food / Groceries: 1,250.00 E£ left of 3,000.00 E£
+// Read fresh from the cloud, so both already include the new expense, with
+// the same math as the app (Available from the budget profile; the budget
+// line in the profile and pay-cycle month the expense was filed under).
+// Never throws: on any problem the notification just stays one line.
+let LAST_ADDED = null; // { profileId, expense } — set where an expense is written
+async function budgetLines() {
+  try {
+    if (CONFIG.budgetInNotifications === false || !LAST_ADDED) return '';
+    const { profileId, expense } = LAST_ADDED;
+    const data = await fetchSyncedState(CONFIG.projectId, CONFIG.apiKey, CONFIG.email, CONFIG.password);
+    const profiles = (data.state && data.state.profiles) || {};
+    const lines = [];
+    const budgetP = pickBudgetProfile(data.state, CONFIG.budgetProfileName);
+    if (budgetP) {
+      const { m } = cycleInfo(budgetP);
+      lines.push(`Available: ${fmtCur(monthSummary(budgetP, m).availableBalance, budgetP.currency || 'EGP')}`);
+    }
+    const prof = profiles[profileId];
+    const isIncome = String(expense.category || '').trim().toLowerCase() === 'income' || Number(expense.value) < 0;
+    if (prof && !isIncome) {
+      const cat = expense.category, sub = expense.subcategory || expense.category;
+      const label = sub && sub !== cat ? `${cat} / ${sub}` : cat;
+      const code = prof.currency || 'EGP';
+      W_BUDGET = prof.budget || [];
+      const buds = W_BUDGET.filter(b => b.month === expense.month && b.category === cat && b.subcategory === sub);
+      if (!buds.length) {
+        lines.push(`${label}: no budget this month`);
+      } else {
+        const planned = buds.reduce((t, b) => t + Number(b.plannedValue || 0), 0);
+        const spent = buds.reduce((t, b) => t + actualForBudgetLine(prof.expenses || [], b), 0);
+        const left = planned - spent;
+        lines.push(left >= 0
+          ? `${label}: ${fmtCur(left, code)} left of ${fmtCur(planned, code)}`
+          : `${label}: over budget by ${fmtCur(-left, code)}`);
+      }
+    }
+    return lines.join('\n');
+  } catch (e) {
+    return '';
+  }
+}
+async function withBudget(note) {
+  const extra = await budgetLines();
+  return extra ? `${note}\n${extra}` : note;
+}
+
 function looksLikeBankMessage(s) {
   const t = String(s || '').trim();
   if (!t || /^[{\[]/.test(t) || /^[^ ]*=/.test(t)) return false;
@@ -906,18 +968,25 @@ async function main() {
     }
     // Bank SMS: { mode: "message", message: <text> } or just the message text.
     if (mode === 'message' || (typeof sp === 'string' && looksLikeBankMessage(sp))) {
-      Script.setShortcutOutput(await handleBankMessage(typeof sp === 'string' ? sp : (sp.message || sp.text || '')));
+      const r = await handleBankMessage(typeof sp === 'string' ? sp : (sp.message || sp.text || ''));
+      if (r.status === 'added') r.notification = await withBudget(r.notification);
+      Script.setShortcutOutput(r);
       Script.complete();
       return;
     }
     // After choosing a category: { mode: "resolve", message, category, subcategory }.
     if (mode === 'resolve') {
-      Script.setShortcutOutput(await handleResolve(sp));
+      const r = await handleResolve(sp);
+      if (r.status === 'added') r.notification = await withBudget(r.notification);
+      Script.setShortcutOutput(r);
       Script.complete();
       return;
     }
     let msg;
-    try { msg = await runFromShortcut(args.shortcutParameter); }
+    try {
+      msg = await runFromShortcut(args.shortcutParameter);
+      if (!/^Error/.test(msg)) msg = await withBudget(msg);
+    }
     catch (err) { msg = 'Error: ' + (err && err.message ? err.message : String(err)); }
     Script.setShortcutOutput(msg);
     Script.complete();
