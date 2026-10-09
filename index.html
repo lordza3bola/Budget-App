@@ -518,6 +518,40 @@
     transition: opacity .15s ease, transform .15s ease; white-space: nowrap;
   }
   .drag-float-wrap.invalid .drag-float-hint { opacity: 1; transform: translateY(0); }
+  /* ===== Take from another budget ===== */
+  #expTakeField[hidden], .tf-edit-row[hidden], .sheet-field[hidden] { display: none !important; }
+  .tf-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+    background: var(--card); border: none; border-radius: 14px; padding: 11px 14px; box-shadow: var(--shadow-out-sm);
+    font: inherit; color: var(--txt); text-align: left; cursor: pointer; }
+  .tf-switch b { display: block; font-size: 13px; font-weight: 700; }
+  .tf-switch .s { display: block; font-size: 11.5px; color: var(--txt-dim); margin-top: 2px; }
+  .tf-toggle { flex: none; width: 40px; height: 23px; border-radius: 12px; background: var(--card); box-shadow: var(--shadow-in); position: relative; transition: background .18s ease; }
+  .tf-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: var(--card); box-shadow: 1px 1px 3px rgba(60,52,38,.25); transition: transform .18s ease; }
+  .tf-switch[aria-checked="true"] .tf-toggle { background: var(--blue); box-shadow: none; }
+  .tf-switch[aria-checked="true"] .tf-toggle::after { transform: translateX(17px); background: #fff; }
+  .tf-lines { display: grid; gap: 6px; margin-top: 8px; }
+  .tf-grp { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--txt-dim2); margin: 6px 4px 0; }
+  .tf-line { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; width: 100%;
+    padding: 9px 12px; border-radius: 12px; border: none; background: transparent; font: inherit; color: var(--txt); text-align: left; cursor: pointer; }
+  @media (hover: hover) { .tf-line:hover { background: var(--line); } }
+  .tf-line .dot { width: 15px; height: 15px; border-radius: 50%; box-shadow: var(--shadow-in); }
+  .tf-line.sel { background: rgba(95,125,104,.13); }
+  .tf-line.sel .dot { background: var(--blue); box-shadow: inset 0 0 0 3px var(--blue-soft); }
+  .tf-line .n { font-weight: 700; font-size: 12.5px; min-width: 0; }
+  .tf-line .n small { display: block; font-weight: 500; color: var(--txt-dim); font-size: 11px; }
+  .tf-line .l { text-align: right; font-weight: 800; font-size: 12px; color: var(--green); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tf-line .l small { display: block; font-weight: 600; color: var(--txt-dim); font-size: 10.5px; }
+  .tf-line.low .l, .tf-line .l small.over { color: var(--amber); }
+  .tf-line .l.neg { color: var(--red); }
+  .tf-empty { font-size: 12px; color: var(--txt-dim); padding: 8px 4px 0; }
+  .tf-tag { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 800; color: var(--blue); background: rgba(95,125,104,.12); border-radius: 7px; padding: 2px 7px; white-space: nowrap; }
+  td .tf-tag { margin: 0 0 0 6px; vertical-align: 1px; }
+  .tf-edit-row > td { padding-top: 0 !important; }
+  .tf-edit-row .tf-wrap { max-width: 560px; }
+  .tf-borrowed { display: grid; gap: 3px; margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--txt-dim); width: 100%; }
+  .tf-borrowed span { display: flex; justify-content: space-between; gap: 10px; }
+  .tf-borrowed b { color: var(--txt); font-variant-numeric: tabular-nums; }
+  .tf-note { display: block; font-size: 10.5px; color: var(--blue); font-weight: 700; white-space: nowrap; }
   /* ===== List drag-and-drop (Settings → Categories: categories and sub categories) ===== */
   #categoryManager, .sub-chips { position: relative; }
   [data-ldrag] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -1465,6 +1499,7 @@
           <label>Sub category</label>
           <div class="chips" id="expSubChips"></div>
         </div>
+        <div class="field" id="expTakeField" hidden><div id="expTakeFrom"></div></div>
         <div class="field" id="expMethodField">
           <label>Payment method</label>
           <div class="chips">
@@ -3376,9 +3411,177 @@ function expensesForMonth(m) { return activeProfile().expenses.filter(e => e.mon
 function budgetForMonth(m) { return activeProfile().budget.filter(b => b.month === m); }
 
 function actualForBudgetLine(line) {
-  return activeProfile().expenses
-    .filter(e => e.month === line.month && e.category === line.category && e.subcategory === line.subcategory)
+  const p = activeProfile();
+  return p.expenses
+    .filter(e => e.month === line.month && expenseCountsFor(e, line, p))
     .reduce((s,e) => s + Number(e.value||0), 0);
+}
+// "Take from another budget": an expense can carry fromCat / fromSub — the
+// budget line it spends from, in its own month — while keeping its own
+// category and sub category everywhere else (lists, filters, reports). It
+// then counts as that line's spending, so the line's unspent amount shrinks
+// instead of Available balance. If that line doesn't exist in the expense's
+// month (deleted, or the expense moved month) it counts against its own
+// category again, as before.
+function budgetLineExists(p, month, cat, sub) {
+  return (p.budget || []).some(b => b.month === month && b.category === cat && b.subcategory === sub);
+}
+function expenseCountsFor(e, line, p) {
+  const own = e.category === line.category && e.subcategory === line.subcategory;
+  if (!e.fromCat) return own;
+  if (e.fromCat === line.category && (e.fromSub || e.fromCat) === line.subcategory) return true;
+  return own && !budgetLineExists(p || activeProfile(), e.month, e.fromCat, e.fromSub || e.fromCat);
+}
+// [category, sub category] of the budget an expense spends from right now.
+function expenseBudgetOf(e, p) {
+  if (e.fromCat && budgetLineExists(p || activeProfile(), e.month, e.fromCat, e.fromSub || e.fromCat)) return [e.fromCat, e.fromSub || e.fromCat];
+  return [e.category, e.subcategory];
+}
+function takesFromOther(e, p) {
+  if (!e || !e.fromCat) return false;
+  const [c, s] = expenseBudgetOf(e, p);
+  return c !== e.category || s !== e.subcategory;
+}
+// Expenses of other sub categories that this budget line is paying for.
+function borrowedInto(line, p) {
+  return (p.expenses || []).filter(e => e.month === line.month && e.fromCat === line.category &&
+    (e.fromSub || e.fromCat) === line.subcategory && (e.category !== line.category || e.subcategory !== line.subcategory));
+}
+function borrowedListHtml(line, p, inSheet) {
+  const list = borrowedInto(line, p);
+  if (!list.length) return '';
+  const rows = list.slice(0, inSheet ? 20 : 4).map(e =>
+    `<span><span>↳ ${escapeHtml(e.subcategory && e.subcategory !== e.category ? e.category + ' · ' + e.subcategory : e.category)} (${escapeHtml(shortDay(e.date))})</span><b>${fmtRaw(Number(e.value || 0))}</b></span>`).join('');
+  const more = list.length > (inSheet ? 20 : 4) ? `<span><span>+ ${list.length - (inSheet ? 20 : 4)} more</span><b></b></span>` : '';
+  return `<span class="tf-borrowed">${rows}${more}</span>`;
+}
+function borrowedNoteHtml(line, p) {
+  const list = borrowedInto(line, p);
+  if (!list.length) return '';
+  const t = list.reduce((s, e) => s + Number(e.value || 0), 0);
+  return `<span class="tf-note" title="${escapeHtml(list.map(e => e.category + ' · ' + e.subcategory + ' ' + fmtRaw(Number(e.value || 0))).join('\n'))}">incl. ${fmtRaw(t)} from other</span>`;
+}
+function shortDay(iso) {
+  const d = new Date(String(iso) + 'T00:00:00');
+  return isNaN(d) ? String(iso || '') : d.getDate() + ' ' + d.toLocaleString('en-GB', { month: 'short' }).replace('Sept', 'Sep');
+}
+
+/* ---------- "Take from another budget" switch + line list ----------
+   One piece shared by Add expense, the phone edit sheet and the computer's
+   row edit. Mounted with getters for the form's live values; re-renders when
+   watched fields change. tfValue() gives { fromCat, fromSub } or null. */
+const TF = {};
+function tfMount(hostId, cfg) {
+  const prev = TF[hostId];
+  const init = cfg.initial || null;
+  TF[hostId] = { cfg, on: prev && prev.keep ? prev.on : !!init, key: prev && prev.keep ? prev.key : (init ? subKey(init[0], init[1]) : null) };
+  tfRender(hostId);
+}
+function tfMonthOf(cfg) {
+  const d = cfg.date && cfg.date();
+  return d ? monthForDate(d) : currentMonth;
+}
+// Budget lines in the month this expense could take from (its own sub
+// category excluded), with what's left before and after this expense.
+function tfCandidates(p, month, cat, sub, amount, exclId) {
+  const groups = {};
+  (p.budget || []).forEach(b => {
+    if (b.month !== month || isIncomeCategory(b.category)) return;
+    if (b.category === cat && b.subcategory === sub) return;
+    const k = subKey(b.category, b.subcategory);
+    const g = groups[k] || (groups[k] = { key: k, cat: b.category, sub: b.subcategory, planned: 0, line: b, closed: true });
+    g.planned += Number(b.plannedValue || 0);
+    if (b.status !== 'Done') g.closed = false;
+  });
+  const ex = exclId ? (p.expenses || []).find(e => e.id === exclId) : null;
+  return Object.values(groups).map(g => {
+    let spent = actualForBudgetLine(g.line);
+    if (ex && ex.month === month && expenseCountsFor(ex, g.line, p)) spent -= Number(ex.value || 0);
+    const left = g.planned - spent;
+    return Object.assign(g, { spent, left, after: left - amount });
+  }).sort((a, b) => ((a.cat === cat ? 0 : 1) - (b.cat === cat ? 0 : 1)) || catRank(p, a.cat) - catRank(p, b.cat) ||
+    a.cat.localeCompare(b.cat) || subRank(p, a.cat, a.sub) - subRank(p, b.cat, b.sub) || a.sub.localeCompare(b.sub));
+}
+function tfRender(hostId) {
+  const st = TF[hostId];
+  const host = document.getElementById(hostId);
+  if (!st || !host) return;
+  const cfg = st.cfg, p = activeProfile();
+  const wrap = cfg.wrap ? document.getElementById(cfg.wrap) : null;
+  const cat = cfg.cat && cfg.cat(), sub = (cfg.sub && cfg.sub()) || cat;
+  const amount = Number(cfg.amount && cfg.amount()) || 0;
+  const month = tfMonthOf(cfg);
+  const usable = !isCredit(p) && !isSavings(p) && cat && !isIncomeCategory(cat) && amount > 0;
+  const cands = usable ? tfCandidates(p, month, cat, sub, amount, cfg.exclId).filter(c => !c.closed || c.key === st.key) : [];
+  st.month = month; st.cands = cands;
+  if (!usable || !cands.length) {
+    st.visible = false; host.innerHTML = '';
+    if (wrap) wrap.hidden = true;
+    return;
+  }
+  st.visible = true;
+  if (wrap) wrap.hidden = false;
+  if (st.key && !cands.some(c => c.key === st.key)) st.key = null;
+  if (st.on && !st.key) { const same = cands.find(c => c.cat === cat); st.key = (same || cands[0]).key; }
+  const ownLines = (p.budget || []).filter(b => b.month === month && b.category === cat && b.subcategory === sub);
+  const subName = sub && sub !== cat ? sub : cat;
+  let ownText;
+  if (!ownLines.length) ownText = `${subName} has no budget in ${monthLabel(month)}`;
+  else {
+    const planned = ownLines.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
+    let spent = actualForBudgetLine(ownLines[0]);
+    const ex = cfg.exclId ? p.expenses.find(e => e.id === cfg.exclId) : null;
+    if (ex && ex.month === month && expenseCountsFor(ex, ownLines[0], p)) spent -= Number(ex.value || 0);
+    const left = planned - spent;
+    ownText = left >= 0 ? `${subName} has ${fmtRaw(left)} left in ${monthLabel(month)}` : `${subName} is over by ${fmtRaw(-left)} in ${monthLabel(month)}`;
+  }
+  const line = c => {
+    const after = c.after < 0 ? `<small class="over">over by ${fmtRaw(-c.after)}</small>` : `<small>${fmtRaw(c.after)} after</small>`;
+    const leftTxt = c.left < 0 ? `<span class="l neg">over ${fmtRaw(-c.left)}${after}</span>` : `<span class="l">${fmtRaw(c.left)} left${after}</span>`;
+    return `<button type="button" class="tf-line${c.key === st.key ? ' sel' : ''}${c.after < 0 ? ' low' : ''}" role="radio" aria-checked="${c.key === st.key}" onclick="tfPick('${hostId}', this.dataset.k)" data-k="${escapeHtml(c.key)}">
+      <span class="dot"></span>
+      <span class="n">${escapeHtml(c.cat === cat ? c.sub : c.cat + ' · ' + c.sub)}<small>planned ${fmtRaw(c.planned)}${c.closed ? ' · closed' : ''}</small></span>
+      ${leftTxt}</button>`;
+  };
+  const same = cands.filter(c => c.cat === cat), other = cands.filter(c => c.cat !== cat);
+  let list = '';
+  if (st.on) {
+    if (same.length) list += `<div class="tf-grp">${escapeHtml(cat)}</div>` + same.map(line).join('');
+    if (other.length) list += `<div class="tf-grp">${same.length ? 'Other budgets' : 'Budgets in ' + escapeHtml(monthLabel(month))}</div>` + other.map(line).join('');
+  }
+  host.innerHTML = `<div class="tf-wrap">
+    <button type="button" class="tf-switch" role="switch" aria-checked="${st.on}" onclick="tfToggle('${hostId}')">
+      <span><b>Take from another budget</b><span class="s">${escapeHtml(ownText)}</span></span><span class="tf-toggle" aria-hidden="true"></span>
+    </button>
+    ${st.on ? `<div class="tf-lines" role="radiogroup" aria-label="Budget to take from">${list}</div>` : ''}
+  </div>`;
+}
+function tfToggle(hostId) { const st = TF[hostId]; if (!st) return; st.keep = true; st.on = !st.on; if (!st.on) st.key = null; tfRender(hostId); }
+function tfPick(hostId, key) { const st = TF[hostId]; if (!st) return; st.keep = true; st.on = true; st.key = key; tfRender(hostId); }
+function tfValue(hostId) {
+  const st = TF[hostId];
+  if (!st || !st.visible || !st.on || !st.key) return null;
+  const [c, s] = subKeyParts(st.key);
+  return { fromCat: c, fromSub: s };
+}
+// Re-render a mounted piece when one of its watched fields changes.
+['input', 'change'].forEach(ev => document.addEventListener(ev, e => {
+  const id = e.target && e.target.id;
+  if (!id) return;
+  Object.keys(TF).forEach(h => { const st = TF[h]; if (st && st.cfg.watch && st.cfg.watch.includes(id)) { st.keep = true; tfRender(h); } });
+}));
+function mountExpenseEditTakeFrom(e) {
+  const id = e.id;
+  if (!document.getElementById('editTake_' + id)) return;
+  const v = x => { const el = document.getElementById(x + id); return el ? el.value : ''; };
+  const host = 'editTake_' + id;
+  tfMount(host, {
+    cat: () => v('editCat_').trim(), sub: () => v('editSub_').trim() || v('editCat_').trim(),
+    amount: () => Number(v('editVal_')), date: () => v('editDate_'),
+    watch: ['editCat_' + id, 'editSub_' + id, 'editVal_' + id, 'editDate_' + id],
+    wrap: 'editTakeWrap_' + id, exclId: id,
+    initial: e.fromCat ? [e.fromCat, e.fromSub || e.fromCat] : null
+  });
 }
 
 // A budget line marked "Done" is being closed out: whatever wasn't spent is no
@@ -4195,6 +4398,12 @@ function renderAddExpensePage() {
   ).join('');
   document.getElementById('expSubField').style.display = 'none';
   document.getElementById('expSubChips').innerHTML = '';
+  delete TF.expTakeFrom;
+  tfMount('expTakeFrom', {
+    cat: () => expSelectedCategory, sub: () => expSelectedSub || expSelectedCategory,
+    amount: () => signedExpAmount(), date: () => document.getElementById('expDate').value,
+    watch: ['expAmount', 'expDate'], wrap: 'expTakeField'
+  });
 }
 function pickCategory(btn) {
   document.querySelectorAll('#expCatChips .chip-btn').forEach(b=>b.classList.remove('sel'));
@@ -4211,11 +4420,13 @@ function pickCategory(btn) {
   } else {
     subField.style.display = 'none';
   }
+  tfRender('expTakeFrom');
 }
 function pickSub(btn) {
   document.querySelectorAll('#expSubChips .chip-btn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
   expSelectedSub = btn.dataset.sub;
+  tfRender('expTakeFrom');
 }
 function pickMethod(btn) {
   document.querySelectorAll('#page-add .chip-btn[data-method]').forEach(b=>b.classList.remove('sel'));
@@ -4246,6 +4457,7 @@ function toggleAmountSign() {
   if (raw < 0) { el.value = String(Math.abs(raw)); expAmountNegative = false; }
   else expAmountNegative = !expAmountNegative;
   updateAmountSignUI();
+  tfRender('expTakeFrom');
 }
 function onExpAmountInput() { updateAmountSignUI(); }
 function saveExpense() {
@@ -4277,6 +4489,8 @@ function saveExpense() {
       description,
       value: amount
     });
+    const tfv = tfValue('expTakeFrom');
+    if (tfv) Object.assign(p.expenses[p.expenses.length - 1], tfv);
   }
   saveState();
   currentMonth = month;
@@ -4388,12 +4602,16 @@ function renderExpensesPage() {
     return `<tr data-drag-id="${editKey}" data-drag-group="${r.date}">
       <td class="editable" onclick="startRowEdit('${editKey}')"><span class="drag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>${r.date}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${catTag}</td>
-      <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.subcategory) || (isPayment ? '<span style="color:var(--txt-dim2);">—</span>' : '')}</td>
+      <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.subcategory) || (isPayment ? '<span style="color:var(--txt-dim2);">—</span>' : '')}${r.takeFrom ? `<span class="tf-tag" title="Takes from the ${escapeHtml(r.takeFrom[0])} · ${escapeHtml(r.takeFrom[1])} budget">↳ ${escapeHtml(r.takeFrom[1])} budget</span>` : ''}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable${amtClass}" onclick="startRowEdit('${editKey}')">${amtText}</td>
       <td><button class="del-btn" onclick="${isPayment ? `deletePayment('${r.id}')` : `deleteExpense('${r.id}')`}">✕</button></td>
     </tr>`;
   }).join('') : `<tr><td colspan="6" class="empty-note">No transactions match this filter for ${escapeHtml(monthsLabel)}.</td></tr>`;
+  if (editingRowKey && editingRowKey.startsWith('expense:')) {
+    const ee = p.expenses.find(x => x.id === editingRowKey.slice(8));
+    if (ee) mountExpenseEditTakeFrom(ee);
+  }
   renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel);
 }
 // Signed amount + display text for one Expenses row (shared by the table and the phone cards).
@@ -4454,7 +4672,7 @@ function renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel) {
     const icon = plainPayment ? thImg('credit-card') : getCategoryIcon(p, r.category, r.subcategory);
     html += `<button type="button" class="tx-card" onclick="openTxSheet('${r.kind}','${r.id}')">
       <span class="tx-icon ${plainPayment ? 'c1' : catTone(r.category)}">${icon}</span>
-      <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span></span>
+      <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span>${r.takeFrom ? `<span class="tf-tag">↳ from ${escapeHtml(r.takeFrom[1] === r.takeFrom[0] ? r.takeFrom[0] : r.takeFrom[1])} budget</span>` : ''}</span>
       <span class="tx-right"><span class="tx-amt ${amtCls}">${ai.text}</span>${meta ? `<span class="tx-meta ${metaCls}">${escapeHtml(meta)}</span>` : ''}</span>
     </button>`;
   });
@@ -4514,8 +4732,11 @@ function openTxSheet(kind, id) {
         <div class="sheet-field"><label for="editMethod_${id}">Method</label><input type="text" id="editMethod_${id}" value="${escapeHtml(e.method || '')}" list="sheetMethodList"><datalist id="sheetMethodList">${methods.map(m => `<option value="${escapeHtml(m)}">`).join('')}</datalist></div>
       </div>
       <div class="sheet-field"><label for="editDesc_${id}">Description</label><input type="text" id="editDesc_${id}" value="${escapeHtml(e.description || '')}"></div>
+      <div class="sheet-field" id="editTakeWrap_${id}" hidden><div id="editTake_${id}"></div></div>
       <div class="sheet-actions"><button type="button" class="del" onclick="sheetDelete('expense','${id}')">Delete</button><button type="button" class="save" onclick="sheetSave('expense','${id}')">Save changes</button></div>`);
     upgradeCatSubPickers('editCat_' + id, 'editSub_' + id);
+    delete TF['editTake_' + id];
+    mountExpenseEditTakeFrom(e);
     syncSheetSign('editVal_' + id);
     return;
   }
@@ -4551,7 +4772,7 @@ function openBudgetSheet(id) {
       <span><span class="l">Planned</span><span class="v">${fmt(planned)}</span></span>
       <span><span class="l">Spent</span><span class="v">${fmt(actual)}</span></span>
       <span><span class="l">${remaining < 0 ? 'Over by' : 'Remaining'}</span><span class="v" style="color:${remaining < 0 ? '#a9523f' : '#4f7d5c'};">${fmt(Math.abs(remaining))}</span></span>
-    </div>
+    </div>${borrowedListHtml(b, p, true)}
     <div class="sheet-field"><label>Status</label><div class="sheet-seg" id="sheetStatusSeg">
       <button type="button" data-st="Not Paid Yet" onclick="pickSheetStatus(this)" class="${sheetBudgetStatus !== 'Done' ? 'sel' : ''}">Ongoing</button>
       <button type="button" data-st="Done" onclick="pickSheetStatus(this)" class="${sheetBudgetStatus === 'Done' ? 'sel' : ''}">Closed</button>
@@ -4638,7 +4859,7 @@ function creationStamp(id) { const m = String(id || '').match(/\d{13}/); return 
 function buildExpenseRows(p) {
   const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
   return [
-    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx, pos: e.pos })),
+    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx, pos: e.pos, takeFrom: takesFromOther(e, p) ? expenseBudgetOf(e, p) : null })),
     ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx, pos: pm.pos }))
   ];
 }
@@ -4867,6 +5088,7 @@ function populateCatListDatalist() {
 }
 function startRowEdit(key) {
   editingRowKey = key;
+  if (key && key.startsWith('expense:')) delete TF['editTake_' + key.slice(8)];
   renderExpensesPage();
 }
 function cancelRowEdit() {
@@ -4930,7 +5152,7 @@ function buildEditRow(r, p) {
         </button>
       </div>
     </td>
-  </tr>`;
+  </tr>${isCredit(p) || isSavings(p) ? '' : `<tr class="tf-edit-row" id="editTakeWrap_${r.id}" hidden><td colspan="6"><div id="editTake_${r.id}"></div></td></tr>`}`;
 }
 // Swaps a free-text category / sub category input for real dropdowns (same
 // element id, so every existing save function keeps reading .value). The
@@ -5007,6 +5229,10 @@ function saveExpenseEdit(id) {
   e.subcategory = subVal || catVal;
   e.description = descVal;
   e.value = valNum;
+  if (document.getElementById('editTake_' + id)) {
+    const tfv = tfValue('editTake_' + id);
+    if (tfv) { e.fromCat = tfv.fromCat; e.fromSub = tfv.fromSub; } else { delete e.fromCat; delete e.fromSub; }
+  }
   const methodEl = document.getElementById('editMethod_' + id);
   if (methodEl) e.method = methodEl.value.trim();
   // A category or sub category typed fresh (not picked from the list) is kept for next time too.
@@ -5138,7 +5364,7 @@ function renderBudgetPage() {
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${escapeHtml(b.subcategory)}</td>
       <td class="editable" onclick="startBudgetEdit('${b.id}')">${b.recurringGroupId ? `<span class="bud-tagicon" title="Part of a recurring series">${thImg('recycle')}</span>` : ''}${instIds.has(b.id) ? `<span class="bud-tagicon" title="Installment">${thImg('reserve-calendar')}</span>` : ''}${escapeHtml(b.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable" onclick="startBudgetEdit('${b.id}')">${fmt(planned)}</td>
-      <td class="amt-cell">${fmt(actual)}</td>
+      <td class="amt-cell">${fmt(actual)}${borrowedNoteHtml(b, p)}</td>
       <td class="amt-cell">${fmt(remaining)}</td>
       ${statusCell}
       <td><button class="del-btn" onclick="deleteBudgetLine('${b.id}')">✕</button></td>
@@ -5174,7 +5400,7 @@ function renderBudgetCards(rows, p, instIds) {
         <span><span class="l">Planned</span><span class="v">${fmtRaw(planned)}</span></span>
         <span><span class="l">Spent</span><span class="v">${fmtRaw(actual)}</span></span>
         <span><span class="l">${over ? 'Over by' : 'Remaining'}</span><span class="v ${over ? 'neg' : (remaining > 0 ? 'pos' : '')}">${fmtRaw(Math.abs(remaining))}</span></span>
-      </span>
+      </span>${borrowedListHtml(b, p)}
     </button>`;
   }).join('');
 }
@@ -7240,7 +7466,8 @@ function plMonthDetail(c, m) {
   baseLines.forEach(b => add(plLineKey(b)));
   afterLines.forEach(b => add(plLineKey(b)));
   Object.keys(ov).forEach(add);
-  exps.forEach(e => add(plKey(e.category, e.subcategory || e.category)));
+  const eKey = e => { const [bc, bs] = expenseBudgetOf(e, p); return plKey(bc, bs || bc); };
+  exps.forEach(e => add(eKey(e)));
   const cats = {};
   keys.forEach(k => {
     const [cat, sub] = plSplit(k);
@@ -7249,7 +7476,7 @@ function plMonthDetail(c, m) {
     const plan = al.reduce((s, b) => s + Number(b.plannedValue || 0), 0);
     const inst = al.filter(b => plIsInst(b, baseIds)).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
     const instNew = al.filter(b => b._plInst).reduce((s, b) => s + Number(b.plannedValue || 0), 0);
-    const spent = exps.filter(e => plKey(e.category, e.subcategory || e.category) === k).reduce((s, e) => s + Number(e.value || 0), 0);
+    const spent = exps.filter(e => eKey(e) === k).reduce((s, e) => s + Number(e.value || 0), 0);
     const o = Object.prototype.hasOwnProperty.call(ov, k) ? Number(ov[k]) : undefined;
     const removed = o === 0 && base > 0;
     if (o === 0 && base === 0 && spent === 0 && inst === 0) return;

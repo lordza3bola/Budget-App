@@ -623,9 +623,20 @@ async function fetchSyncedState(projectId, apiKey, email, password) {
 }
 
 // ---- Budget math (mirrors the app's own calculations exactly) ------------
+// "Take from another budget" (fromCat / fromSub on an expense): it counts as
+// that line's spending in its month; if that line doesn't exist, it counts
+// against its own category as before. Same rule as the app.
+let W_BUDGET = [];
+function wLineExists(month, cat, sub) { return W_BUDGET.some(b => b.month === month && b.category === cat && b.subcategory === sub); }
+function expenseCountsFor(e, line) {
+  const own = e.category === line.category && e.subcategory === line.subcategory;
+  if (!e.fromCat) return own;
+  if (e.fromCat === line.category && (e.fromSub || e.fromCat) === line.subcategory) return true;
+  return own && !wLineExists(e.month, e.fromCat, e.fromSub || e.fromCat);
+}
 function actualForBudgetLine(expenses, line) {
   return expenses
-    .filter(e => e.month === line.month && e.category === line.category && e.subcategory === line.subcategory)
+    .filter(e => e.month === line.month && expenseCountsFor(e, line))
     .reduce((s, e) => s + Number(e.value || 0), 0);
 }
 function effectivePlanned(expenses, line) {
@@ -636,6 +647,7 @@ function effectivePlanned(expenses, line) {
   return planned;
 }
 function monthSummary(profile, m) {
+  W_BUDGET = profile.budget || [];
   const exps = (profile.expenses || []).filter(e => e.month === m);
   const buds = (profile.budget || []).filter(b => b.month === m);
   const allExps = profile.expenses || [];
