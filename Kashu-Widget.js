@@ -15,10 +15,10 @@
 // BALANCE WIDGET:
 // Long-press your Home Screen -> "+" -> search "Scriptable" -> add a
 // widget in whichever size you like -> Edit Widget -> Script: this
-// script. Design "Linen balance" in the app's Sage & Linen colours (follows
-// light/dark mode). Small: Available balance, days left in the pay cycle and
-// safe to spend per day. Medium: adds a Spent vs income bar and the next
-// bill due.
+// script. Design "Mini ledger" in the app's Sage & Linen colours (follows
+// light/dark mode). Small: Remaining (income − spent), minus the budget still
+// set aside, equals Available balance. Medium: adds safe to spend per day,
+// days left in the pay cycle and the next bill due.
 //
 // SHORTCUTS (add an expense from an iPhone Shortcut — no browser opens):
 // In your Shortcut, replace the Text + "Open URLs" steps with:
@@ -741,7 +741,7 @@ function monthSummary(profile, m) {
   const notPaidPlanned = buds.filter(b => b.status === 'Not Paid Yet').reduce((s, b) => s + effectivePlanned(allExps, b), 0);
   const allActual = buds.reduce((s, b) => s + actualForBudgetLine(allExps, b), 0);
   const availableBalance = remaining - (doneActual + notPaidPlanned - allActual);
-  return { availableBalance, spent, totalIncome };
+  return { availableBalance, spent, totalIncome, remaining };
 }
 function pickBudgetProfile(state, nameOverride) {
   const profiles = Object.values(state.profiles || {});
@@ -781,7 +781,7 @@ function fmtCur(n, currencyCode) {
   return cur.position === 'prefix' ? (cur.symbol + s) : (s + ' ' + cur.symbol);
 }
 
-// ---- Widget building (design A — "Linen balance") ------------------------
+// ---- Widget building (design C — "Mini ledger") --------------------------
 // Sage & Linen colours, matching the app. Each colour has a dark-mode twin.
 const COL = {
   bg:   Color.dynamic(new Color('#f0ebe1'), new Color('#1f2622')),
@@ -790,6 +790,7 @@ const COL = {
   dim2: Color.dynamic(new Color('#8f968a'), new Color('#868476')),
   line: Color.dynamic(new Color('#e0d8c9'), new Color('#2f3832')),
   ok:   Color.dynamic(new Color('#4f7d5c'), new Color('#9ccc9a')),
+  warn: Color.dynamic(new Color('#a3742e'), new Color('#d9a85c')),
   bad:  Color.dynamic(new Color('#c0604b'), new Color('#ec9179'))
 };
 function isoAddDays(iso, n) {
@@ -833,18 +834,6 @@ function logoImage() {
   piece([[262,270],[369,317],[289,305],[235,336]], '#b9ac96');
   return ctx.getImage();
 }
-// A thin rounded progress bar as an image.
-function barImage(width, frac) {
-  const ctx = new DrawContext(); ctx.size = new Size(width, 6); ctx.opaque = false; ctx.respectScreenScale = true;
-  const track = new Path(); track.addRoundedRect(new Rect(0, 0, width, 6), 3, 3);
-  ctx.addPath(track); ctx.setFillColor(new Color(Device.isUsingDarkAppearance() ? '#2f3832' : '#e3dbcc')); ctx.fillPath();
-  const f = Math.max(0, Math.min(1, frac));
-  if (f > 0) {
-    const fill = new Path(); fill.addRoundedRect(new Rect(0, 0, Math.max(6, width * f), 6), 3, 3);
-    ctx.addPath(fill); ctx.setFillColor(new Color(frac > 1 ? '#c0604b' : '#5f7d68')); ctx.fillPath();
-  }
-  return ctx.getImage();
-}
 function addText(stack, str, font, color, opts) {
   const t = stack.addText(str); t.font = font; t.textColor = color; t.lineLimit = 1;
   if (opts && opts.scale) t.minimumScaleFactor = opts.scale;
@@ -861,50 +850,41 @@ function addAmount(stack, value, code, size) {
   if (cur.position !== 'prefix') { row.addSpacer(3); addText(row, cur.symbol, small, COL.dim); }
 }
 function shortNum(n) { return Math.round(n).toLocaleString('en-US'); }
-// The left half of the medium widget, and the whole of the small one.
+// One ledger row: label on the left, amount on the right.
+function addLedgerRow(col, label, value, color) {
+  const r = col.addStack(); r.centerAlignContent();
+  const f = Font.semiboldRoundedSystemFont(11);
+  addText(r, label, f, COL.dim);
+  r.addSpacer();
+  addText(r, value, f, color, { scale: 0.6 });
+}
+// The left half of the medium widget, and the whole of the small one:
+// Remaining − Budget = Available, read like a sum.
 function addBalanceColumn(col, d, small) {
   const top = col.addStack(); top.centerAlignContent();
   const logo = top.addImage(d.logo); logo.imageSize = new Size(20, 20); logo.cornerRadius = 5;
   top.addSpacer(6);
   addText(top, small ? 'Kashu' : 'Kashu · ' + d.monthName, Font.semiboldRoundedSystemFont(11), COL.dim);
-  if (small) { top.addSpacer(); addText(top, d.monthName.slice(0, 3), Font.semiboldRoundedSystemFont(10), COL.dim2); }
-  // Three blocks spread over the full height: header on top, the balance in
-  // the middle, the days-left line at the bottom — no empty band in between.
+  if (small) { top.addSpacer(); addText(top, d.daysLeft + ' d', Font.semiboldRoundedSystemFont(10), COL.dim2); }
   col.addSpacer();
-  addText(col, 'Available', Font.semiboldRoundedSystemFont(small ? 12 : 11.5), COL.dim);
-  addAmount(col, d.available, d.code, small ? 30 : 27);
-  if (small) {
-    // Spent vs income under the balance (the medium size shows this on its right side).
-    col.addSpacer(8);
-    const sr = col.addStack(); sr.bottomAlignContent();
-    addText(sr, 'Spent', Font.semiboldRoundedSystemFont(10), COL.dim);
-    sr.addSpacer();
-    addText(sr, shortNum(d.spent) + ' / ' + shortNum(d.income), Font.semiboldRoundedSystemFont(10), COL.dim, { scale: 0.7 });
-    col.addSpacer(4);
-    const bar = col.addImage(barImage(120, d.income > 0 ? d.spent / d.income : 0));
-    bar.imageSize = new Size(120, 6);
-  }
-  col.addSpacer();
-  const line = col.addStack(); line.bottomAlignContent();
-  const f = Font.semiboldRoundedSystemFont(10.5);
-  addText(line, d.daysLeft + (d.daysLeft === 1 ? ' day left' : ' days left'), f, COL.dim, { scale: 0.7 });
-  if (small) {
-    addText(line, ' · ', f, COL.dim);
-    addText(line, fmt(d.perDay), Font.boldRoundedSystemFont(10.5), d.perDay >= 0 ? COL.txt : COL.bad, { scale: 0.7 });
-    addText(line, '/day', f, COL.dim);
-  }
+  addLedgerRow(col, 'Remaining', fmt(d.remaining), d.remaining >= 0 ? COL.txt : COL.bad);
+  col.addSpacer(3);
+  // Budget = what Available holds back for budget lines still running.
+  const b = d.budget;
+  addLedgerRow(col, 'Budget', (b >= 0 ? '− ' : '+ ') + fmt(Math.abs(b)), COL.warn);
+  col.addSpacer(5);
+  const rule = col.addStack(); rule.size = new Size(0, 1); rule.backgroundColor = COL.line;
+  rule.layoutHorizontally(); rule.addSpacer();
+  col.addSpacer(5);
+  addText(col, 'Available', Font.semiboldRoundedSystemFont(11), COL.dim);
+  addAmount(col, d.available, d.code, 26);
 }
 function addDetailsColumn(col, d) {
   addText(col, 'Safe to spend / day', Font.semiboldRoundedSystemFont(10.5), COL.dim);
   addText(col, fmtCur(d.perDay, d.code), Font.boldRoundedSystemFont(18), d.perDay >= 0 ? COL.txt : COL.bad, { scale: 0.6 });
   col.addSpacer();
-  const row = col.addStack();
-  addText(row, 'Spent', Font.semiboldRoundedSystemFont(10.5), COL.dim);
-  row.addSpacer();
-  addText(row, shortNum(d.spent) + ' / ' + shortNum(d.income), Font.semiboldRoundedSystemFont(10.5), COL.dim, { scale: 0.7 });
-  col.addSpacer(4);
-  const bar = col.addImage(barImage(150, d.income > 0 ? d.spent / d.income : 0));
-  bar.imageSize = new Size(150, 6);
+  addText(col, 'Pay cycle', Font.semiboldRoundedSystemFont(10.5), COL.dim);
+  addText(col, d.daysLeft + (d.daysLeft === 1 ? ' day left' : ' days left'), Font.boldRoundedSystemFont(13), COL.txt);
   col.addSpacer();
   const nx = col.addStack();
   const f = Font.semiboldRoundedSystemFont(10.5);
@@ -937,8 +917,8 @@ async function buildWidget() {
       available: sum.availableBalance,
       perDay: sum.availableBalance / daysLeft,
       daysLeft,
-      spent: sum.spent,
-      income: sum.totalIncome,
+      remaining: sum.remaining,
+      budget: sum.remaining - sum.availableBalance,
       next: nextBill(budgetP),
       code: budgetP.currency || 'EGP'
     };
@@ -948,7 +928,7 @@ async function buildWidget() {
       addBalanceColumn(col, d, true);
     } else {
       const row = widget.addStack(); row.layoutHorizontally();
-      const left = row.addStack(); left.layoutVertically(); left.size = new Size(150, 0);
+      const left = row.addStack(); left.layoutVertically(); left.size = new Size(165, 0);
       addBalanceColumn(left, d, false);
       row.addSpacer(14);
       const divider = row.addStack(); divider.size = new Size(1, 0); divider.backgroundColor = COL.line;
