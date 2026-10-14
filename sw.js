@@ -3,7 +3,7 @@
 // opens instantly and works with no connection. Firebase's own traffic
 // (auth + Firestore sync) is left completely alone — never cached, never
 // intercepted — so your data always reflects the network, not a stale copy.
-const CACHE_NAME = 'kashu-app-shell-v36';
+const CACHE_NAME = 'kashu-app-shell-v37';
 
 // Same-origin app shell — always cached on install.
 const CORE_ASSETS = [
@@ -62,6 +62,26 @@ self.addEventListener('fetch', (event) => {
 
   // A plain "/" or "/Budget-App/" request should resolve to the app shell too.
   const isNavigation = req.mode === 'navigate';
+
+  // Opening the app: try the network first (up to 3 s) so a new version is
+  // used straight away, instead of only on the next launch. Offline or slow →
+  // the cached copy.
+  if (isNavigation) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        const res = await Promise.race([
+          fetch(req, { cache: 'no-store' }),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 3000))
+        ]);
+        if (res && res.ok) { cache.put('./index.html', res.clone()); return res; }
+        return (await cache.match('./index.html')) || res;
+      } catch (e) {
+        return (await cache.match('./index.html')) || fetch(req);
+      }
+    })());
+    return;
+  }
 
   event.respondWith(
     caches.match(isNavigation ? './index.html' : req).then((cached) => {

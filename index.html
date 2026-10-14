@@ -253,9 +253,10 @@
   @media (max-width: 860px) {
     .dash-grid, .dash-lists { grid-template-columns: 1fr; padding: 0 18px; }
     .bva-head { display: none; }
-    .bva-row { grid-template-columns: repeat(3, minmax(0,1fr)) auto; grid-template-areas: "name name name status" "plan spent rem rem"; row-gap: 6px; column-gap: 10px; padding: 10px 0; }
+    .bva-row { grid-template-columns: max-content max-content minmax(0,1fr) auto; grid-template-areas: "name name name status" "plan spent rem rem"; row-gap: 6px; column-gap: 16px; padding: 10px 0; }
     .bva-name { grid-area: name; } .bva-plan { grid-area: plan; } .bva-spent { grid-area: spent; } .bva-rem { grid-area: rem; } .bva-status { grid-area: status; }
-    .bva-num { text-align: left; font-size: 12.5px; }
+    .bva-num { text-align: left; font-size: 12.5px; overflow: visible; }
+    .bva-rem .bva-minus { display: none; } /* the label already says "Over by" */
     .bva-num::before { content: attr(data-l); display: block; font-size: 10.5px; font-weight: 700; color: var(--txt-dim2); margin-bottom: 1px; }
     .dash-tools { width: 100%; } .dash-tools .ms-btn { flex: 1; max-width: none; }
     #catRows, .dash-scroll { max-height: none; }
@@ -1015,7 +1016,7 @@
        sync/Cloud Sync/Data) — tighten them on narrow screens so they sit
        neatly rather than wrapping awkwardly or crowding the edges. */
     #settingsTabs { row-gap: 8px; }
-    #settingsTabs button { padding: 7px 11px; font-size: 12px; }
+    #settingsTabs button { padding: 7px 11px; font-size: 12px; min-height: 36px; }
     /* Calendar grid gets tighter cells on narrow screens so 7 columns keep breathing room */
     .cal-cell { min-height: 54px; padding: 5px 4px; }
     .cal-evt { font-size: 8px; padding: 1px 4px; }
@@ -1184,7 +1185,7 @@
   .pl-cbars { display: flex; gap: 4px; align-items: flex-end; height: 168px; justify-content: center; }
   .pl-vbtn { border: none; background: none; padding: 0; font: inherit; color: inherit; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; cursor: pointer; }
   .pl-gonecol { gap: 5px; }
-  .pl-cl { border: none; background: none; padding: 0; font: 700 11px Manrope, sans-serif; color: var(--txt-dim); text-align: center; width: 76px; line-height: 1.25; overflow-wrap: anywhere; cursor: pointer; min-height: 28px; }
+  .pl-cl { border: none; background: none; padding: 0; font: 700 11px Manrope, sans-serif; color: var(--txt-dim); text-align: center; width: 76px; line-height: 1.25; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto; cursor: pointer; min-height: 28px; }
   .pl-cl.ov { color: #a9523f; }
   .pl-openhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 11.5px; font-weight: 800; }
   .pl-openhead .pl-link { font-weight: 800; font-size: 12px; }
@@ -2440,7 +2441,8 @@ function renderSyncStatusBadge() {
     connecting: '<span class="chip sync-off">Connecting…</span>',
     connected: '<span class="chip sync-on">Synced</span>',
     syncing: '<span class="chip sync-on">Syncing…</span>',
-    error: '<span class="chip sync-err">Sync error</span>'
+    error: '<span class="chip sync-err">Sync error</span>',
+    offline: `<span class="chip sync-off">Offline${fbState.pending ? ' · ' + fbState.pending + ' waiting' : ''}</span>`
   };
   el.innerHTML = map[fbState.status] || '';
 }
@@ -2451,7 +2453,7 @@ function renderUserGreeting() {
   const el = document.getElementById('userGreeting');
   if (!el) return;
   const name = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
-  const show = (fbState.status === 'connected' || fbState.status === 'syncing') && name;
+  const show = (fbState.status === 'connected' || fbState.status === 'syncing' || (fbState.docRef && (fbState.status === 'offline' || fbState.status === 'error'))) && name;
   el.textContent = show ? `Hi, ${name}` : '';
   el.style.cursor = show ? 'pointer' : 'default';
   el.title = show ? 'Edit name' : '';
@@ -2493,16 +2495,233 @@ async function initFirebase(firebaseConfigObj) {
 // /users/{uid}, and the Firestore rule (shown in the UI) restricts each
 // document to the signed-in user whose uid matches it — unlike the old
 // PIN scheme, a doc ID can no longer be guessed to reach someone else's data.
+/* ---- Merge sync (V31) -----------------------------------------------------
+   Each device keeps a "base": the last copy of the data it agreed with the
+   cloud on. Syncing compares three copies — base, this device, the cloud —
+   and keeps every change made on either side since the base:
+   - something added on either device is kept (matched by its id),
+   - something deleted on one device and untouched on the other is deleted,
+   - something edited on one device takes that edit; if both edited the same
+     field, this device's edit wins.
+   Writes go through a Firestore transaction, which always reads the latest
+   cloud copy first, so a device that was offline can never upload an old
+   copy over newer data. While offline, changes wait on this device and are
+   merged in as soon as the connection is back. */
+const SYNC_BASE_KEY = 'kashu_sync_base';
+function syncIsObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+function syncEq(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
+    return typeof a === 'number' && typeof b === 'number' && isNaN(a) && isNaN(b);
+  }
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!syncEq(a[i], b[i])) return false;
+    return true;
+  }
+  const ka = Object.keys(a).filter(k => a[k] !== undefined);
+  const kb = Object.keys(b).filter(k => b[k] !== undefined);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (!syncEq(a[k], b[k])) return false;
+  return true;
+}
+// Keys for an array of records: the id, plus a counter for any repeated id,
+// so two records that happen to share an id are never collapsed into one.
+function syncKeyed(arr) {
+  const seen = {}, m = new Map();
+  arr.forEach(x => { const id = String(x.id); const n = seen[id] = (seen[id] || 0) + 1; m.set(id + '#' + n, x); });
+  return m;
+}
+const syncIsIdArr = a => a.every(x => syncIsObj(x) && x.id !== undefined && x.id !== null && x.id !== '');
+const syncIsPrimArr = a => a.every(x => x === null || typeof x !== 'object');
+function syncMergeArray(base, local, remote) {
+  const hasBase = Array.isArray(base);
+  if (syncIsIdArr(local) && syncIsIdArr(remote) && (!hasBase || syncIsIdArr(base))) {
+    const bm = hasBase ? syncKeyed(base) : new Map(), lm = syncKeyed(local), rm = syncKeyed(remote);
+    const pick = (k) => {
+      const inB = bm.has(k), inL = lm.has(k), inR = rm.has(k);
+      if (inL && inR) return syncMerge(inB ? bm.get(k) : undefined, lm.get(k), rm.get(k));
+      if (inL) return inB && syncEq(lm.get(k), bm.get(k)) ? undefined : lm.get(k); // deleted in the cloud
+      if (inR) return inB && syncEq(rm.get(k), bm.get(k)) ? undefined : rm.get(k); // deleted on this device
+      return undefined;
+    };
+    // This device's order first; records only the cloud has go right after
+    // the record they follow there.
+    const out = [], placed = new Set();
+    for (const k of lm.keys()) { const v = pick(k); placed.add(k); if (v !== undefined) out.push({ k, v }); }
+    let prev = null;
+    for (const k of rm.keys()) {
+      if (!placed.has(k)) {
+        const v = pick(k); placed.add(k);
+        if (v !== undefined) {
+          const at = prev === null ? 0 : out.findIndex(e => e.k === prev) + 1;
+          out.splice(at, 0, { k, v });
+          prev = k; continue;
+        }
+      }
+      if (out.some(e => e.k === k)) prev = k;
+    }
+    return out.map(e => e.v);
+  }
+  if (syncIsPrimArr(local) && syncIsPrimArr(remote)) {
+    const b = hasBase ? base : [];
+    const goneRemote = x => hasBase && b.includes(x) && !remote.includes(x);
+    const out = local.filter(x => !goneRemote(x));
+    remote.forEach(x => { if (!local.includes(x) && !(hasBase && b.includes(x)) && !out.includes(x)) out.push(x); });
+    return out;
+  }
+  return local;
+}
+function syncMerge(base, local, remote) {
+  if (syncEq(local, remote)) return local;
+  if (base !== undefined && syncEq(local, base)) return remote;
+  if (base !== undefined && syncEq(remote, base)) return local;
+  if (local === undefined) return remote;
+  if (remote === undefined) return local;
+  if (Array.isArray(local) && Array.isArray(remote)) return syncMergeArray(Array.isArray(base) ? base : undefined, local, remote);
+  if (syncIsObj(local) && syncIsObj(remote)) {
+    const b = syncIsObj(base) ? base : null;
+    const out = {};
+    const keys = Object.keys(local).concat(Object.keys(remote).filter(k => !(k in local)));
+    for (const k of keys) {
+      const v = syncMerge(b ? b[k] : undefined, local[k], remote[k]);
+      if (v !== undefined) out[k] = v;
+    }
+    return out;
+  }
+  return local; // both changed the same value: this device's edit wins
+}
+// After a merge: profile order lists exactly the profiles that exist, and
+// the open profile still exists.
+function syncTidy(st) {
+  if (!st || !syncIsObj(st.profiles)) return st;
+  const ids = Object.keys(st.profiles);
+  const order = (Array.isArray(st.profileOrder) ? st.profileOrder : []).filter((id, i, a) => ids.includes(id) && a.indexOf(id) === i);
+  ids.forEach(id => { if (!order.includes(id)) order.push(id); });
+  st.profileOrder = order;
+  if (!st.profiles[st.activeProfileId]) st.activeProfileId = order[0];
+  // Two devices can each create the same vendor rule (e.g. the built-in
+  // ones on a fresh sign-in) under different ids — keep one per vendor/card.
+  if (Array.isArray(st.vendorRules)) {
+    const seen = new Set();
+    st.vendorRules = st.vendorRules.filter(r => {
+      if (!syncIsObj(r)) return true;
+      const k = String(r.match || '').trim().toLowerCase() + '|' + (r.card || '');
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }
+  return st;
+}
+const syncClone = (v) => JSON.parse(JSON.stringify(v));
+function loadSyncBase(uid) {
+  try { const o = JSON.parse(localStorage.getItem(SYNC_BASE_KEY) || 'null'); return o && o.uid === uid && o.state ? o.state : null; }
+  catch (e) { return null; }
+}
+function setSyncBase(st) {
+  // Always a separate copy: the base must never share objects with the live
+  // data, or an edit would silently change the base too and look "synced".
+  st = syncClone(st);
+  fbState.base = st;
+  try { localStorage.setItem(SYNC_BASE_KEY, JSON.stringify({ uid: fbState.uid, state: st })); }
+  catch (e) { console.error('could not keep the sync base', e); }
+}
+// How many records differ between the last synced copy and this device —
+// shown as "N changes waiting" while offline.
+function syncPendingCount() {
+  const base = fbState.base;
+  if (!base) return 0;
+  if (syncEq(base, state)) return 0;
+  let n = 0;
+  const cmp = (a = [], b = []) => {
+    const am = syncKeyed(a.filter(x => syncIsObj(x) && x.id != null)), bm = syncKeyed(b.filter(x => syncIsObj(x) && x.id != null));
+    for (const [k, v] of bm) if (!am.has(k) || !syncEq(am.get(k), v)) n++;
+    for (const k of am.keys()) if (!bm.has(k)) n++;
+  };
+  const pids = new Set(Object.keys(base.profiles || {}).concat(Object.keys(state.profiles || {})));
+  pids.forEach(id => {
+    const a = (base.profiles || {})[id] || {}, b = (state.profiles || {})[id] || {};
+    ['expenses', 'budget', 'payments'].forEach(f => cmp(a[f], b[f]));
+  });
+  cmp(base.vendorRules, state.vendorRules);
+  return Math.max(n, 1);
+}
+function syncIsOffline(e) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  const code = e && (e.code || '');
+  return /unavailable|deadline-exceeded|offline/i.test(code + ' ' + ((e && e.message) || ''));
+}
+function syncWithTimeout(p, ms) {
+  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({ code: 'deadline-exceeded', message: 'timed out' }), ms))]);
+}
+// Puts a merged copy on screen (and in this device's storage). Re-renders
+// only when something actually changed.
+function syncApply(next) {
+  if (syncEq(next, state)) return false;
+  fbState.applyingRemote = true;
+  try {
+    state = next;
+    Object.values(state.profiles || {}).forEach(p => { try { ensureProfileDefaults(p); } catch (e) {} });
+    syncTidy(state);
+    localStorage.setItem('ledger_state', JSON.stringify(state));
+    renderProfileTabs();
+    updateNavVisibility();
+    renderAll();
+    renderUserGreeting();
+  } finally { fbState.applyingRemote = false; }
+  return true;
+}
+// First merge for a device that has no base yet (a fresh sign-in, or the
+// first run after updating from a version without merge sync): the cloud is
+// the starting point; this device only adds records the cloud doesn't have
+// inside profiles the cloud already has. Profiles that exist only here (the
+// blank starter profile, demo data) are left out, as before.
+function syncFirstMerge(local, remote) {
+  const l = syncClone(local);
+  l.profiles = {};
+  Object.keys(local.profiles || {}).forEach(id => { if (remote.profiles && remote.profiles[id]) l.profiles[id] = local.profiles[id]; });
+  l.profileOrder = (local.profileOrder || []).filter(id => l.profiles[id]);
+  if (!l.profiles[l.activeProfileId]) delete l.activeProfileId;
+  // Vendor rules the cloud already has (same vendor and card) keep the cloud's copy.
+  const vk = r => String((r && r.match) || '').trim().toLowerCase() + '|' + ((r && r.card) || '');
+  if (Array.isArray(l.vendorRules) && Array.isArray(remote.vendorRules)) {
+    const have = new Set(remote.vendorRules.map(vk));
+    l.vendorRules = l.vendorRules.filter(r => !have.has(vk(r)));
+  }
+  return syncMerge(undefined, l, remote);
+}
+let syncInFlight = null, syncAgain = false, syncRetryTimer = null;
+function syncScheduleRetry() {
+  clearTimeout(syncRetryTimer);
+  syncRetryTimer = setTimeout(() => { if (fbState.docRef) pushStateToCloud(); }, 30000);
+}
+function syncSetOffline() {
+  fbState.pending = syncPendingCount();
+  setSyncStatus('offline');
+  syncScheduleRetry();
+}
 async function bindUserDoc(uid) {
+  fbState.uid = uid;
   fbState.docRef = fbState.db.collection('users').doc(uid);
   fbState.configured = true;
+  fbState.base = loadSyncBase(uid);
 
-  const snap = await fbState.docRef.get();
-  if (snap.exists && snap.data() && snap.data().state) {
-    fbState.applyingRemote = true;
-    state = snap.data().state;
-    localStorage.setItem('ledger_state', JSON.stringify(state));
-    fbState.applyingRemote = false;
+  let snap = null;
+  try { snap = await syncWithTimeout(fbState.docRef.get(), 8000); }
+  catch (e) { console.warn('first sync read failed', e); }
+
+  const docData = snap && snap.exists ? (snap.data() || {}) : {};
+  const authUser = fbState.auth && fbState.auth.currentUser;
+  const fallbackName = (authUser && authUser.displayName) ? authUser.displayName.split(' ') : [];
+  fbState.firstName = docData.firstName || fbState.firstName || fallbackName[0] || '';
+  fbState.lastName = docData.lastName || fbState.lastName || fallbackName.slice(1).join(' ') || '';
+
+  if (snap && snap.exists && docData.state) {
+    const remote = docData.state;
+    const merged = syncTidy(fbState.base ? syncMerge(fbState.base, state, remote) : syncFirstMerge(state, remote));
+    setSyncBase(remote);
+    syncApply(merged);
     if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
     const movedOnLoad = [rebucketAllProfiles(), ensureVendorDefaults(), repairPlannerInstallments()].some(Boolean);
     currentMonth = todayCycleMonth();
@@ -2510,22 +2729,24 @@ async function bindUserDoc(uid) {
     renderProfileTabs();
     updateNavVisibility();
     renderAll();
-    if (movedOnLoad) { localStorage.setItem('ledger_state', JSON.stringify(state)); await pushStateToCloud(); }
-  } else {
+    if (movedOnLoad) localStorage.setItem('ledger_state', JSON.stringify(state));
+    renderUserGreeting();
+    subscribeToCloud();
+    if (!syncEq(state, remote)) await pushStateToCloud();
+    else { fbState.lastSyncedAt = new Date(); setSyncStatus('connected'); }
+  } else if (snap) {
+    // A new account with nothing in the cloud yet: this device's data goes up.
     ensureVendorDefaults();
+    renderUserGreeting();
+    subscribeToCloud();
     await pushStateToCloud();
+  } else {
+    // Offline: keep working on this device; the listener and the retry
+    // timer pick the cloud up again once the connection is back.
+    renderUserGreeting();
+    subscribeToCloud();
+    syncSetOffline();
   }
-  const docData = snap.exists ? (snap.data() || {}) : {};
-  // Fall back to Auth's own displayName (e.g. an account that signed up
-  // before name fields existed, or was migrated from the old PIN scheme).
-  const authUser = fbState.auth && fbState.auth.currentUser;
-  const fallbackName = (authUser && authUser.displayName) ? authUser.displayName.split(' ') : [];
-  fbState.firstName = docData.firstName || fallbackName[0] || '';
-  fbState.lastName = docData.lastName || fallbackName.slice(1).join(' ') || '';
-  renderUserGreeting();
-  subscribeToCloud();
-  fbState.lastSyncedAt = new Date();
-  setSyncStatus('connected');
   flushPendingQuickAdd();
 }
 async function signUpSync(firebaseConfigObj, email, password, firstName, lastName) {
@@ -2553,62 +2774,108 @@ async function resetSyncPassword(firebaseConfigObj, email) {
   await initFirebase(firebaseConfigObj);
   await fbState.auth.sendPasswordResetEmail(email);
 }
+// Changes from other devices (and from the Shortcut / bank-SMS script) arrive
+// here. They're merged with anything this device hasn't sent yet, never
+// swapped in wholesale.
 function subscribeToCloud() {
   if (fbState.unsubscribe) fbState.unsubscribe();
   fbState.unsubscribe = fbState.docRef.onSnapshot(snap => {
-    if (fbState.applyingRemote) return;
     if (!snap.exists) return;
+    if (snap.metadata && snap.metadata.hasPendingWrites) return;
     const data = snap.data();
     if (!data || !data.state) return;
-    fbState.applyingRemote = true;
-    state = data.state;
-    localStorage.setItem('ledger_state', JSON.stringify(state));
-    if (!state.profiles[state.activeProfileId]) state.activeProfileId = state.profileOrder[0];
     if (data.firstName !== undefined) fbState.firstName = data.firstName;
     if (data.lastName !== undefined) fbState.lastName = data.lastName;
-    const movedRemote = rebucketAllProfiles();
-    renderProfileTabs();
-    updateNavVisibility();
-    renderAll();
+    const remote = data.state;
+    if (fbState.base && syncEq(remote, fbState.base)) {
+      // Nothing new in the cloud. Send anything still waiting here.
+      if (!syncEq(state, fbState.base)) pushStateToCloud();
+      else if (fbState.status !== 'syncing') { fbState.lastSyncedAt = new Date(); setSyncStatus('connected'); }
+      return;
+    }
+    const merged = syncTidy(fbState.base ? syncMerge(fbState.base, state, remote) : syncFirstMerge(state, remote));
+    setSyncBase(remote);
+    syncApply(merged);
     renderUserGreeting();
-    fbState.applyingRemote = false;
-    if (movedRemote) saveState(); // e.g. an expense added from the Shortcut before the cycle existed
-    fbState.lastSyncedAt = new Date();
-    setSyncStatus('connected');
+    const movedRemote = rebucketAllProfiles(); // e.g. an expense added from the Shortcut before the cycle existed
+    if (movedRemote) localStorage.setItem('ledger_state', JSON.stringify(state));
+    if (!syncEq(state, remote)) pushStateToCloud();
+    else { fbState.lastSyncedAt = new Date(); setSyncStatus('connected'); }
   }, err => {
     console.error('sync listener error', err);
-    setSyncStatus('error');
+    if (syncIsOffline(err)) syncSetOffline(); else setSyncStatus('error');
   });
 }
 function pushStateToCloudDebounced() {
   if (!fbState.configured || fbState.applyingRemote) return;
-  setSyncStatus('syncing');
+  if (fbState.status === 'offline') { fbState.pending = syncPendingCount(); setSyncStatus('offline'); }
+  else setSyncStatus('syncing');
   clearTimeout(pushDebounceTimer);
   pushDebounceTimer = setTimeout(() => { pushStateToCloud(); }, 800);
 }
+// Reads the latest cloud copy, merges this device's changes into it and
+// writes the result — all in one transaction, so nothing in between is lost.
 async function pushStateToCloud() {
   if (!fbState.docRef) return;
-  try {
-    await fbState.docRef.set({
-      state,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      email: fbState.email || null,
-      firstName: fbState.firstName || '',
-      lastName: fbState.lastName || ''
-    });
-    fbState.lastSyncedAt = new Date();
-    setSyncStatus('connected');
-  } catch(e) {
-    console.error('cloud push failed', e);
-    setSyncStatus('error');
-  }
+  if (syncInFlight) { syncAgain = true; return syncInFlight; }
+  syncInFlight = (async () => {
+    do {
+      syncAgain = false;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) { syncSetOffline(); return; }
+      if (fbState.status !== 'offline') setSyncStatus('syncing');
+      const sent = syncClone(state);
+      let merged = null, remote = null;
+      try {
+        await fbState.db.runTransaction(async (tx) => {
+          const snap = await tx.get(fbState.docRef);
+          remote = snap.exists && snap.data() && snap.data().state ? snap.data().state : null;
+          merged = syncClone(syncTidy(remote ? (fbState.base ? syncMerge(fbState.base, sent, remote) : syncFirstMerge(sent, remote)) : sent));
+          const d = snap.exists ? (snap.data() || {}) : {};
+          const sameNames = d.firstName === (fbState.firstName || '') && d.lastName === (fbState.lastName || '');
+          if (remote && syncEq(merged, remote) && sameNames) return; // already up to date — nothing to write
+          tx.set(fbState.docRef, {
+            state: merged,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            email: fbState.email || null,
+            firstName: fbState.firstName || '',
+            lastName: fbState.lastName || ''
+          });
+        });
+      } catch (e) {
+        console.error('cloud sync failed', e);
+        if (syncIsOffline(e)) syncSetOffline();
+        else { setSyncStatus('error'); syncScheduleRetry(); }
+        return;
+      }
+      setSyncBase(merged);
+      // Keep anything edited on this device while the sync was running.
+      const next = syncEq(state, sent) ? merged : syncTidy(syncMerge(sent, state, merged));
+      syncApply(next);
+      if (!syncEq(state, merged)) syncAgain = true;
+      fbState.pending = 0;
+      clearTimeout(syncRetryTimer);
+      fbState.lastSyncedAt = new Date();
+      setSyncStatus('connected');
+    } while (syncAgain);
+  })();
+  try { await syncInFlight; } finally { syncInFlight = null; }
 }
+// Back online, or the app brought back to the front: check the cloud and
+// send anything waiting.
+window.addEventListener('online', () => { if (fbState.docRef) pushStateToCloud(); });
+window.addEventListener('offline', () => { if (fbState.docRef) syncSetOffline(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && fbState.docRef) pushStateToCloud();
+});
 
 function disconnectSync() {
   if (!confirm('Log out and stop syncing on this device? Your data stays in the cloud under your account — sign back in any time with your email and password.')) return;
   if (fbState.unsubscribe) fbState.unsubscribe();
   if (fbState.auth) fbState.auth.signOut().catch(() => {});
   fbState.docRef = null;
+  fbState.uid = null;
+  clearTimeout(syncRetryTimer);
+  clearTimeout(pushDebounceTimer);
   fbState.unsubscribe = null;
   fbState.configured = false;
   fbState.email = null;
@@ -2761,10 +3028,10 @@ function renderCloudSyncPanel() {
   if (!el) return;
   const cfg = loadSyncConfig();
   const configText = JSON.stringify(cfg ? cfg.firebaseConfig : DEFAULT_FIREBASE_CONFIG, null, 2);
-  if (fbState.status === 'connected' || fbState.status === 'syncing') {
+  if (fbState.status === 'connected' || fbState.status === 'syncing' || fbState.status === 'offline' || (fbState.status === 'error' && fbState.docRef)) {
     const fullName = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
     el.innerHTML = `
-      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.</p>
+      <p style="font-size:12.5px;color:var(--txt-dim);margin-bottom:14px;">${fbState.status === 'offline' ? 'This device is signed in but offline right now. Keep using the app — your changes stay on this device and sync by themselves when the connection is back.' : 'This device is signed in and syncing. Log in with the same email and password on your other devices to see the same data there.'}</p>
       <div class="field" id="nameDisplayRow">
         <label>Name</label>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -2783,7 +3050,10 @@ function renderCloudSyncPanel() {
       </div>
       <div class="field"><label>Signed in as</label><input type="text" value="${escapeHtml(fbState.email || '')}" readonly></div>
       <div class="stat-row"><span class="l">Last synced</span><span class="v" style="font-size:12px;">${fbState.lastSyncedAt ? fbState.lastSyncedAt.toLocaleTimeString() : '—'}</span></div>
+      ${fbState.status === 'offline' || fbState.status === 'error' ? `<div class="stat-row"><span class="l">Status</span><span class="v" style="font-size:12px;">${fbState.status === 'offline' ? 'Offline' : 'Sync error'}${fbState.pending ? ' · ' + fbState.pending + (fbState.pending === 1 ? ' change' : ' changes') + ' waiting on this device' : ''}</span></div>` : ''}
+      <p style="font-size:11.5px;color:var(--txt-dim);margin:8px 0 0;">Changes made on any device are merged, never overwritten. While offline they wait on this device and sync by themselves when the connection is back.</p>
       <div class="btn-row" style="margin-top:10px;">
+        <button class="btn btn-ghost" onclick="pushStateToCloud()">Sync now</button>
         <button class="btn btn-danger" onclick="disconnectSync()">Log out on this device</button>
       </div>`;
   } else {
@@ -3936,7 +4206,8 @@ function trSyncHtml() {
   if (st === 'connected') return `<span class="tr-sync ok">● Synced${fbState.lastSyncedAt ? ' ' + fbState.lastSyncedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''}</span>`;
   if (st === 'syncing') return '<span class="tr-sync busy">● Syncing…</span>';
   if (st === 'connecting') return '<span class="tr-sync busy">● Connecting…</span>';
-  if (st === 'error') return '<span class="tr-sync err">● Sync error</span>';
+  if (st === 'error') return '<span class="tr-sync err">● Sync error · will retry</span>';
+  if (st === 'offline') return `<span class="tr-sync off">● Offline${fbState.pending ? ' · ' + fbState.pending + (fbState.pending === 1 ? ' change' : ' changes') + ' waiting' : ''}</span>`;
   return '<span class="tr-sync off">● This device only</span>';
 }
 function renderTopRight() {
@@ -3947,7 +4218,7 @@ function renderTopRight() {
   const dateStr = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   // The logo + name block only shows on the phone, where there is no sidebar.
   const who = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
-  const signedIn = fbState.status === 'connected' || fbState.status === 'syncing';
+  const signedIn = fbState.status === 'connected' || fbState.status === 'syncing' || fbState.status === 'offline';
   el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b>${signedIn && who ? `<span class="tr-who">Hi, ${escapeHtml(who)}</span>` : ''}</span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}</div>`;
 }
 setInterval(renderTopRight, 60000); // keeps the date, days left and sync time fresh
@@ -4041,7 +4312,7 @@ function renderDashboardCore() {
         <div class="bva-name" title="${escapeHtml(category + (subcategory && subcategory !== category ? ' · ' + subcategory : ''))}">${labelHtml}</div>
         <div class="bva-num bva-plan" data-l="Planned">${planHtml}</div>
         <div class="bva-num bva-spent" data-l="Spent">${fmt(actual)}</div>
-        <div class="bva-num bva-rem ${remaining < -0.004 ? 'neg' : (remaining > 0.004 ? 'pos' : '')}" data-l="${remaining < -0.004 ? 'Over by' : 'Remaining'}">${remaining < -0.004 ? '−' + fmt(-remaining) : fmt(remaining)}</div>
+        <div class="bva-num bva-rem ${remaining < -0.004 ? 'neg' : (remaining > 0.004 ? 'pos' : '')}" data-l="${remaining < -0.004 ? 'Over by' : 'Remaining'}">${remaining < -0.004 ? '<span class="bva-minus">−</span>' + fmt(-remaining) : fmt(remaining)}</div>
         <div class="bva-status">
           <select class="status-pill ${stCls}" onchange="setDashBudgetStatus('${ids.join(',')}', this.value)">
             ${mixed ? '<option value="" selected disabled hidden>Mixed</option>' : ''}
@@ -6558,15 +6829,22 @@ function handleImport(evt) {
       }
 
       // --- Budget table ---
-      const budHeader = findHeaderRow(rows, ['start date','planned value']);
+      // The original workbook keeps the budget table beside the expenses; the
+      // app's own export puts it on a separate "Budget" sheet.
+      let budRows = rows;
+      let budHeader = findHeaderRow(rows, ['start date','planned value']);
+      if (!budHeader) {
+        const bn = wb.SheetNames.find(n => /budget/i.test(n));
+        if (bn) { budRows = XLSX.utils.sheet_to_json(wb.Sheets[bn], {header:1, raw:true, defval:null}); budHeader = findHeaderRow(budRows, ['start date','planned value']); }
+      }
       let importedBudget = 0;
       if (budHeader) {
         const c = budHeader.cells;
         const iMonth = colIndexOfLast(c,'month'), iCat = colIndexOfLast(c,'category'), iSub = colIndexOfLast(c,'sub category'),
               iDesc = colIndexOfLast(c,'description'), iStart = colIndexOf(c,'start date'), iDur = colIndexOf(c,'duration (month)'),
               iPlanned = colIndexOf(c,'planned value'), iStatus = colIndexOf(c,'status');
-        for (let r = budHeader.rowIndex+1; r < rows.length; r++) {
-          const row = rows[r];
+        for (let r = budHeader.rowIndex+1; r < budRows.length; r++) {
+          const row = budRows[r];
           if (!row) continue;
           const catVal = row[iCat];
           const plannedVal = row[iPlanned];
@@ -6651,9 +6929,14 @@ function exportExcelActive() {
     expRows.push([e.month+'-01', e.date, e.category, e.subcategory, e.method, e.description, e.value]);
   });
   const budRows = [['Month','Category','Sub Category','Description','Start Date','Duration (Month)','Planned Value','Actual Value','Remaining','Status']];
+  // Start Date / Duration are only filled in for installment lines, as in the
+  // original workbook — on import, a line with a Start Date is an installment.
+  const instTotal = new Map();
+  installmentPlans(activeProfile()).forEach(pl => pl.rows.forEach(r => instTotal.set(r.id, pl.total)));
   activeProfile().budget.filter(b => inRange(b.startDate || (b.month+'-01'))).sort((a,b)=>a.month.localeCompare(b.month)).forEach(b => {
     const actual = actualForBudgetLine(b);
-    budRows.push([b.month+'-01', b.category, b.subcategory, b.description, b.startDate||'', b.durationMonths, b.plannedValue, actual, b.plannedValue-actual, b.status]);
+    const inst = instTotal.has(b.id);
+    budRows.push([b.month+'-01', b.category, b.subcategory, b.description, inst ? (b.startDate || b.month + '-05') : '', inst ? instTotal.get(b.id) : 1, b.plannedValue, actual, b.plannedValue-actual, b.status]);
   });
   const months = Array.from(new Set([...Object.keys(activeProfile().income), ...activeProfile().expenses.map(e=>e.month), ...activeProfile().budget.map(b=>b.month)]))
     .filter(m => inRange(m+'-01')).sort();
