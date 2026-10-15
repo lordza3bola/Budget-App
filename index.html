@@ -829,6 +829,8 @@
   .tr-v { font-family: var(--font-display); font-size: 19px; font-weight: 700; color: var(--green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tr-v.neg { color: var(--red); }
   .tr-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; font-size: 12px; font-weight: 600; color: var(--txt-dim); }
+  .tr-ver { font-size: 11px; font-weight: 700; color: var(--txt-dim2); white-space: nowrap; }
+  .app-version { margin: 22px 0 8px; text-align: center; font-size: 12px; font-weight: 700; color: var(--txt-dim2); }
   .tr-sync { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
   .tr-sync.ok { background: var(--green-soft); color: #4f7d5c; }
   .tr-sync.busy { background: var(--amber-soft); color: #7d5a1e; }
@@ -1827,6 +1829,7 @@
         </div>
 
       </div>
+      <p class="app-version">Kashu <span class="app-version-num"></span></p>
     </div>
 
   </div>
@@ -2368,6 +2371,10 @@ function saveState() {
    document to request.auth.uid so only that account's own signed-in
    session can read or write it.
    ============================================================ */
+// The app's version — shown at the top of every page and at the bottom of
+// Settings. Bump it with every release (matches the V## folder).
+const APP_VERSION = 'V32';
+document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
 // Baked-in default so the app can sign in "out of the box" with no setup —
@@ -4219,7 +4226,7 @@ function renderTopRight() {
   // The logo + name block only shows on the phone, where there is no sidebar.
   const who = `${fbState.firstName || ''} ${fbState.lastName || ''}`.trim();
   const signedIn = fbState.status === 'connected' || fbState.status === 'syncing' || fbState.status === 'offline';
-  el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b>${signedIn && who ? `<span class="tr-who">Hi, ${escapeHtml(who)}</span>` : ''}</span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}</div>`;
+  el.innerHTML = `<div class="tr-brand">${TR_LOGO}<span>Kashu<b>.</b>${signedIn && who ? `<span class="tr-who">Hi, ${escapeHtml(who)}</span>` : ''}</span></div>${cyc}<div class="tr-meta"><span>${escapeHtml(dateStr)}</span>${trSyncHtml()}<span class="tr-ver" title="App version">${APP_VERSION}</span></div>`;
 }
 setInterval(renderTopRight, 60000); // keeps the date, days left and sync time fresh
 
