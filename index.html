@@ -2464,7 +2464,7 @@ function saveState() {
    ============================================================ */
 // The app's version — shown at the top of every page and at the bottom of
 // Settings. Bump it with every release (matches the V## folder).
-const APP_VERSION = 'V34';
+const APP_VERSION = 'V35';
 document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
@@ -4130,11 +4130,21 @@ function renderBalanceCheck(remaining) {
   badge.innerHTML = closeEnough
     ? `<span class="chip paid">Matches</span>`
     : `<span class="chip due">${diff > 0 ? '+' : ''}${fmt(diff)} off</span>`;
-  el.innerHTML = `
+  // The Cash / Bank fields are built once and then left in place, so typing in
+  // one and moving to the other never loses focus (rebuilding them closed the
+  // phone keyboard and could leave the tab bar hidden).
+  if (!document.getElementById('bcCash')) {
+    el.innerHTML = `
     <div class="bc-inputs">
-      <label class="bc-in"><span>Cash</span><input type="number" inputmode="decimal" value="${p.cashBalance||''}" placeholder="0" onchange="setCashBalance(this.value)"></label>
-      <label class="bc-in"><span>Bank</span><input type="number" inputmode="decimal" value="${p.bankBalance||''}" placeholder="0" onchange="setBankBalance(this.value)"></label>
+      <label class="bc-in"><span>Cash</span><input id="bcCash" type="number" inputmode="decimal" placeholder="0" onchange="setCashBalance(this.value)"></label>
+      <label class="bc-in"><span>Bank</span><input id="bcBank" type="number" inputmode="decimal" placeholder="0" onchange="setBankBalance(this.value)"></label>
     </div>
+    <div id="bcResult"></div>`;
+  }
+  const cashIn = document.getElementById('bcCash'), bankIn = document.getElementById('bcBank');
+  if (document.activeElement !== cashIn) cashIn.value = p.cashBalance || '';
+  if (document.activeElement !== bankIn) bankIn.value = p.bankBalance || '';
+  document.getElementById('bcResult').innerHTML = `
     <div class="bc-stats">
       <div><span class="l">You have</span><span class="v">${fmt(yours)}</span></div>
       <div><span class="l">App says</span><span class="v">${fmt(remaining)}</span></div>
@@ -9105,6 +9115,17 @@ ListDrag.register('categoryManager', { onDrop: persistCategoryOrder, rerender: (
     (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|range|color|file)$/i.test(el.type || '')) || el.isContentEditable);
   document.addEventListener('focusin', e => { if (isTyping(e.target)) document.body.classList.add('kb-open'); });
   document.addEventListener('focusout', () => setTimeout(() => { if (!isTyping(document.activeElement)) document.body.classList.remove('kb-open'); }, 80));
+  // A focused field that gets re-drawn (or removed) never sends "focusout", which
+  // left the tab bar and + button hidden. Re-check whenever the keyboard might
+  // have closed, and every half second while it's marked open.
+  const recheck = () => {
+    const a = document.activeElement;
+    if (!(isTyping(a) && a.isConnected)) document.body.classList.remove('kb-open');
+  };
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(recheck, 120));
+  document.addEventListener('touchend', () => setTimeout(recheck, 350), { passive: true });
+  document.addEventListener('visibilitychange', recheck);
+  setInterval(() => { if (document.body.classList.contains('kb-open')) recheck(); }, 500);
   const lastY = new WeakMap();
   let lastWin = 0;
   document.addEventListener('scroll', e => {
