@@ -980,7 +980,7 @@
     #page-calendar .top .btn { padding: 9px 14px !important; }
     .icon-trigger { width: 34px; height: 34px; }
     /* Filter rows: search on its own line, the pickers share the next */
-    #page-expenses .freeze-head .budget-filter:last-child, #page-budget .freeze-head .budget-filter:last-child { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+    #page-expenses .budget-filter:has(#expSearch), #page-budget .budget-filter:has(#budgetSearch) { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
     #expSearch, #budgetSearch { grid-column: 1 / -1; min-width: 0 !important; width: 100%; box-sizing: border-box; padding: 10px 12px !important; }
     #page-expenses .ms-btn, #page-budget .ms-btn { max-width: none; min-width: 0; width: 100%; padding-top: 10px; padding-bottom: 10px; }
   }
@@ -1263,6 +1263,97 @@
     .pl-savebar { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
     .pl-sb-btns .btn { flex: 1; }
     .tab { font-size: 9px; }
+  }
+
+  /* ===== Rearrangeable page layouts (Edit layout) =====
+     Each page's sections live in one .lay-grid: 12 columns on the computer,
+     2 on the phone. Order, width and hidden sections are saved per page and
+     per device kind in state.layouts. */
+  .lay-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .lay-edit-btn { width: 32px; height: 32px; flex: none; border-radius: 16px; border: none; background: var(--bg); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: inline-flex; align-items: center; justify-content: center; align-self: center; transition: transform .12s, color .12s; }
+  .lay-edit-btn:hover { color: var(--blue); }
+  .lay-edit-btn:active { transform: scale(.92); }
+  .lay-grid { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-bottom: 14px; }
+  .lay-item { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .lay-grid > .lay-item > *:not(.lay-ctl) { margin: 0 !important; min-width: 0; }
+  .lay-grid > .lay-item > .card:only-of-type, .lay-grid > .lay-item.lay-single > :not(.lay-ctl) { flex: 1 1 auto; }
+  #page-dashboard .lay-item > #balanceCheckCard, #page-dashboard-credit .lay-item > #ccDueCard { margin: 0 !important; }
+  .lay-grid:not(.editing) > .lay-item.lay-off { display: none; }
+  .lay-grid:not(.editing) > .lay-item:has(> :not(.lay-ctl):only-child:empty) { display: none; }
+  .lay-grid:not(.editing) > .lay-item:has(> .kpis-mirror:empty) { display: none; }
+  .lay-grid.editing > .lay-item.lay-off { display: none; }
+  .lay-guides, .lay-nums, .lay-tray, .lay-ctl { display: none; }
+  .freeze-head > .lay-grid { margin-bottom: 10px; }
+  .pl-wrap > .lay-grid { margin-bottom: 0; gap: 16px; }
+
+  /* edit mode */
+  .lay-bar { display: none; }
+  .page.lay-editing .lay-bar { display: flex; position: sticky; top: 0; z-index: 60; align-items: center; gap: 12px; flex-wrap: wrap; margin: -8px 0 16px; padding: 12px 18px; border-radius: 16px; background: var(--blue); color: #fff; box-shadow: 0 10px 24px rgba(60,52,38,.18); }
+  .lay-bar b { font-family: var(--font-display); font-size: 16px; }
+  .lay-bar .lay-hint { font-size: 12.5px; opacity: .88; flex: 1 1 260px; min-width: 0; }
+  .lay-bar button { height: 36px; padding: 0 16px; border-radius: 18px; border: none; font: inherit; font-size: 13px; font-weight: 700; }
+  .lay-bar .lay-reset { background: rgba(255,255,255,.16); color: #fff; }
+  .lay-bar .lay-done { background: #fff; color: #3f5a47; }
+  body.lay-editing .freeze-head { position: static !important; }
+  body.lay-editing .fab, body.lay-editing .fab-desktop { display: none !important; }
+  .page.lay-editing .lay-edit-btn { display: none; }
+  .lay-grid.editing { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; row-gap: 34px; padding-top: 18px; padding-bottom: 4px; }
+  .lay-grid.editing .lay-guides { display: grid; position: absolute; inset: 0; grid-template-columns: inherit; column-gap: inherit; pointer-events: none; z-index: 0; }
+  .lay-guides > i { background: rgba(95,125,104,.07); border-radius: 6px; }
+  .lay-grid.editing > .lay-nums { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12, minmax(0,1fr)); column-gap: 14px; margin: -12px 0 -22px; font-size: 10px; font-weight: 800; color: #9aae9f; text-align: center; pointer-events: none; }
+  .lay-grid.editing > .lay-item { padding-top: 16px; z-index: 1; outline: 2px dashed #8aa593; outline-offset: 4px; border-radius: 16px; cursor: grab; touch-action: pan-y; animation: layWig .5s ease-in-out infinite alternate; }
+  .lay-grid.editing > .lay-item:nth-child(even) { animation-delay: -.25s; animation-duration: .56s; }
+  @keyframes layWig { from { rotate: -.3deg; } to { rotate: .3deg; } }
+  @media (prefers-reduced-motion: reduce) { .lay-grid.editing > .lay-item { animation: none; } }
+  .lay-grid.editing > .lay-item > :not(.lay-ctl) { pointer-events: none; user-select: none; -webkit-user-select: none; }
+  /* tall sections are shortened while editing so they're easy to move around */
+  .lay-grid.editing > .lay-item > :not(.lay-ctl) { max-height: 440px; overflow: hidden; }
+  .lay-grid.editing > .lay-item > .lay-clip { -webkit-mask-image: linear-gradient(#000 calc(100% - 60px), transparent); mask-image: linear-gradient(#000 calc(100% - 60px), transparent); }
+  .lay-grid.editing .lay-ctl { display: flex; }
+  .lay-grip { position: absolute; z-index: 3; top: -16px; left: 12px; height: 30px; max-width: calc(100% - 110px); padding: 0 12px; border-radius: 15px; border: none; background: var(--blue); color: #fff; align-items: center; gap: 7px; font: inherit; font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; touch-action: none; box-shadow: 0 3px 8px rgba(60,52,38,.18); }
+  .lay-grip svg { flex: none; }
+  .lay-tools { position: absolute; z-index: 3; top: -16px; right: 14px; align-items: center; gap: 6px; }
+  .lay-tag { height: 24px; display: flex; align-items: center; padding: 0 9px; border-radius: 12px; background: #e2eae3; color: #3f5a47; font-size: 11px; font-weight: 800; white-space: nowrap; }
+  .lay-tag.on { background: var(--blue); color: #fff; }
+  .lay-eye { width: 34px; height: 34px; border-radius: 17px; border: none; background: #f6f2ea; box-shadow: 3px 3px 7px #d3cbbc, -3px -3px 7px #fffaf1; color: #4c5a50; display: flex; align-items: center; justify-content: center; }
+  .lay-rz { position: absolute; z-index: 3; right: -9px; top: 50%; margin-top: -24px; width: 18px; height: 48px; border-radius: 9px; background: var(--blue); box-shadow: 0 2px 6px rgba(0,0,0,.22); cursor: ew-resize; touch-action: none; border: none; padding: 0; }
+  .lay-rz::after { content: ""; position: absolute; left: 6px; top: 14px; width: 6px; height: 20px; border-left: 1.5px solid #fff; border-right: 1.5px solid #fff; box-sizing: border-box; }
+  .lay-grid.editing > .lay-item.lay-resizing { outline-style: solid; outline-color: var(--blue); animation: none; }
+  .lay-grid.editing > .lay-tray { display: flex; grid-column: 1 / -1; z-index: 1; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; background: #e9e3d7; box-shadow: inset 2px 2px 6px #d6cebf, inset -2px -2px 6px #faf6ee; }
+  .lay-tray .lay-tl { font-size: 12px; font-weight: 600; color: var(--txt-dim); }
+  .lay-tray .lay-chip { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 6px 0 14px; border-radius: 18px; border: none; background: #f4efe6; font: inherit; font-size: 13px; font-weight: 700; color: #6f6d63; box-shadow: 2px 2px 5px #d6cebf, -2px -2px 5px #fffaf1; }
+  .lay-chip .lay-plus { width: 26px; height: 26px; border-radius: 13px; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; color: var(--blue); font-size: 17px; font-weight: 800; }
+  /* moving */
+  body.lay-dragging, body.lay-dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+  body.lay-dragging .lay-grid.editing > .lay-item { animation: none; }
+  .lay-grid.editing > .lay-item.lay-ph { outline: 2px dashed var(--blue); background: rgba(95,125,104,.10); }
+  .lay-item.lay-ph > * { visibility: hidden; }
+  .lay-float { position: fixed; z-index: 1000; pointer-events: none; will-change: transform; }
+  .lay-float > .lay-item { width: 100%; height: 100%; overflow: hidden; border-radius: 16px; outline: 2px solid var(--blue); outline-offset: 3px; transition: transform .16s ease, box-shadow .16s ease; }
+  .lay-float.lifted > .lay-item { transform: rotate(1.2deg) scale(1.02); box-shadow: 14px 18px 34px rgba(60,50,30,.26); }
+  .lay-float.settling { transition: transform .2s cubic-bezier(.2,.7,.3,1); }
+  .lay-float.settling > .lay-item { transform: none; box-shadow: none; }
+  .lay-float .lay-ctl { display: none !important; }
+  .lay-float > .lay-mv { display: flex !important; position: absolute; top: -18px; left: 12px; height: 30px; padding: 0 12px; border-radius: 15px; background: #3f5a47; color: #fff; align-items: center; font-size: 11.5px; font-weight: 700; z-index: 3; }
+
+  @media (min-width: 861px) and (max-width: 1180px) {
+    .lay-grid.editing > .lay-nums { display: none; }
+  }
+  @media (max-width: 860px) {
+    .lay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 18px; gap: 14px; }
+    .pl-wrap > .lay-grid { padding: 0; }
+    .lay-grid .lay-item > .kpis, .lay-grid .lay-item > .budget-filter, .lay-grid .lay-item > #expTotalLine, .lay-grid .lay-item > #budgetTotalLine, .lay-grid .lay-item > #installmentPlansList, .lay-grid .lay-item > .grid2, .lay-grid .lay-item > .grid3 { padding-left: 0; padding-right: 0; }
+    .lay-grid.editing .lay-guides { left: 18px; right: 18px; }
+    .pl-wrap > .lay-grid.editing .lay-guides { left: 0; right: 0; }
+    .page.lay-editing .lay-bar { top: calc(6px + env(safe-area-inset-top, 0px)); margin: 0 12px 14px; border-radius: 18px; padding: 12px 16px; }
+    .lay-bar .lay-hint { flex-basis: 100%; order: 3; }
+    .lay-bar b { flex: 1; }
+    .lay-bar button { padding: 0 14px; }
+    .lay-grid.editing > .lay-item { touch-action: auto; }
+    .lay-grid.editing > .lay-item > :not(.lay-ctl) { max-height: 230px; }
+    .lay-grip { font-size: 11px; padding: 0 10px; }
+    .lay-tools { right: 10px; }
+    .lay-grid.editing > .lay-nums { display: none; }
   }
 </style>
 </head>
@@ -2373,7 +2464,7 @@ function saveState() {
    ============================================================ */
 // The app's version — shown at the top of every page and at the bottom of
 // Settings. Bump it with every release (matches the V## folder).
-const APP_VERSION = 'V33';
+const APP_VERSION = 'V34';
 document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
@@ -3616,6 +3707,7 @@ function syncPageForProfileChange() {
 // page this doesn't know about (e.g. 'add') just gets the plain fade below.
 const NAV_ORDER = ['dashboard','expenses','budget','installments','planner','calendar','settings'];
 function goPage(name) {
+  if (window.__layoutApi) window.__layoutApi.exitEdit(); // leaving a page saves and closes its layout editing
   if ((name === 'budget' || name === 'installments' || name === 'planner') && hasLedgerMode()) name = 'dashboard'; // ledger-mode profiles have no budget/installments/planner tab
   const prevPageEl = document.querySelector('.page.on');
   const prevName = prevPageEl ? (prevPageEl.id.startsWith('page-dashboard') ? 'dashboard' : prevPageEl.id.replace('page-','')) : null;
@@ -3660,6 +3752,7 @@ document.getElementById('nav').addEventListener('click', (e) => {
     tracking = false;
     if (window.innerWidth > 860) return;
     if (document.querySelector('.modal-backdrop.on')) return;
+    if (document.body.classList.contains('lay-editing')) return; // dragging sections, not switching tabs
     if (e.target.closest('.table-wrap, .profile-strip, input, select, textarea, .cal-grid, .icon-picker-grid, .pl-scroll, .pl-strip')) return;
     const t = e.touches[0];
     sx = t.clientX; sy = t.clientY; tracking = true;
@@ -8372,6 +8465,7 @@ function renderAll() {
   if (document.getElementById('page-planner').classList.contains('on') && !hasLedgerMode()) renderPlannerPage(false);
   if (document.getElementById('page-calendar').classList.contains('on')) renderCalendarPage();
   if (document.getElementById('page-settings').classList.contains('on')) renderSettingsPage();
+  if (window.__layoutApi) window.__layoutApi.applyAll();
 }
 
 function showToast(msg, isError) {
@@ -9051,6 +9145,534 @@ function hideWelcomeScreen() {
   const elapsed = Date.now() - __appBootStart;
   setTimeout(() => el.classList.add('ws-hide'), Math.max(0, minMs - elapsed));
 }
+
+/* ============================================================
+   REARRANGEABLE PAGE LAYOUTS — "Edit layout" on every main page.
+   Each page's sections are moved (once, at start-up) into one grid:
+   12 columns on the computer, 2 on the phone. In edit mode a section is
+   moved by dragging it, made wider/narrower from its right edge (snaps to
+   the columns), or hidden with the eye. The layout is saved per page and
+   per device kind in state.layouts.{desktop|phone}.<page> =
+   { order: [ids], span: { id: columns }, hidden: [ids] } and syncs with the
+   account like everything else. Elements keep their ids, so every render
+   function keeps finding them exactly as before.
+   ============================================================ */
+const LAYOUT_PAGES = {
+  dashboard: { page: 'page-dashboard', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis', d: 12 },
+    { id: 'bva', label: 'Budget vs actual', sel: '.dash-bva', d: 8, rows: 2 },
+    { id: 'balance', label: 'Balance check', sel: '#balanceCheckCard', d: 4 },
+    { id: 'trend', label: 'Spending trend', card: '#trendChart', d: 4 },
+    { id: 'ongoing', label: 'Ongoing', card: '#notPaidList', d: 4 },
+    { id: 'coming', label: 'Coming up', card: '#comingUpList', d: 4 },
+    { id: 'recent', label: 'Recent transactions', card: '#recentTxns', d: 4 } ] },
+  credit: { page: 'page-dashboard-credit', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis', d: 12 },
+    { id: 'due', label: 'Payment due', sel: '#ccDueCard', d: 12 },
+    { id: 'recent', label: 'Recent transactions', card: '#ccRecentTxns', d: 4 },
+    { id: 'topcat', label: 'Spending by category', card: '#ccTopCatList', d: 4 },
+    { id: 'payments', label: 'Payment history', card: '#ccPaymentHistory', d: 4 },
+    { id: 'trend', label: 'Spending trend', card: '#ccTrendChart', d: 7 },
+    { id: 'statement', label: 'This statement', card: '#ccStatementDetails', d: 5 } ] },
+  savings: { page: 'page-dashboard-savings', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis', d: 12 },
+    { id: 'recent', label: 'Recent transactions', card: '#svRecentTxns', d: 4 },
+    { id: 'topcat', label: 'Withdrawals by category', card: '#svTopCatList', d: 4 },
+    { id: 'deposits', label: 'Deposit history', card: '#svDepositHistory', d: 4 },
+    { id: 'trend', label: 'Balance trend', card: '#svTrendChart', d: 7 },
+    { id: 'month', label: 'This month', card: '#svMonthDetails', d: 5 } ] },
+  expenses: { page: 'page-expenses', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis-mirror', d: 12 },
+    { id: 'filters', label: 'Total & filters', els: ['#expTotalLine', () => (document.getElementById('expSearch') || {}).parentElement], d: 12 } ] },
+  budget: { page: 'page-budget', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis-mirror', d: 12 },
+    { id: 'status', label: 'All / Closed / Ongoing', fn: pg => { const b = pg.querySelector('.budget-filter [data-f="done"]'); return b && b.parentElement; }, d: 12 },
+    { id: 'filters', label: 'Total & filters', els: ['#budgetTotalLine', () => (document.getElementById('budgetSearch') || {}).parentElement], d: 12 } ] },
+  installments: { page: 'page-installments', secs: [
+    { id: 'kpis', label: 'Summary tiles', sel: '.kpis-mirror', d: 12 },
+    { id: 'totals', label: 'Installment totals', sel: '.kpis-inst', d: 12 },
+    { id: 'plans', label: 'Installment plans', els: ['#installmentStatusFilter', '#installmentPlansList'], d: 12 },
+    { id: 'monthly', label: 'Total due per month', card: '#installmentMonthlyBody', d: 12 } ] },
+  planner: { page: 'page-planner', secs: [
+    { id: 'whatif', label: 'What if…', card: '#plDesc', d: 12 },
+    { id: 'verdict', label: 'Verdict', sel: '#plVerdict', d: 12 },
+    { id: 'chart', label: 'Month chart', sel: '#plChart', d: 12 },
+    { id: 'drill', label: 'Month details', sel: '#plDrill', d: 12 } ] },
+  calendar: { page: 'page-calendar', secs: [
+    { id: 'grid', label: 'Month grid', card: '#calGrid', d: 12 },
+    { id: 'day', label: 'Selected day', card: '#calDayDetail', d: 7 },
+    { id: 'upcoming', label: 'Upcoming', card: '#calUpcomingList', d: 5 } ] }
+};
+
+const Layout = (() => {
+  const built = {};          // key -> { pg, grid, guides, nums, tray, bar, items: {id: el}, defs: {id: def} }
+  let editing = null;        // key being edited
+  let d = null, pend = null, rz = null;
+  const GRIP = '<svg width="10" height="14" viewBox="0 0 10 14" aria-hidden="true"><g fill="currentColor"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="7" r="1.4"/><circle cx="8" cy="7" r="1.4"/><circle cx="2" cy="12" r="1.4"/><circle cx="8" cy="12" r="1.4"/></g></svg>';
+  const EYE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const LAYOUT_IC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="13" width="7" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>';
+
+  const isPhone = () => window.innerWidth <= 860;
+  const mode = () => isPhone() ? 'phone' : 'desktop';
+  const colsNow = () => isPhone() ? 2 : 12;
+  const minSpan = () => isPhone() ? 1 : 3;
+
+  function resolve(pg, def) {
+    const one = (x) => typeof x === 'function' ? x(pg) : (x.startsWith('#') ? document.getElementById(x.slice(1)) : pg.querySelector(x));
+    if (def.els) return def.els.map(one).filter(Boolean);
+    if (def.fn) { const e = def.fn(pg); return e ? [e] : []; }
+    if (def.card) { const e = document.querySelector(def.card); const c = e && e.closest('.card'); return c ? [c] : []; }
+    const e = one(def.sel); return e ? [e] : [];
+  }
+
+  function build(key) {
+    const cfg = LAYOUT_PAGES[key];
+    const pg = document.getElementById(cfg.page);
+    if (!pg || built[key]) return;
+    const found = cfg.secs.map(def => ({ def, els: resolve(pg, def) })).filter(x => x.els.length);
+    if (!found.length) return;
+    const first = found[0].els[0];
+    const parents = new Set();
+    const grid = document.createElement('div');
+    grid.className = 'lay-grid';
+    grid.dataset.lay = key;
+    first.parentNode.insertBefore(grid, first);
+    const guides = document.createElement('div'); guides.className = 'lay-guides'; guides.setAttribute('aria-hidden', 'true');
+    const nums = document.createElement('div'); nums.className = 'lay-nums'; nums.setAttribute('aria-hidden', 'true');
+    nums.innerHTML = Array.from({ length: 12 }, (_, i) => `<span>${i + 1}</span>`).join('');
+    grid.append(guides, nums);
+    const items = {}, defs = {};
+    found.forEach(({ def, els }) => {
+      const it = document.createElement('div');
+      it.className = 'lay-item' + (els.length === 1 ? ' lay-single' : '');
+      it.dataset.sec = def.id;
+      els.forEach(e => { if (e.parentNode && e.parentNode !== grid) parents.add(e.parentNode); it.appendChild(e); });
+      grid.appendChild(it);
+      items[def.id] = it; defs[def.id] = def;
+    });
+    const tray = document.createElement('div'); tray.className = 'lay-tray';
+    grid.appendChild(tray);
+    // Old wrappers (dash-grid, grid3…) are empty now — keep them out of the flow.
+    parents.forEach(p => { if (p !== pg && !p.children.length && !p.classList.contains('freeze-head') && !p.classList.contains('pl-wrap')) p.style.display = 'none'; });
+    // "Edit layout" button beside the page title
+    const h1 = pg.querySelector('.top h1');
+    if (h1) {
+      const wrap = document.createElement('div'); wrap.className = 'lay-title';
+      h1.parentNode.insertBefore(wrap, h1); wrap.appendChild(h1);
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'lay-edit-btn'; b.title = 'Edit layout';
+      b.setAttribute('aria-label', 'Edit layout'); b.innerHTML = LAYOUT_IC;
+      b.addEventListener('click', () => enter(key));
+      wrap.appendChild(b);
+    }
+    // Edit bar (sticky, shown only while editing)
+    const bar = document.createElement('div'); bar.className = 'lay-bar'; bar.setAttribute('role', 'region');
+    bar.innerHTML = `<b></b><span class="lay-hint"></span><button type="button" class="lay-reset">Reset to default</button><button type="button" class="lay-done">Done</button>`;
+    bar.querySelector('.lay-reset').addEventListener('click', () => reset(key));
+    bar.querySelector('.lay-done').addEventListener('click', () => exitEdit());
+    pg.insertBefore(bar, pg.firstChild);
+    grid.addEventListener('pointerdown', onDown);
+    grid.addEventListener('click', onGridClick);
+    grid.addEventListener('keydown', onKeyCtl);
+    built[key] = { pg, grid, guides, nums, tray, bar, items, defs, order: found.map(x => x.def.id), title: h1 ? h1.textContent.trim() : key };
+  }
+
+  /* ----- saved settings ----- */
+  function cfgOf(key, m) {
+    const L = state.layouts && state.layouts[m || mode()];
+    const c = L && L[key];
+    return c && typeof c === 'object' ? c : {};
+  }
+  function saveCfg(key, fn) {
+    const m = mode();
+    if (!state.layouts || typeof state.layouts !== 'object') state.layouts = {};
+    if (!state.layouts[m] || typeof state.layouts[m] !== 'object') state.layouts[m] = {};
+    const c = state.layouts[m][key] && typeof state.layouts[m][key] === 'object' ? state.layouts[m][key] : (state.layouts[m][key] = {});
+    fn(c);
+    saveState();
+  }
+  function orderOf(key) {
+    const B = built[key], c = cfgOf(key);
+    const known = B.order;
+    const saved = Array.isArray(c.order) ? c.order.filter((id, i, a) => known.includes(id) && a.indexOf(id) === i) : [];
+    const out = saved.slice();
+    known.forEach((id, i) => {
+      if (out.includes(id)) return;
+      const nextKnown = known.slice(i + 1).find(n => out.includes(n));
+      if (nextKnown) out.splice(out.indexOf(nextKnown), 0, id); else out.push(id);
+    });
+    return out;
+  }
+  function spanOf(key, id) {
+    const c = cfgOf(key), v = c.span && Number(c.span[id]);
+    const cols = colsNow();
+    if (v && v >= minSpan() && v <= cols) return Math.round(v);
+    return isPhone() ? 2 : (built[key].defs[id].d || 12);
+  }
+  function hiddenOf(key) { const c = cfgOf(key); return Array.isArray(c.hidden) ? c.hidden : []; }
+  // On a narrow computer window (861–1180px) a third-width card is too
+  // cramped: sections show half or full width there.
+  function effSpan(s) {
+    if (isPhone()) return Math.min(Math.max(s, 1), 2);
+    if (window.innerWidth <= 1180) return s <= 6 ? 6 : 12;
+    return s;
+  }
+  function rowsFor(key, id, eff) {
+    const def = built[key].defs[id];
+    return def.rows && !isPhone() && eff <= 8 ? 'span ' + def.rows : '';
+  }
+  function tagText(eff, from) {
+    if (isPhone()) return eff >= 2 ? 'Full width' : 'Half width';
+    return (from && from !== eff ? from + ' → ' : '') + eff + ' / 12';
+  }
+
+  /* ----- applying ----- */
+  function apply(key) {
+    const B = built[key]; if (!B) return;
+    const cols = colsNow();
+    if (B.guides.childElementCount !== cols) B.guides.innerHTML = '<i></i>'.repeat(cols);
+    const order = orderOf(key), hidden = hiddenOf(key);
+    const current = [...B.grid.children].filter(n => n.dataset && n.dataset.sec).map(n => n.dataset.sec);
+    if (current.join('|') !== order.join('|')) order.forEach(id => B.grid.insertBefore(B.items[id], B.tray));
+    order.forEach(id => {
+      const it = B.items[id], eff = effSpan(spanOf(key, id));
+      it.style.gridColumn = 'span ' + eff;
+      it.style.gridRow = rowsFor(key, id, eff);
+      it.classList.toggle('lay-off', hidden.includes(id));
+      const tag = it.querySelector(':scope > .lay-tools .lay-tag');
+      if (tag && !(rz && rz.item === it)) { tag.textContent = tagText(eff); tag.classList.remove('on'); }
+    });
+    if (editing === key) renderTray(key);
+  }
+  let lastBand = null;
+  function applyAll() {
+    if (d || rz) return; // never reshuffle under a drag
+    Object.keys(built).forEach(apply);
+    lastBand = band();
+    if (typeof updateFreezeHeights === 'function') updateFreezeHeights();
+  }
+  const band = () => isPhone() ? 'p' : (window.innerWidth <= 1180 ? 'm' : 'd');
+
+  /* ----- edit mode ----- */
+  function enter(key) {
+    const B = built[key]; if (!B) return;
+    if (editing && editing !== key) exitEdit();
+    if (typeof closeMs === 'function') closeMs();
+    editing = key;
+    B.pg.classList.add('lay-editing');
+    document.body.classList.add('lay-editing');
+    B.grid.classList.add('editing');
+    B.bar.querySelector('b').textContent = `${B.title} layout`;
+    B.bar.querySelector('.lay-hint').textContent = isPhone()
+      ? 'Hold a section and drag it · drag the right edge for half or full width · tap the eye to hide'
+      : 'Drag ⠿ to move · drag the right edge to change width · tap the eye to hide';
+    Object.keys(B.items).forEach(id => addCtl(key, id));
+    apply(key);
+    B.grid.querySelectorAll(':scope > .lay-item > :not(.lay-ctl)').forEach(n => n.classList.toggle('lay-clip', n.scrollHeight > n.clientHeight + 4));
+    if (typeof updateFreezeHeights === 'function') updateFreezeHeights();
+    requestAnimationFrame(() => {
+      const top = B.bar.getBoundingClientRect().top + window.scrollY - 8;
+      if (Math.abs(window.scrollY - top) > 4) window.scrollTo({ top, behavior: 'smooth' });
+    });
+  }
+  function addCtl(key, id) {
+    const B = built[key], it = B.items[id], label = escapeHtml(B.defs[id].label);
+    if (it.querySelector(':scope > .lay-grip')) return;
+    it.insertAdjacentHTML('beforeend',
+      `<button type="button" class="lay-ctl lay-grip" aria-label="Move ${label} (arrow keys)">${GRIP}<span>${label}</span></button>` +
+      `<div class="lay-ctl lay-tools"><span class="lay-tag"></span><button type="button" class="lay-eye" aria-label="Hide ${label}" title="Hide">${EYE}</button></div>` +
+      `<button type="button" class="lay-ctl lay-rz" aria-label="Width of ${label} (left and right arrow keys)" title="Drag to change width"></button>`);
+  }
+  function exitEdit() {
+    if (!editing) return;
+    if (d) finishDrag(true);
+    const B = built[editing];
+    editing = null;
+    B.pg.classList.remove('lay-editing');
+    document.body.classList.remove('lay-editing');
+    B.grid.classList.remove('editing');
+    B.grid.querySelectorAll('.lay-ctl').forEach(n => n.remove());
+    B.grid.querySelectorAll('.lay-clip').forEach(n => n.classList.remove('lay-clip'));
+    apply(B.grid.dataset.lay);
+    if (typeof updateFreezeHeights === 'function') updateFreezeHeights();
+  }
+  function renderTray(key) {
+    const B = built[key], hidden = hiddenOf(key).filter(id => B.items[id]);
+    B.tray.innerHTML = `<span class="lay-tl">${hidden.length ? 'Hidden on this page' : 'Nothing hidden · tap the eye on a section to hide it'}</span>` +
+      hidden.map(id => `<button type="button" class="lay-chip" data-show="${id}" aria-label="Show ${escapeHtml(B.defs[id].label)}">${escapeHtml(B.defs[id].label)}<span class="lay-plus" aria-hidden="true">+</span></button>`).join('');
+  }
+  function reset(key) {
+    const where = isPhone() ? 'phone' : 'computer';
+    if (!confirm(`Put the ${built[key].title} page back to its default layout on this ${where}?`)) return;
+    if (state.layouts && state.layouts[mode()]) { delete state.layouts[mode()][key]; saveState(); }
+    apply(key);
+    showToast('Layout reset');
+  }
+  function setHidden(key, id, hide) {
+    saveCfg(key, c => {
+      const h = Array.isArray(c.hidden) ? c.hidden.filter(x => x !== id) : [];
+      if (hide) h.push(id);
+      c.hidden = h;
+    });
+    apply(key);
+  }
+  function saveOrder(key) {
+    const ids = [...built[key].grid.children].filter(n => n.dataset && n.dataset.sec).map(n => n.dataset.sec);
+    saveCfg(key, c => { c.order = ids; });
+  }
+  function saveSpan(key, id, n) {
+    saveCfg(key, c => { if (!c.span || typeof c.span !== 'object') c.span = {}; c.span[id] = n; });
+  }
+
+  function onGridClick(e) {
+    const grid = e.currentTarget, key = grid.dataset.lay;
+    if (editing !== key) return;
+    const eye = e.target.closest('.lay-eye');
+    if (eye) { const it = eye.closest('.lay-item'); setHidden(key, it.dataset.sec, true); return; }
+    const chip = e.target.closest('[data-show]');
+    if (chip) { setHidden(key, chip.dataset.show, false); return; }
+  }
+  // Keyboard: arrows on the grip move the section, on the edge change its width.
+  function onKeyCtl(e) {
+    const grid = e.currentTarget, key = grid.dataset.lay;
+    if (editing !== key) return;
+    const it = e.target.closest('.lay-item'); if (!it) return;
+    const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp', fwd = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+    if (!back && !fwd) return;
+    e.preventDefault();
+    if (e.target.classList.contains('lay-grip')) {
+      const vis = visibleItems(grid);
+      const i = vis.indexOf(it), j = back ? i - 1 : i + 1;
+      if (j < 0 || j >= vis.length) return;
+      if (back) grid.insertBefore(it, vis[j]); else grid.insertBefore(it, vis[j].nextSibling);
+      saveOrder(key); e.target.focus();
+    } else if (e.target.classList.contains('lay-rz')) {
+      const id = it.dataset.sec, cur = effSpan(spanOf(key, id));
+      const n = Math.min(colsNow(), Math.max(minSpan(), cur + (fwd ? 1 : -1)));
+      if (n !== cur) { saveSpan(key, id, n); apply(key); }
+    }
+  }
+  const visibleItems = (grid) => [...grid.children].filter(n => n.classList && n.classList.contains('lay-item') && !n.classList.contains('lay-off'));
+
+  /* ----- moving ----- */
+  function onDown(e) {
+    const grid = e.currentTarget, key = grid.dataset.lay;
+    if (editing !== key || d || rz) return;
+    if (e.button !== undefined && e.button !== 0) return;
+    if (e.target.closest('.lay-eye, .lay-tools, .lay-tray')) return;
+    if (e.target.closest('.lay-rz')) { startResize(e, key); return; }
+    const it = e.target.closest('.lay-item');
+    if (!it || it.parentElement !== grid) return;
+    const grip = !!e.target.closest('.lay-grip');
+    pend = { key, item: it, grip, x: e.clientX, y: e.clientY, id: e.pointerId, type: e.pointerType, timer: null };
+    if (e.pointerType === 'touch' && !grip) pend.timer = setTimeout(() => activate(pend.x, pend.y), 280);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  }
+  function removeWin() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    window.removeEventListener('pointercancel', onCancel);
+  }
+  function onMove(e) {
+    if (pend && e.pointerId === pend.id) {
+      const dist = Math.hypot(e.clientX - pend.x, e.clientY - pend.y);
+      if (pend.type === 'touch' && !pend.grip) {
+        if (dist > 8) { clearTimeout(pend.timer); pend = null; removeWin(); } // it's a scroll
+        return;
+      }
+      if (dist > (pend.grip ? 3 : 6)) activate(e.clientX, e.clientY);
+      return;
+    }
+    if (d && e.pointerId === d.pid) { d.px = e.clientX; d.py = e.clientY; positionFloat(); place(); }
+  }
+  function onUp(e) {
+    if (pend && e.pointerId === pend.id) { clearTimeout(pend.timer); pend = null; removeWin(); return; }
+    if (d && e.pointerId === d.pid) finishDrag(false);
+  }
+  function onCancel(e) {
+    if (pend && e.pointerId === pend.id) { clearTimeout(pend.timer); pend = null; removeWin(); return; }
+    if (d && e.pointerId === d.pid) finishDrag(true);
+  }
+  const onTouchMove = (e) => { if (d) e.preventDefault(); };
+  const onCtx = (e) => { if (d) e.preventDefault(); };
+  const onEsc = (e) => { if (e.key === 'Escape' && d) { e.preventDefault(); finishDrag(true); } };
+
+  function activate(px, py) {
+    const p = pend; if (!p) return;
+    clearTimeout(p.timer); pend = null;
+    const it = p.item, grid = it.parentElement;
+    if (!it.isConnected) { removeWin(); return; }
+    const rect = it.getBoundingClientRect();
+    const wrap = document.createElement('div');
+    wrap.className = 'lay-float';
+    Object.assign(wrap.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+    const clone = it.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+    clone.querySelectorAll('[onclick],[oninput],[onchange]').forEach(n => { n.removeAttribute('onclick'); n.removeAttribute('oninput'); n.removeAttribute('onchange'); });
+    clone.style.gridColumn = clone.style.gridRow = '';
+    const mv = document.createElement('div'); mv.className = 'lay-mv';
+    mv.textContent = built[p.key].defs[it.dataset.sec].label + ' · moving';
+    wrap.appendChild(clone);
+    wrap.appendChild(mv);
+    document.body.appendChild(wrap);
+    it.classList.add('lay-ph');
+    document.body.classList.add('lay-dragging');
+    d = { key: p.key, item: it, grid, rect, wrap, pid: p.id, sx: p.x, sy: p.y, px, py, origNext: it.nextSibling, raf: 0 };
+    window.addEventListener('keydown', onEsc, true);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('contextmenu', onCtx, true);
+    positionFloat();
+    requestAnimationFrame(() => { if (d && d.wrap === wrap) wrap.classList.add('lifted'); });
+    d.raf = requestAnimationFrame(autoScroll);
+    if (navigator.vibrate && p.type === 'touch') { try { navigator.vibrate(8); } catch (e) {} }
+  }
+  function positionFloat() { d.wrap.style.transform = `translate3d(${d.px - d.sx}px, ${d.py - d.sy}px, 0)`; }
+  function box(n) {
+    const g = d.grid.getBoundingClientRect();
+    return { l: g.left + n.offsetLeft, t: g.top + n.offsetTop, w: n.offsetWidth, h: n.offsetHeight };
+  }
+  function place() {
+    if (!d) return;
+    if (!d.item.isConnected) { cleanup(); return; }
+    const x = d.px, y = d.py;
+    const vis = visibleItems(d.grid), others = vis.filter(n => n !== d.item);
+    if (!others.length) return;
+    const own = box(d.item);
+    if (x >= own.l && x <= own.l + own.w && y >= own.t && y <= own.t + own.h) return;
+    const cols = colsNow();
+    let target = null, before = true;
+    for (const n of others) {
+      const b = box(n);
+      if (x >= b.l && x <= b.l + b.w && y >= b.t && y <= b.t + b.h) {
+        const full = Math.round(b.w) >= Math.round(d.grid.clientWidth * 0.9) || effSpan(spanOf(d.key, n.dataset.sec)) >= cols;
+        before = full ? y < b.t + b.h / 2 : x < b.l + b.w / 2;
+        target = n; break;
+      }
+    }
+    if (!target) {
+      const firstB = box(others[0]), last = others[others.length - 1], lastB = box(last);
+      if (y < firstB.t) { target = others[0]; before = true; }
+      else if (y > lastB.t + lastB.h) { target = last; before = false; }
+      else return;
+    }
+    if (before) { if (d.item.nextElementSibling === target) return; flip(() => d.grid.insertBefore(d.item, target)); }
+    else { if (target.nextElementSibling === d.item) return; flip(() => d.grid.insertBefore(d.item, target.nextSibling)); }
+  }
+  function flip(mutate) {
+    const items = visibleItems(d.grid);
+    const before = new Map(items.map(n => [n, [n.offsetLeft, n.offsetTop]]));
+    mutate();
+    items.forEach(n => {
+      const [l0, t0] = before.get(n), dx = l0 - n.offsetLeft, dy = t0 - n.offsetTop;
+      if (!dx && !dy) return;
+      n.style.transition = 'none';
+      n.style.transform = `translate(${dx}px, ${dy}px)`;
+      n.getBoundingClientRect();
+      n.style.transition = 'transform .18s cubic-bezier(.2,.7,.3,1)';
+      n.style.transform = '';
+      clearTimeout(n._layT);
+      n._layT = setTimeout(() => { n.style.transition = ''; }, 220);
+    });
+  }
+  function autoScroll() {
+    if (!d) return;
+    const zone = 64; let v = 0;
+    if (d.py < zone) v = -Math.ceil(((zone - d.py) / zone) * 16);
+    else if (d.py > window.innerHeight - zone) v = Math.ceil(((d.py - (window.innerHeight - zone)) / zone) * 16);
+    if (v) { const b = window.scrollY; window.scrollBy(0, v); if (window.scrollY !== b) place(); }
+    d.raf = requestAnimationFrame(autoScroll);
+  }
+  function cleanup() {
+    const s = d; if (!s) return;
+    cancelAnimationFrame(s.raf);
+    removeWin();
+    window.removeEventListener('keydown', onEsc, true);
+    document.removeEventListener('touchmove', onTouchMove, { passive: false });
+    document.removeEventListener('contextmenu', onCtx, true);
+    s.wrap.remove();
+    s.item.classList.remove('lay-ph');
+    document.body.classList.remove('lay-dragging');
+    d = null;
+  }
+  function finishDrag(cancelled) {
+    const s = d; if (!s) return;
+    cancelAnimationFrame(s.raf);
+    removeWin();
+    window.removeEventListener('keydown', onEsc, true);
+    document.removeEventListener('touchmove', onTouchMove, { passive: false });
+    document.removeEventListener('contextmenu', onCtx, true);
+    if (cancelled && s.origNext && s.origNext.parentNode === s.grid) s.grid.insertBefore(s.item, s.origNext);
+    const r = s.item.getBoundingClientRect();
+    s.wrap.classList.remove('lifted');
+    s.wrap.classList.add('settling');
+    s.wrap.style.transform = `translate3d(${r.left - s.rect.left}px, ${r.top - s.rect.top}px, 0)`;
+    d = null;
+    const stop = ev => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 80);
+    if (!cancelled) saveOrder(s.key);
+    setTimeout(() => {
+      s.wrap.remove();
+      s.item.classList.remove('lay-ph');
+      document.body.classList.remove('lay-dragging');
+    }, 210);
+  }
+
+  /* ----- width ----- */
+  function startResize(e, key) {
+    e.preventDefault(); e.stopPropagation();
+    const btn = e.target.closest('.lay-rz'), it = btn.closest('.lay-item'), grid = it.parentElement;
+    const cs = getComputedStyle(grid), cols = colsNow();
+    const gap = parseFloat(cs.columnGap) || 14;
+    const inner = grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const s0 = effSpan(spanOf(key, it.dataset.sec));
+    rz = { key, item: it, id: it.dataset.sec, x0: e.clientX, s0, cur: s0, step: (inner + gap) / cols, pid: e.pointerId, btn };
+    try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+    it.classList.add('lay-resizing');
+    const tag = it.querySelector('.lay-tag'); if (tag) { tag.classList.add('on'); tag.textContent = tagText(s0, s0); }
+    btn.addEventListener('pointermove', onRzMove);
+    btn.addEventListener('pointerup', onRzUp);
+    btn.addEventListener('pointercancel', onRzUp);
+  }
+  function onRzMove(e) {
+    if (!rz || e.pointerId !== rz.pid) return;
+    const n = Math.min(colsNow(), Math.max(minSpan(), Math.round(rz.s0 + (e.clientX - rz.x0) / rz.step)));
+    if (n === rz.cur) return;
+    rz.cur = n;
+    rz.item.style.gridColumn = 'span ' + n;
+    rz.item.style.gridRow = rowsFor(rz.key, rz.id, n);
+    const tag = rz.item.querySelector('.lay-tag'); if (tag) tag.textContent = tagText(n, rz.s0);
+  }
+  function onRzUp(e) {
+    if (!rz || e.pointerId !== rz.pid) return;
+    const s = rz; rz = null;
+    s.btn.removeEventListener('pointermove', onRzMove);
+    s.btn.removeEventListener('pointerup', onRzUp);
+    s.btn.removeEventListener('pointercancel', onRzUp);
+    s.item.classList.remove('lay-resizing');
+    if (s.cur !== s.s0) saveSpan(s.key, s.id, s.cur);
+    apply(s.key);
+  }
+
+  function init() {
+    Object.keys(LAYOUT_PAGES).forEach(k => { try { build(k); } catch (e) { console.error('layout build failed', k, e); } });
+    applyAll();
+    let t = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        if (band() === lastBand) return;
+        if (editing && (lastBand === 'p') !== isPhone()) exitEdit(); // switched between phone and computer layouts
+        applyAll();
+      }, 120);
+    });
+  }
+  return { init, applyAll, enter, exitEdit, isEditing: () => !!editing };
+})();
+window.__layoutApi = Layout;
+try { Layout.init(); } catch (e) { console.error('layout init failed', e); }
 
 // Register the service worker so the app shell caches itself for offline/
 // instant loading. Registered relative to this page's own folder, so it
