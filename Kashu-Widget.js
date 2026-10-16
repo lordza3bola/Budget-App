@@ -59,6 +59,17 @@
 // "When I get a message containing 5931" with those steps. Charges use the
 // card's own vendor rules; card payments (IPN inward) are added with no
 // question; USD charges are estimated in EGP from the available-limit drop.
+// Card charges never ask: an unknown shop gets a best-guess category (the
+// category that shop had last time, a category named in the shop's name, the
+// shop's type, else Uncategorized) and is tagged "Check" in the app — fix it
+// there. (cardAutoCategories: false in CONFIG brings the question back.)
+//
+// NO INTERNET: nothing is lost. The transaction is saved on the phone
+// ("Saved offline …" notification) and added automatically the next time the
+// script runs with a connection — the next bank message or Shortcut, or the
+// Home Screen widget's next refresh — then a "Kashu" notification says so.
+// A shop that needs a category still asks offline, using the categories saved
+// from the last time it was online.
 //
 // SECURITY NOTE: your password is only ever sent straight to Google's own
 // Firebase Auth endpoint (identitytoolkit.googleapis.com) to get a fresh
@@ -81,7 +92,12 @@ const CONFIG = {
   // Adds your Available balance and what's left in that expense's budget
   // (category / sub category, this month) to every "Added …" notification.
   // Set to false to keep the notifications to one line.
-  budgetInNotifications: true
+  budgetInNotifications: true,
+
+  // Credit card charges are filed with a best-guess category instead of
+  // asking (tagged "Check" in the app so you can fix them later).
+  // Set to false to be asked for unknown card vendors again.
+  cardAutoCategories: true
 };
 
 // ---- Firebase Auth (email/password) ---------------------------------------
@@ -89,12 +105,51 @@ const CONFIG = {
 // a short-lived idToken, and returns the account's uid — that uid is the
 // Firestore document ID (/users/{uid}) the app writes everything to, and
 // is exactly what the security rule (request.auth.uid == userId) checks.
+// ---- Network + offline storage ---------------------------------------------
+// Every request goes through netJSON: a 12-second limit, and any failure to
+// reach the server (no internet, weak signal, timeout, a Wi-Fi login page)
+// becomes an error marked isNet, so the caller saves the transaction to the
+// offline queue instead of losing it.
+const NET_TIMEOUT = 12;
+function netError(msg) { const e = new Error(msg || 'No internet connection.'); e.isNet = true; return e; }
+async function netJSON(req) {
+  req.timeoutInterval = NET_TIMEOUT;
+  let res;
+  try { res = await req.loadJSON(); }
+  catch (err) { throw netError('No internet connection (' + (err && err.message ? err.message : String(err)) + ')'); }
+  const er = res && res.error;
+  if (er && (er.status === 'UNAUTHENTICATED' || er.code === 401)) {
+    forgetToken(); // the saved sign-in stopped working — sign in fresh next time
+    throw netError('Sign-in expired — will retry.');
+  }
+  if (er && (Number(er.code) >= 500 || er.status === 'UNAVAILABLE' || er.status === 'DEADLINE_EXCEEDED')) throw netError('Server busy (' + (er.status || er.code) + ')');
+  return res;
+}
+// Small files in Scriptable's own folder on the phone: the offline queue, and
+// a copy of your rules and categories so the Shortcut still works offline.
+function localPath(name) { const fm = FileManager.local(); return fm.joinPath(fm.documentsDirectory(), name); }
+function readLocal(name, fallback) {
+  try { const fm = FileManager.local(), p = localPath(name); if (!fm.fileExists(p)) return fallback; return JSON.parse(fm.readString(p)); }
+  catch (e) { return fallback; }
+}
+function writeLocal(name, data) { try { FileManager.local().writeString(localPath(name), JSON.stringify(data)); } catch (e) {} }
+const TOKEN_KEY = 'kashu_auth_token';
+function forgetToken() { try { if (Keychain.contains(TOKEN_KEY)) Keychain.remove(TOKEN_KEY); } catch (e) {} }
+
 async function signInWithPassword(apiKey, email, password) {
+  // Reuse the last sign-in for up to ~50 minutes (Firebase tokens last 60):
+  // one request fewer on every run, which matters on a weak connection.
+  try {
+    if (Keychain.contains(TOKEN_KEY)) {
+      const t = JSON.parse(Keychain.get(TOKEN_KEY));
+      if (t && t.email === email && t.idToken && t.uid && t.exp > Date.now()) return { idToken: t.idToken, uid: t.uid };
+    }
+  } catch (e) {}
   const req = new Request(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`);
   req.method = 'POST';
   req.headers = { 'Content-Type': 'application/json' };
   req.body = JSON.stringify({ email, password, returnSecureToken: true });
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) {
     const code = (res.error.message || '').split(' ')[0];
     const map = {
@@ -105,6 +160,10 @@ async function signInWithPassword(apiKey, email, password) {
     };
     throw new Error(map[code] || res.error.message || 'Sign-in failed — check your email/password in CONFIG.');
   }
+  try {
+    const life = Math.max(900, Number(res.expiresIn) || 3600) - 600;
+    Keychain.set(TOKEN_KEY, JSON.stringify({ email, idToken: res.idToken, uid: res.localId, exp: Date.now() + life * 1000 }));
+  } catch (e) {}
   return { idToken: res.idToken, uid: res.localId };
 }
 function decodeFirestoreValue(v) {
@@ -150,7 +209,7 @@ async function fetchMaskedFields(projectId, docId, idToken, fieldPaths) {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${docId}?${qs}`;
   const req = new Request(url);
   req.headers = { 'Authorization': `Bearer ${idToken}` };
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) throw new Error(res.error.message || 'Firestore request failed.');
   const decoded = {};
   for (const k in (res.fields || {})) decoded[k] = decodeFirestoreValue(res.fields[k]);
@@ -184,7 +243,7 @@ async function commitAddExpense(projectId, docId, idToken, profileId, expense) {
   req.method = 'POST';
   req.headers = { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' };
   req.body = JSON.stringify(body);
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) throw new Error(res.error.message || 'Firestore write failed.');
   return res;
 }
@@ -218,7 +277,7 @@ function configIsFilledIn() {
 }
 // Used by the Shortcuts entry point: signs in, finds the
 // app's active profile, and appends one expense atomically to Firestore.
-async function addExpenseToCloud({ amount, category, subcategory, description, method, date, idPrefix }) {
+async function addExpenseToCloud({ amount, category, subcategory, description, method, date, idPrefix, id }) {
   const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
   const docId = uid;
 
@@ -234,11 +293,13 @@ async function addExpenseToCloud({ amount, category, subcategory, description, m
   ]);
   const prof = (d2.state && d2.state.profiles && d2.state.profiles[profileId]) || {};
   const incomeCycles = prof.incomeCycles || {};
+  // A retry of an offline entry: skip it if the earlier try already reached the cloud.
+  if (id && await expenseIdExists(uid, idToken, profileId, id)) return { expense: null, currencyCode: prof.currency || 'EGP', profileName: prof.name || '', already: true };
   const currencyCode = prof.currency || 'EGP';
 
   const day = (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date : isoDateToday();
   const expense = {
-    id: (idPrefix || 'e_widget_') + Date.now(),
+    id: id || ((idPrefix || 'e_widget_') + Date.now()),
     month: monthForDateOffline(day, incomeCycles),
     date: day,
     category,
@@ -280,8 +341,19 @@ async function categoriesForShortcut() {
     if (!names.length) throw new Error('No categories found in the active profile.');
     const subs = {};
     names.forEach(c => { const list = Array.isArray(cats[c]) ? cats[c].filter(Boolean) : []; subs[c] = list.length ? list : [c]; });
+    cacheProfile(profileId, { categories: cats, categoryOrder: d2.state.profiles[profileId].categoryOrder || [] }, profileId);
     return { categories: names, subs };
   } catch (err) {
+    // Offline: the categories saved from the last time it worked.
+    if (err && err.isNet) {
+      const c = readLocal(CACHE_FILE, null);
+      const cp = c && c.profiles && c.profiles[c.activeProfileId];
+      if (cp && cp.categories && Object.keys(cp.categories).length) {
+        const names = orderedCatNames(cp.categories, cp.categoryOrder), subs = {};
+        names.forEach(n => { const list = Array.isArray(cp.categories[n]) ? cp.categories[n].filter(Boolean) : []; subs[n] = list.length ? list : [n]; });
+        return { categories: names, subs, offline: true };
+      }
+    }
     const msg = '⚠️ ' + (err && err.message ? err.message : String(err));
     return { categories: [msg], subs: { [msg]: [msg] }, error: msg };
   }
@@ -289,7 +361,8 @@ async function categoriesForShortcut() {
 // Shortcuts "Run Script" entry point. Accepts a Dictionary (preferred), JSON
 // text, or "amount=50&category=Food" text. Returns a one-line result that the
 // Shortcut can show as a notification.
-async function runFromShortcut(param) {
+async function runFromShortcut(param, opts) {
+  opts = opts || {};
   let p = param;
   if (typeof p === 'string') {
     const t = p.trim();
@@ -302,16 +375,18 @@ async function runFromShortcut(param) {
   if (!amount || Number.isNaN(amount)) return 'Error: amount must be a nonzero number.';
   if (!category) return 'Error: category is required.';
   try {
-    const { currencyCode, profileName } = await addExpenseToCloud({
+    const { currencyCode, profileName, already } = await addExpenseToCloud({
       amount, category,
       subcategory: String(p.subcategory ?? '').trim(),
       description: String(p.description ?? '').trim(),
       method: String(p.method ?? '').trim(),
-      date: String(p.date ?? '').trim(),
-      idPrefix: 'e_shortcut_'
+      date: String(p.date ?? '').trim() || opts.fallbackDate || '',
+      idPrefix: 'e_shortcut_',
+      id: opts.expenseId
     });
-    return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, currencyCode)} → ${category}${profileName ? ' (' + profileName + ')' : ''}`;
+    return `${already ? 'Already added' : (amount < 0 ? 'Income added' : 'Added')}: ${fmtCur(amount, currencyCode)} → ${category}${profileName ? ' (' + profileName + ')' : ''}`;
   } catch (err) {
+    if (err && err.isNet) throw err;
     return 'Error: ' + err.message;
   }
 }
@@ -416,7 +491,11 @@ async function loadSmsContext() {
   const { idToken, uid } = await signInWithPassword(CONFIG.apiKey, CONFIG.email, CONFIG.password);
   const d = await fetchMaskedFields(CONFIG.projectId, uid, idToken, ['state.activeProfileId', 'state.vendorRules', 'state.cardRoutes']);
   const st = d.state || {};
-  return { idToken, uid, activeProfileId: st.activeProfileId, rules: Array.isArray(st.vendorRules) ? st.vendorRules : [], routes: st.cardRoutes || {} };
+  const ctx = { idToken, uid, activeProfileId: st.activeProfileId, rules: Array.isArray(st.vendorRules) ? st.vendorRules : [], routes: st.cardRoutes || {} };
+  const c = readLocal(CACHE_FILE, {}) || {};
+  c.rules = ctx.rules; c.routes = ctx.routes; c.activeProfileId = ctx.activeProfileId; c.savedAt = new Date().toISOString();
+  writeLocal(CACHE_FILE, c);
+  return ctx;
 }
 // The profile this card's messages go to, with the fields needed to file them.
 async function loadTargetProfile(ctx, last4, withCategories) {
@@ -427,7 +506,7 @@ async function loadTargetProfile(ctx, last4, withCategories) {
     const fields = ['incomeCycles', 'currency', 'name', 'cardType'].concat(withCategories ? ['categories', 'categoryOrder'] : []);
     const d = await fetchMaskedFields(CONFIG.projectId, ctx.uid, ctx.idToken, fields.map(f => `state.profiles.\`${pid}\`.${f}`));
     const prof = d.state && d.state.profiles && d.state.profiles[pid];
-    if (prof && prof.name !== undefined) return { id: pid, prof };
+    if (prof && prof.name !== undefined) { cacheProfile(pid, prof); return { id: pid, prof }; }
   }
   throw new Error('No synced profile found — open the app once to sync first.');
 }
@@ -440,14 +519,19 @@ async function commitAppendRule(ctx, rule) {
     document: `projects/${CONFIG.projectId}/databases/(default)/documents/users/${ctx.uid}`,
     fieldTransforms: [{ fieldPath: 'state.vendorRules', appendMissingElements: { values: [encodeFirestoreValue(rule)] } }]
   } }] });
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) throw new Error(res.error.message || 'Saving the vendor rule failed.');
 }
-async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
+async function fileSmsExpense(ctx, target, parsed, category, subcategory, opts) {
+  opts = opts || {};
   const day = parsed.date || isoDateToday();
   const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount);
+  const label = `${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''}`;
+  // A retry of an offline entry: skip it if the earlier try already reached the cloud.
+  if (opts.expenseId && await expenseIdExists(ctx.uid, ctx.idToken, target.id, opts.expenseId))
+    return `Already added: ${fmtCur(amount, target.prof.currency || 'EGP')} → ${label}`;
   const expense = {
-    id: 'e_sms_' + Date.now(),
+    id: opts.expenseId || ('e_sms_' + Date.now()),
     month: monthForDateOffline(day, target.prof.incomeCycles || {}),
     date: day,
     category,
@@ -457,6 +541,8 @@ async function fileSmsExpense(ctx, target, parsed, category, subcategory) {
     value: amount,
     src: 'sms'
   };
+  if (opts.auto) expense.auto = true;
+  if (opts.auto && category === 'Uncategorized' && !(target.prof.categories || {}).Uncategorized) await commitEnsureCategory(ctx, target.id, 'Uncategorized');
   await commitAddExpense(CONFIG.projectId, ctx.uid, ctx.idToken, target.id, expense);
   LAST_ADDED = { profileId: target.id, expense };
   return `${amount < 0 ? 'Income added' : 'Added'}: ${fmtCur(amount, target.prof.currency || 'EGP')} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''}${target.prof.name ? ' (' + target.prof.name + ')' : ''}`;
@@ -517,10 +603,11 @@ async function commitCardWrite(ctx, pid, arrayName, item, lastAvail, rule) {
   req.method = 'POST';
   req.headers = { 'Authorization': `Bearer ${ctx.idToken}`, 'Content-Type': 'application/json' };
   req.body = JSON.stringify({ writes: [write] });
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) throw new Error(res.error.message || 'Firestore write failed.');
 }
-async function handleCardMessage(ctx, target, parsed, chosen) {
+async function handleCardMessage(ctx, target, parsed, chosen, opts) {
+  opts = opts || {};
   const prof = target.prof, code = prof.currency || 'EGP';
   const card = await loadCardExtras(ctx, target.id);
   const day = parsed.date || isoDateToday();
@@ -545,9 +632,14 @@ async function handleCardMessage(ctx, target, parsed, chosen) {
   const smsSide = { date: day, amount: amt.amount, vendor: parsed.vendor, estimated: amt.estimated };
   if (card.expenses.some(e => String(e.id || '').startsWith('e_stmt_') && cardEntryScore(smsSide, { date: e.date, amount: Number(e.value), vendor: e.description }) != null))
     return smsReply('skipped', 'Already on your statement — ' + (vendorKey(parsed.vendor) || 'charge') + ' not added again.');
-  let category, subcategory;
+  let category, subcategory, auto = false;
   if (chosen) { category = chosen.category; subcategory = chosen.subcategory || chosen.category; }
   else if (rule && !rule.ask && rule.category) { category = rule.category; subcategory = rule.subcategory || rule.category; }
+  else if (CONFIG.cardAutoCategories !== false || opts.background) {
+    // No question: a best guess, tagged "Check" in the app to fix later.
+    const g = guessForMessage(prof, parsed, rule, card.expenses);
+    category = g.category; subcategory = g.subcategory; auto = true;
+  }
   else {
     const cats = prof.categories || {};
     const names = orderedCatNames(cats, prof.categoryOrder);
@@ -564,29 +656,43 @@ async function handleCardMessage(ctx, target, parsed, chosen) {
     value: amt.amount, src: 'sms', smsVendor: parsed.vendor || ''
   };
   if (amt.estimated) { expense.estimated = true; expense.origAmount = parsed.amount; expense.origCurrency = parsed.currency; }
+  if (auto) expense.auto = true;
+  if (category === 'Uncategorized' && !(prof.categories || {}).Uncategorized) await commitEnsureCategory(ctx, target.id, 'Uncategorized');
   const la = parsed.availLimit != null ? { value: parsed.availLimit, date: day, rate: amt.rate || (card.lastAvail && card.lastAvail.rate) || null } : null;
   const key = vendorKey(parsed.vendor);
   const newRule = chosen && key && !rule ? { id: 'v_sms_' + Date.now(), match: key, category, subcategory, ask: true, learned: true, card: parsed.last4 } : null;
   await commitCardWrite(ctx, target.id, 'expenses', expense, la, newRule);
   LAST_ADDED = { profileId: target.id, expense };
-  return smsReply('added', `Card: ${fmtCur(amt.amount, code)}${fxNote} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''} (${name})${newRule ? ' · saved ' + key + ' to Vendors' : ''}`);
+  return smsReply('added', `Card: ${fmtCur(amt.amount, code)}${fxNote} → ${category}${subcategory && subcategory !== category ? ' / ' + subcategory : ''} (${name})${auto ? ' · auto, check in app' : ''}${newRule ? ' · saved ' + key + ' to Vendors' : ''}`);
 }
 function smsReply(status, notification, extra) {
   return Object.assign({ status, notification }, extra || {});
 }
-async function handleBankMessage(text) {
+async function handleBankMessage(text, opts) {
+  opts = opts || {};
   try {
     if (!configIsFilledIn()) return smsReply('error', 'Kashu: put your email and password into CONFIG in the Kashu script.');
     const parsed = parseBankMessage(text);
     if (parsed.declined) return smsReply('skipped', 'Declined transaction — nothing added.');
     if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
+    if (!parsed.date && opts.fallbackDate) parsed.date = opts.fallbackDate;
     const ctx = await loadSmsContext();
     const target = await loadTargetProfile(ctx, parsed.last4, true);
-    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, null);
+    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, null, opts);
     const rule = parsed.isIPN ? null : matchVendorRule(rulesForCard(ctx.rules, parsed.last4, false), parsed);
     if (rule && !rule.ask && rule.category) {
-      const note = await fileSmsExpense(ctx, target, parsed, rule.category, rule.subcategory);
+      const note = await fileSmsExpense(ctx, target, parsed, rule.category, rule.subcategory, opts);
+      if (/^Already added/.test(note)) return smsReply('skipped', note);
       return smsReply('added', note + ' · ' + (vendorKey(parsed.vendor) || rule.match));
+    }
+    // Sent while offline, retried later in the background: nobody is there to
+    // ask, so it's filed with a best guess and tagged "Check" in the app.
+    if (opts.background) {
+      const exp = (await loadCardExtras(ctx, target.id)).expenses;
+      const g = parsed.isIPN ? { category: 'Uncategorized', subcategory: 'Uncategorized' } : guessForMessage(target.prof, parsed, rule, exp);
+      const note = await fileSmsExpense(ctx, target, parsed, g.category, g.subcategory, Object.assign({}, opts, { auto: true }));
+      if (/^Already added/.test(note)) return smsReply('skipped', note);
+      return smsReply('added', note + ' · auto, check in app');
     }
     const cats = target.prof.categories || {};
     const names = orderedCatNames(cats, target.prof.categoryOrder);
@@ -601,11 +707,13 @@ async function handleBankMessage(text) {
       categories: names, subs
     });
   } catch (err) {
+    if (err && err.isNet) throw err;
     return smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err)));
   }
 }
 // Second call from the Shortcut after you picked a category for an "ask".
-async function handleResolve(p) {
+async function handleResolve(p, opts) {
+  opts = opts || {};
   try {
     if (!configIsFilledIn()) return smsReply('error', 'Kashu: put your email and password into CONFIG in the Kashu script.');
     const parsed = parseBankMessage(p.message || p.text || '');
@@ -613,10 +721,12 @@ async function handleResolve(p) {
     const subcategory = String(p.subcategory ?? '').trim();
     if (parsed.amount == null || !parsed.amount) return smsReply('error', 'Kashu couldn\'t read an amount from this message.');
     if (!category) return smsReply('error', 'No category was chosen — nothing added.');
+    if (!parsed.date && opts.fallbackDate) parsed.date = opts.fallbackDate;
     const ctx = await loadSmsContext();
     const target = await loadTargetProfile(ctx, parsed.last4, true);
-    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, { category, subcategory });
-    let note = await fileSmsExpense(ctx, target, parsed, category, subcategory);
+    if (target.prof.cardType === 'mastercard') return await handleCardMessage(ctx, target, parsed, { category, subcategory }, opts);
+    let note = await fileSmsExpense(ctx, target, parsed, category, subcategory, opts);
+    if (/^Already added/.test(note)) return smsReply('skipped', note);
     const key = vendorKey(parsed.vendor);
     // Remember the vendor — never for IPN transfers, and never over an existing rule.
     if (!parsed.isIPN && key && !matchVendorRule(rulesForCard(ctx.rules, parsed.last4, false), parsed)) {
@@ -627,6 +737,7 @@ async function handleResolve(p) {
     }
     return smsReply('added', note);
   } catch (err) {
+    if (err && err.isNet) throw err;
     return smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err)));
   }
 }
@@ -680,6 +791,194 @@ async function withBudget(note) {
   return extra ? `${note}\n${extra}` : note;
 }
 
+// ---- Best-guess category (identical copy in the app and in Kashu-Widget.js) ----
+// Used when a credit card charge is added without asking. In order:
+//   1. the category this shop had last time (a fix you made in the app wins
+//      over an earlier guess), 2. a sub category / category whose name is in
+//      the shop's name (e.g. "UBER *TRIP" → Uber), 3. common Egyptian and
+//      online shops by type, 4. Uncategorized.
+const GUESS_GROUPS = [
+  { v: /\b(uber|careem|indrive|indriver|didi|swvl|bolt|halan)\b/i, c: /transport|car\b|ride|travel/i, s: /uber|careem|ride|taxi|transport/i },
+  { v: /(fuel|petrol|benzin|banzen|wataneya|chill ?out|misr petroleum|totalenergies|\bshell\b|\bmobil\b|emarat|taqa|cooper)/i, c: /car\b|transport/i, s: /fuel|banzen|benzin|petrol|gas/i },
+  { v: /(talabat|elmenus|mrsool|breadfast|instashop|rabbit|yalla ?market)/i, c: /food|grocer|eat/i, s: /deliver|talabat|online|grocer/i },
+  { v: /(carrefour|spinneys|hyper|kazyon|metro market|seoudi|gourmet|oscar|kheir zaman|awlad ragab|supermarket|\bmart\b|market|grocer)/i, c: /food|grocer|home|house/i, s: /grocer|supermarket|market/i },
+  { v: /(restaurant|\bcafe|caf[eé]\b|coffee|starbucks|costa|cilantro|mcdonald|\bkfc\b|hardee|pizza|burger|buffalo|bakery|cook door|koshary|dunkin|krispy)/i, c: /food|eat|entertain|outing/i, s: /restaurant|cafe|coffee|eat|outing|ahwa|food/i },
+  { v: /(netflix|spotify|anghami|shahid|\bosn\b|watch ?it|youtube|apple|itunes|icloud|google|microsoft|openai|chatgpt|anthropic|claude|adobe|playstation|\bpsn\b|xbox|steam|canva|notion|dropbox)/i, c: /subscri|bills|entertain|digital|apps/i, s: null },
+  { v: /(pharma|pharmacy|el ?ezaby|seif|dawa|saydal|clinic|hospital|\blabs?\b|medical|dental)/i, c: /medic|health|pharm/i, s: /pharm|dawa|saydal|medic|doctor|clinic/i },
+  { v: /(amazon|\bnoon\b|jumia|shein|temu|aliexpress|ikea|\bzara\b|h&m|waikiki|defacto|decathlon)/i, c: /shop|cloth|home|house/i, s: /online|shop|cloth/i },
+  { v: /(vodafone|orange|etisalat|telecom|fawry)/i, c: /bills|utilit|phone|mobile/i, s: null },
+  { v: /(cinema|\bvox\b|imax|ticket|tazkarti)/i, c: /entertain|outing|fun/i, s: /cinema|movie|event|ticket|outing/i }
+];
+function guessCategory(names, cats, vendor, history) {
+  const STOP = { com: 1, www: 1, egy: 1, egp: 1, usd: 1, cairo: 1, giza: 1, sub: 1, bill: 1, the: 1, and: 1, ltd: 1, inc: 1, llc: 1, payment: 1, store: 1, branch: 1 };
+  const words = str => String(str || '').toLowerCase().split(/[^a-z0-9؀-ۿ]+/).filter(w => w.length >= 3 && !STOP[w] && !/^\d+$/.test(w));
+  const subsOf = c => (Array.isArray(cats[c]) ? cats[c] : []).filter(Boolean);
+  const pick = (c, s) => ({ category: c, subcategory: s && subsOf(c).includes(s) ? s : c });
+  const key = vendorKey(vendor).toLowerCase().trim();
+  // 1. Same shop before.
+  if (key && Array.isArray(history)) {
+    const kw = words(key).slice(0, 2).join(' ');
+    const vk = e => vendorKey(e.smsVendor || String(e.description || '').split(' · ')[0]).toLowerCase().trim();
+    const same = history.filter(e => e && Number(e.value) > 0 && names.includes(e.category) && e.category !== 'Uncategorized' &&
+      (vk(e) === key || (kw.length >= 5 && words(vk(e)).slice(0, 2).join(' ') === kw)));
+    if (same.length) {
+      const byDate = (a, b) => String(b.date || '').localeCompare(String(a.date || ''));
+      const best = same.filter(e => !e.auto).sort(byDate)[0] || same.sort(byDate)[0];
+      return Object.assign(pick(best.category, best.subcategory), { how: 'history' });
+    }
+  }
+  // 2. A sub category or category named in the shop's name.
+  const vw = words(vendor);
+  const named = n => { const nw = words(n); return nw.length > 0 && nw.every(w => vw.includes(w)); };
+  for (const c of names) { const s = subsOf(c).find(named); if (s && c !== 'Uncategorized') return Object.assign(pick(c, s), { how: 'name' }); }
+  for (const c of names) if (c !== 'Uncategorized' && named(c)) return Object.assign(pick(c, c), { how: 'name' });
+  // 3. Common shops by type, mapped onto your own category names.
+  for (const g of GUESS_GROUPS) {
+    if (!g.v.test(String(vendor || ''))) continue;
+    const c = names.find(n => g.c.test(n));
+    if (!c) continue;
+    const subs = subsOf(c);
+    const s = subs.find(named) || (g.s && subs.find(x => g.s.test(x))) || c;
+    return Object.assign(pick(c, s), { how: 'type' });
+  }
+  return { category: 'Uncategorized', subcategory: 'Uncategorized', how: 'none' };
+}
+function guessForMessage(prof, parsed, rule, history) {
+  if (rule && rule.category) return { category: rule.category, subcategory: rule.subcategory || rule.category, how: 'rule' };
+  const cats = (prof && prof.categories) || {};
+  return guessCategory(orderedCatNames(cats, prof && prof.categoryOrder), cats, parsed.vendor, history || []);
+}
+
+// ---- Offline queue -----------------------------------------------------------
+// When there's no internet (or the connection is too weak), the transaction is
+// saved on the phone instead of being lost, and sent the next time the script
+// runs with a connection: the next bank message or Shortcut, or the Home Screen
+// widget's next refresh. Each queued entry keeps a fixed id, so a retry after a
+// try that actually reached the cloud is never added twice.
+const QUEUE_FILE = 'kashu_offline_queue.json';
+const CACHE_FILE = 'kashu_offline_cache.json';
+function cacheProfile(pid, fields, activeId) {
+  const c = readLocal(CACHE_FILE, {}) || {};
+  c.profiles = c.profiles || {};
+  const keep = ['name', 'cardType', 'currency', 'incomeCycles', 'categories', 'categoryOrder'];
+  const cur = c.profiles[pid] || {};
+  keep.forEach(k => { if (fields && fields[k] !== undefined) cur[k] = fields[k]; });
+  c.profiles[pid] = cur;
+  if (activeId) c.activeProfileId = activeId;
+  writeLocal(CACHE_FILE, c);
+}
+function readQueue() { const q = readLocal(QUEUE_FILE, []); return Array.isArray(q) ? q : []; }
+function queueCount() { return readQueue().length; }
+function enqueue(item) {
+  const q = readQueue();
+  if (item.text && q.some(x => x.kind === item.kind && x.text === item.text && x.category === item.category)) return; // same message twice
+  q.push(item);
+  writeLocal(QUEUE_FILE, q);
+}
+function dequeue(qid) { writeLocal(QUEUE_FILE, readQueue().filter(x => x.qid !== qid)); }
+function newItem(kind, fields) {
+  const qid = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  return Object.assign({ qid, kind, day: isoDateToday(), at: new Date().toISOString(), eid: (kind === 'quick' ? 'e_shortcut_q' : 'e_sms_q') + qid }, fields);
+}
+async function expenseIdExists(uid, idToken, pid, id) {
+  const d = await fetchMaskedFields(CONFIG.projectId, uid, idToken, [`state.profiles.\`${pid}\`.expenses`]);
+  const list = (d.state && d.state.profiles && d.state.profiles[pid] && d.state.profiles[pid].expenses) || [];
+  return list.some(e => e && e.id === id);
+}
+// Adds an empty category to a profile (only if it isn't there yet).
+async function commitEnsureCategory(ctx, pid, cat) {
+  const docName = `projects/${CONFIG.projectId}/databases/(default)/documents/users/${ctx.uid}`;
+  const req = new Request(`https://firestore.googleapis.com/v1/projects/${CONFIG.projectId}/databases/(default)/documents:commit`);
+  req.method = 'POST';
+  req.headers = { 'Authorization': `Bearer ${ctx.idToken}`, 'Content-Type': 'application/json' };
+  req.body = JSON.stringify({ writes: [{
+    update: { name: docName, fields: encodeFirestoreValue({ state: { profiles: { [pid]: { categories: { [cat]: [] } } } } }).mapValue.fields },
+    updateMask: { fieldPaths: [`state.profiles.\`${pid}\`.categories.\`${cat}\``] }
+  }] });
+  const res = await netJSON(req);
+  if (res.error) throw new Error(res.error.message || 'Firestore write failed.');
+}
+// One entry, online. Throws an isNet error when there's no connection.
+async function processItem(item, background) {
+  const opts = { fallbackDate: item.day, expenseId: item.eid, background: !!background };
+  if (item.kind === 'quick') return await runFromShortcut(item.params, opts);
+  if (item.kind === 'resolve') return await handleResolve({ message: item.text, category: item.category, subcategory: item.subcategory }, opts);
+  return await handleBankMessage(item.text, opts);
+}
+const OFFLINE_TAIL = 'No internet — saved on your phone; it will be added automatically when you\'re back online.';
+// No connection: save it (or, for a shop that needs a category, ask using the
+// categories saved last time, and save the answer).
+function offlineReply(item) {
+  const c = readLocal(CACHE_FILE, {}) || {};
+  if (item.kind === 'quick') {
+    enqueue(item);
+    let p = item.params || {};
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = parseQueryString(p.trim().replace(/^.*\?/, '')); } }
+    return `Saved offline: ${fmt(Number(p.amount ?? p.Amount))} → ${p.category || p.Category || ''}. ${OFFLINE_TAIL}`;
+  }
+  const parsed = parseBankMessage(item.text);
+  const vendor = parsed.isIPN ? 'IPN transfer' : (vendorKey(parsed.vendor) || 'Bank message');
+  const pid = (parsed.last4 && c.routes && c.routes[parsed.last4]) || c.activeProfileId;
+  const cp = (c.profiles && c.profiles[pid]) || null;
+  const code = (cp && cp.currency) || 'EGP';
+  const amount = (parsed.incoming ? -1 : 1) * Math.abs(parsed.amount || 0);
+  if (item.kind === 'resolve') {
+    enqueue(item);
+    return smsReply('queued', `Saved offline: ${vendor} ${fmtCur(amount, code)} → ${item.category}${item.subcategory && item.subcategory !== item.category ? ' / ' + item.subcategory : ''}. ${OFFLINE_TAIL}`);
+  }
+  const isCC = cp && cp.cardType === 'mastercard';
+  const rule = isCC || parsed.isIPN ? null : matchVendorRule(rulesForCard(c.rules || [], parsed.last4, false), parsed);
+  const needsAsk = !isCC && !(rule && !rule.ask && rule.category);
+  if (needsAsk && cp && cp.categories && Object.keys(cp.categories).length) {
+    const names = orderedCatNames(cp.categories, cp.categoryOrder), subs = {};
+    names.forEach(n => { const list = Array.isArray(cp.categories[n]) ? cp.categories[n].filter(Boolean) : []; subs[n] = list.length ? list : [n]; });
+    return smsReply('ask', '', { prompt: `${vendor} · ${fmtCur(amount, code)} (offline)`, vendor, amount, isIPN: parsed.isIPN, message: parsed.text, categories: names, subs, offline: true });
+  }
+  enqueue(item);
+  const where = rule && !rule.ask && rule.category ? ` → ${rule.category}${rule.subcategory && rule.subcategory !== rule.category ? ' / ' + rule.subcategory : ''}` : '';
+  return smsReply('queued', `Saved offline: ${vendor} ${fmtCur(amount, code)}${where}. ${OFFLINE_TAIL}`);
+}
+// Runs one entry now; on no connection falls back to offlineReply.
+async function runLive(item) {
+  try { return await processItem(item, false); }
+  catch (err) { if (err && err.isNet) return offlineReply(item); throw err; }
+}
+// Sends what's waiting in the queue, oldest first. Stops at the first
+// connection problem (the rest stays for next time).
+async function flushQueue(maxItems) {
+  const done = { added: 0, failed: [], left: 0 };
+  const items = readQueue().slice(0, maxItems || 10);
+  for (const item of items) {
+    let r;
+    try { r = await processItem(item, true); }
+    catch (err) {
+      if (err && err.isNet) break;
+      r = { status: 'error', notification: err && err.message ? err.message : String(err) };
+    }
+    const status = typeof r === 'string' ? (/^Error/.test(r) ? 'error' : /^Already/.test(r) ? 'skipped' : 'added') : r.status;
+    if (status === 'error') {
+      item.tries = (item.tries || 0) + 1;
+      if (item.tries >= 3) { dequeue(item.qid); done.failed.push((typeof r === 'string' ? r : r.notification) || 'unknown error'); }
+      else { const q = readQueue(); const x = q.find(y => y.qid === item.qid); if (x) { x.tries = item.tries; writeLocal(QUEUE_FILE, q); } }
+      continue;
+    }
+    dequeue(item.qid);
+    if (status === 'added') done.added++;
+  }
+  done.left = queueCount();
+  if (done.added || done.failed.length) {
+    try {
+      const n = new Notification();
+      n.title = 'Kashu';
+      n.body = ((done.added ? `${done.added} transaction${done.added > 1 ? 's' : ''} saved while offline ${done.added > 1 ? 'were' : 'was'} added.` : '') +
+        (done.failed.length ? ` ${done.failed.length} couldn't be added: ${done.failed[0]}` : '') +
+        (done.left ? ` ${done.left} still waiting.` : '')).trim();
+      await n.schedule();
+    } catch (e) {}
+  }
+  return done;
+}
+
 function looksLikeBankMessage(s) {
   const t = String(s || '').trim();
   if (!t || /^[{\[]/.test(t) || /^[^ ]*=/.test(t)) return false;
@@ -691,7 +990,7 @@ async function fetchSyncedState(projectId, apiKey, email, password) {
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${docId}`;
   const req = new Request(url);
   req.headers = { 'Authorization': `Bearer ${idToken}` };
-  const res = await req.loadJSON();
+  const res = await netJSON(req);
   if (res.error) throw new Error(res.error.message || 'Firestore request failed.');
   if (!res.fields || !res.fields.state) throw new Error('No synced data found for this account yet.');
   const decoded = {};
@@ -905,6 +1204,8 @@ async function buildWidget() {
 
   try {
     if (!configIsFilledIn()) throw new Error('Fill in CONFIG (email/password) at the top of the script first.');
+    // Each refresh also sends anything saved while offline.
+    if (queueCount()) { try { await flushQueue(6); } catch (e) {} }
     const data = await fetchSyncedState(CONFIG.projectId, CONFIG.apiKey, CONFIG.email, CONFIG.password);
     const budgetP = pickBudgetProfile(data.state, CONFIG.budgetProfileName);
     if (!budgetP) throw new Error('No budget profile found for this account.');
@@ -962,25 +1263,36 @@ async function main() {
       return;
     }
     // Bank SMS: { mode: "message", message: <text> } or just the message text.
+    // Whatever ran, a connection that worked also sends anything saved offline.
+    const online = r => !(r && (r.status === 'queued' || r.offline)) && !(typeof r === 'string' && /^Saved offline/.test(r));
+    const sendWaiting = async r => { if (online(r) && queueCount()) { try { await flushQueue(4); } catch (e) {} } };
     if (mode === 'message' || (typeof sp === 'string' && looksLikeBankMessage(sp))) {
-      const r = await handleBankMessage(typeof sp === 'string' ? sp : (sp.message || sp.text || ''));
+      let r;
+      try { r = await runLive(newItem('message', { text: typeof sp === 'string' ? sp : String(sp.message || sp.text || '') })); }
+      catch (err) { r = smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err))); }
       if (r.status === 'added') r.notification = await withBudget(r.notification);
+      await sendWaiting(r);
       Script.setShortcutOutput(r);
       Script.complete();
       return;
     }
     // After choosing a category: { mode: "resolve", message, category, subcategory }.
     if (mode === 'resolve') {
-      const r = await handleResolve(sp);
+      let r;
+      try { r = await runLive(newItem('resolve', { text: String(sp.message || sp.text || ''), category: String(sp.category ?? '').trim(), subcategory: String(sp.subcategory ?? '').trim() })); }
+      catch (err) { r = smsReply('error', 'Kashu error: ' + (err && err.message ? err.message : String(err))); }
       if (r.status === 'added') r.notification = await withBudget(r.notification);
+      await sendWaiting(r);
       Script.setShortcutOutput(r);
       Script.complete();
       return;
     }
     let msg;
     try {
-      msg = await runFromShortcut(args.shortcutParameter);
-      if (!/^Error/.test(msg)) msg = await withBudget(msg);
+      const params = typeof sp === 'string' ? sp : Object.assign({}, sp);
+      msg = await runLive(newItem('quick', { params }));
+      if (!/^(Error|Saved offline|Already)/.test(msg)) msg = await withBudget(msg);
+      await sendWaiting(msg);
     }
     catch (err) { msg = 'Error: ' + (err && err.message ? err.message : String(err)); }
     Script.setShortcutOutput(msg);

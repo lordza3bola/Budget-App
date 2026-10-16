@@ -400,6 +400,7 @@
   #msPanel label .ms-hint { color:var(--txt-dim2); font-size:11px; }
   #msPanel .ms-empty { font-size:12px; color:var(--txt-dim); padding:8px 4px; }
   .filter-clear { color:var(--blue); cursor:pointer; font-weight:700; }
+  .filter-clear.ck-link { color: var(--amber); }
   /* ---- Phone card layout (Expenses + Budget). Desktop keeps the tables. ---- */
   .card-list { display:none; flex-direction:column; gap:10px; padding:4px 18px 24px; }
   .day-head { display:flex; justify-content:space-between; align-items:baseline; padding:10px 4px 0; font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--txt-dim); }
@@ -547,6 +548,8 @@
   .tf-empty { font-size: 12px; color: var(--txt-dim); padding: 8px 4px 0; }
   .tf-tag { display: inline-block; margin-top: 4px; font-size: 10.5px; font-weight: 800; color: var(--blue); background: rgba(95,125,104,.12); border-radius: 7px; padding: 2px 7px; white-space: nowrap; }
   td .tf-tag { margin: 0 0 0 6px; vertical-align: 1px; }
+  .ck-tag { color: var(--amber); background: rgba(185,134,59,.14); }
+  .tx-main .ck-tag + .tf-tag, .tx-main .tf-tag + .ck-tag { margin-left: 4px; }
   .tf-edit-row > td { padding-top: 0 !important; }
   .tf-edit-row .tf-wrap { max-width: 560px; }
   .tf-borrowed { display: grid; gap: 3px; margin-top: 9px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 11.5px; color: var(--txt-dim); width: 100%; }
@@ -1832,7 +1835,7 @@
 
         <div class="settings-panel" id="settingsPanel-vendors">
           <p class="vd-note">When a bank message arrives, your Shortcut sends it to the Kashu script. A vendor with a rule here is added straight away; anything else (and every <b>IPN</b> transfer) asks you for the category. A new vendor you categorize is saved here with <b>Always ask</b> on, so it keeps asking — switch that off once a vendor is always the same category.</p>
-          <p class="vd-note">A <b>credit card</b> (a card below that goes to a Mastercard profile) has its own rule list. Its charges are filed by those rules, payments to it are added with no question, and charges in USD are estimated in EGP from the drop in available limit — importing the statement PDF later puts in the bank's exact amounts.</p>
+          <p class="vd-note">A <b>credit card</b> (a card below that goes to a Mastercard profile) has its own rule list. Its charges never ask: they're filed by those rules, or else by a best guess (the category the shop had last time, a category named in the shop's name, the kind of shop, otherwise Uncategorized) and tagged <b>Check</b> in Expenses so you can fix them later — saving an entry clears the tag. Payments to it are added with no question, and charges in USD are estimated in EGP from the drop in available limit — importing the statement PDF later puts in the bank's exact amounts.</p>
           <h3>Cards</h3>
           <div class="vd-list" id="vdCards"></div>
           <h3 style="margin-top:22px;">Vendor rules <span class="vd-count" id="vdCount"></span></h3>
@@ -2464,7 +2467,7 @@ function saveState() {
    ============================================================ */
 // The app's version — shown at the top of every page and at the bottom of
 // Settings. Bump it with every release (matches the V## folder).
-const APP_VERSION = 'V35';
+const APP_VERSION = 'V36';
 document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
@@ -4962,6 +4965,11 @@ function renderExpensesPage() {
   }
   let totalHtml = escapeHtml(totalText);
   if (f.dates.length) totalHtml += ` · <span class="filter-clear" onclick="clearSharedFilter('dates')">${f.dates.length === 1 ? escapeHtml(dayLabel(f.dates[0])) : f.dates.length + ' days'} ✕</span>`;
+  // Charges added automatically from card messages that still need a look.
+  const toCheck = rows.filter(r => r.auto).length;
+  if (toCheck) totalHtml += search === 'check'
+    ? ` · <span class="filter-clear ck-link" onclick="setExpSearch('')">Showing ${toCheck} to check ✕</span>`
+    : ` · <span class="filter-clear ck-link" onclick="setExpSearch('check')" title="Added automatically from card messages — tap to list them">${toCheck} to check</span>`;
   totalLineEl.innerHTML = totalHtml;
   // Newest first: by date, then — for several transactions on the same day —
   // by when each was entered, so the one just added lands on top, not at the bottom.
@@ -4979,7 +4987,7 @@ function renderExpensesPage() {
     return `<tr data-drag-id="${editKey}" data-drag-group="${r.date}">
       <td class="editable" onclick="startRowEdit('${editKey}')"><span class="drag-handle" title="Drag to reorder" aria-hidden="true" onclick="event.stopPropagation()">⠿</span>${r.date}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${catTag}</td>
-      <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.subcategory) || (isPayment ? '<span style="color:var(--txt-dim2);">—</span>' : '')}${r.takeFrom ? `<span class="tf-tag" title="Takes from the ${escapeHtml(r.takeFrom[0])} · ${escapeHtml(r.takeFrom[1])} budget">↳ ${escapeHtml(r.takeFrom[1])} budget</span>` : ''}</td>
+      <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.subcategory) || (isPayment ? '<span style="color:var(--txt-dim2);">—</span>' : '')}${r.auto ? '<span class="tf-tag ck-tag" title="Added automatically from a card message — open it to check the category; saving clears this tag">Check</span>' : ''}${r.takeFrom ? `<span class="tf-tag" title="Takes from the ${escapeHtml(r.takeFrom[0])} · ${escapeHtml(r.takeFrom[1])} budget">↳ ${escapeHtml(r.takeFrom[1])} budget</span>` : ''}</td>
       <td class="editable" onclick="startRowEdit('${editKey}')">${escapeHtml(r.description) || '<span style="color:var(--txt-dim2);">—</span>'}</td>
       <td class="amt-cell editable${amtClass}" onclick="startRowEdit('${editKey}')">${amtText}</td>
       <td><button class="del-btn" onclick="${isPayment ? `deletePayment('${r.id}')` : `deleteExpense('${r.id}')`}">✕</button></td>
@@ -5049,7 +5057,7 @@ function renderExpenseCards(rows, p, savings, secondaryLabel, monthsLabel) {
     const icon = plainPayment ? thImg('credit-card') : getCategoryIcon(p, r.category, r.subcategory);
     html += `<button type="button" class="tx-card" onclick="openTxSheet('${r.kind}','${r.id}')">
       <span class="tx-icon ${plainPayment ? 'c1' : catTone(r.category)}">${icon}</span>
-      <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span>${r.takeFrom ? `<span class="tf-tag">↳ from ${escapeHtml(r.takeFrom[1] === r.takeFrom[0] ? r.takeFrom[0] : r.takeFrom[1])} budget</span>` : ''}</span>
+      <span class="tx-main"><span class="tx-title">${escapeHtml(title)}</span><span class="tx-sub">${escapeHtml(subLine)}</span>${r.auto ? '<span class="tf-tag ck-tag" title="Added automatically from a card message — open it to check the category; saving clears this tag">Check</span>' : ''}${r.takeFrom ? `<span class="tf-tag">↳ from ${escapeHtml(r.takeFrom[1] === r.takeFrom[0] ? r.takeFrom[0] : r.takeFrom[1])} budget</span>` : ''}</span>
       <span class="tx-right"><span class="tx-amt ${amtCls}">${ai.text}</span>${meta ? `<span class="tx-meta ${metaCls}">${escapeHtml(meta)}</span>` : ''}</span>
     </button>`;
   });
@@ -5253,15 +5261,22 @@ function expAmountMatch(value, search) {
   const plain = (Math.round(v * 100) / 100).toString(), fixed = v.toFixed(2);
   return plain.includes(digits) || fixed.includes(digits);
 }
+function setExpSearch(v) {
+  const el = document.getElementById('expSearch');
+  if (!el) return;
+  el.value = v;
+  renderExpensesPage();
+}
 function expMatchesSearch(r, search) {
   if (!search) return true;
+  if (r.auto && (search === 'check' || search === 'to check' || search === 'auto')) return true;
   if ((r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search)) return true;
   return expAmountMatch(r.value, search) === true;
 }
 function buildExpenseRows(p) {
   const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
   return [
-    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx, pos: e.pos, takeFrom: takesFromOther(e, p) ? expenseBudgetOf(e, p) : null })),
+    ...p.expenses.map((e, idx) => ({ kind:'expense', id:e.id, date:e.date, month:e.month, category:e.category, subcategory:e.subcategory, description:e.description, method:e.method || '', value:Number(e.value||0), stamp: creationStamp(e.id), idx, pos: e.pos, auto: !!e.auto, takeFrom: takesFromOther(e, p) ? expenseBudgetOf(e, p) : null })),
     ...p.payments.map((pm, idx) => ({ kind:'payment', id:pm.id, date:pm.date, month:monthForDate(pm.date, p), category:pm.category || secondaryLabel, subcategory:pm.subcategory || '', description:pm.note||'', value:Number(pm.amount||0), hasCategory: !!pm.category, stamp: creationStamp(pm.id), idx, pos: pm.pos }))
   ];
 }
@@ -5631,6 +5646,7 @@ function saveExpenseEdit(id) {
   e.subcategory = subVal || catVal;
   e.description = descVal;
   e.value = valNum;
+  delete e.auto; // saved by you = checked
   if (document.getElementById('editTake_' + id)) {
     const tfv = tfValue('editTake_' + id);
     if (tfv) { e.fromCat = tfv.fromCat; e.fromSub = tfv.fromSub; } else { delete e.fromCat; delete e.fromSub; }
@@ -7282,6 +7298,58 @@ function matchVendorRule(rules, parsed) {
 }
 // Vendor rules are kept per card: rules with a `card` (last 4 digits) belong to
 // that credit card; rules without one are the bank / debit card rules.
+// ---- Best-guess category (identical copy in the app and in Kashu-Widget.js) ----
+// Used when a credit card charge is added without asking. In order:
+//   1. the category this shop had last time (a fix you made in the app wins
+//      over an earlier guess), 2. a sub category / category whose name is in
+//      the shop's name (e.g. "UBER *TRIP" → Uber), 3. common Egyptian and
+//      online shops by type, 4. Uncategorized.
+const GUESS_GROUPS = [
+  { v: /\b(uber|careem|indrive|indriver|didi|swvl|bolt|halan)\b/i, c: /transport|car\b|ride|travel/i, s: /uber|careem|ride|taxi|transport/i },
+  { v: /(fuel|petrol|benzin|banzen|wataneya|chill ?out|misr petroleum|totalenergies|\bshell\b|\bmobil\b|emarat|taqa|cooper)/i, c: /car\b|transport/i, s: /fuel|banzen|benzin|petrol|gas/i },
+  { v: /(talabat|elmenus|mrsool|breadfast|instashop|rabbit|yalla ?market)/i, c: /food|grocer|eat/i, s: /deliver|talabat|online|grocer/i },
+  { v: /(carrefour|spinneys|hyper|kazyon|metro market|seoudi|gourmet|oscar|kheir zaman|awlad ragab|supermarket|\bmart\b|market|grocer)/i, c: /food|grocer|home|house/i, s: /grocer|supermarket|market/i },
+  { v: /(restaurant|\bcafe|caf[eé]\b|coffee|starbucks|costa|cilantro|mcdonald|\bkfc\b|hardee|pizza|burger|buffalo|bakery|cook door|koshary|dunkin|krispy)/i, c: /food|eat|entertain|outing/i, s: /restaurant|cafe|coffee|eat|outing|ahwa|food/i },
+  { v: /(netflix|spotify|anghami|shahid|\bosn\b|watch ?it|youtube|apple|itunes|icloud|google|microsoft|openai|chatgpt|anthropic|claude|adobe|playstation|\bpsn\b|xbox|steam|canva|notion|dropbox)/i, c: /subscri|bills|entertain|digital|apps/i, s: null },
+  { v: /(pharma|pharmacy|el ?ezaby|seif|dawa|saydal|clinic|hospital|\blabs?\b|medical|dental)/i, c: /medic|health|pharm/i, s: /pharm|dawa|saydal|medic|doctor|clinic/i },
+  { v: /(amazon|\bnoon\b|jumia|shein|temu|aliexpress|ikea|\bzara\b|h&m|waikiki|defacto|decathlon)/i, c: /shop|cloth|home|house/i, s: /online|shop|cloth/i },
+  { v: /(vodafone|orange|etisalat|telecom|fawry)/i, c: /bills|utilit|phone|mobile/i, s: null },
+  { v: /(cinema|\bvox\b|imax|ticket|tazkarti)/i, c: /entertain|outing|fun/i, s: /cinema|movie|event|ticket|outing/i }
+];
+function guessCategory(names, cats, vendor, history) {
+  const STOP = { com: 1, www: 1, egy: 1, egp: 1, usd: 1, cairo: 1, giza: 1, sub: 1, bill: 1, the: 1, and: 1, ltd: 1, inc: 1, llc: 1, payment: 1, store: 1, branch: 1 };
+  const words = str => String(str || '').toLowerCase().split(/[^a-z0-9؀-ۿ]+/).filter(w => w.length >= 3 && !STOP[w] && !/^\d+$/.test(w));
+  const subsOf = c => (Array.isArray(cats[c]) ? cats[c] : []).filter(Boolean);
+  const pick = (c, s) => ({ category: c, subcategory: s && subsOf(c).includes(s) ? s : c });
+  const key = vendorKey(vendor).toLowerCase().trim();
+  // 1. Same shop before.
+  if (key && Array.isArray(history)) {
+    const kw = words(key).slice(0, 2).join(' ');
+    const vk = e => vendorKey(e.smsVendor || String(e.description || '').split(' · ')[0]).toLowerCase().trim();
+    const same = history.filter(e => e && Number(e.value) > 0 && names.includes(e.category) && e.category !== 'Uncategorized' &&
+      (vk(e) === key || (kw.length >= 5 && words(vk(e)).slice(0, 2).join(' ') === kw)));
+    if (same.length) {
+      const byDate = (a, b) => String(b.date || '').localeCompare(String(a.date || ''));
+      const best = same.filter(e => !e.auto).sort(byDate)[0] || same.sort(byDate)[0];
+      return Object.assign(pick(best.category, best.subcategory), { how: 'history' });
+    }
+  }
+  // 2. A sub category or category named in the shop's name.
+  const vw = words(vendor);
+  const named = n => { const nw = words(n); return nw.length > 0 && nw.every(w => vw.includes(w)); };
+  for (const c of names) { const s = subsOf(c).find(named); if (s && c !== 'Uncategorized') return Object.assign(pick(c, s), { how: 'name' }); }
+  for (const c of names) if (c !== 'Uncategorized' && named(c)) return Object.assign(pick(c, c), { how: 'name' });
+  // 3. Common shops by type, mapped onto your own category names.
+  for (const g of GUESS_GROUPS) {
+    if (!g.v.test(String(vendor || ''))) continue;
+    const c = names.find(n => g.c.test(n));
+    if (!c) continue;
+    const subs = subsOf(c);
+    const s = subs.find(named) || (g.s && subs.find(x => g.s.test(x))) || c;
+    return Object.assign(pick(c, s), { how: 'type' });
+  }
+  return { category: 'Uncategorized', subcategory: 'Uncategorized', how: 'none' };
+}
 function rulesForCard(rules, last4, isCreditCard) {
   return (rules || []).filter(r => r && (isCreditCard ? r.card === last4 : !r.card));
 }
@@ -7490,6 +7558,12 @@ function testVendorMessage() {
   else if (m.amount == null) verdict = '<span class="bad">No amount found — the script would return an error.</span>';
   else if (isCC && m.incoming) verdict = '<span class="ok">Card payment — added to the card\'s payments with no question.</span>';
   else if (m.isIPN) verdict = `<span class="ask">IPN transfer ${m.ipnSent ? 'sent — InstaPay fee added; ' : 'received — '}asks you for the category every time.</span>`;
+  else if (isCC && !(rule && !rule.ask)) {
+    // Credit card charges never ask: best guess, tagged "Check" in Expenses.
+    const g = rule && rule.category ? { category: rule.category, subcategory: rule.subcategory || rule.category, how: 'rule' } : guessCategory(catNames(prof), prof.categories || {}, m.vendor, prof.expenses || []);
+    const why = { rule: 'this card\'s vendor rule', history: 'what this shop had last time', name: 'a category named in the shop\'s name', type: 'the kind of shop', none: 'no match found' }[g.how];
+    verdict = `<span class="ok">Added automatically (best guess from ${why}) → <b>${escapeHtml(g.category)} / ${escapeHtml(g.subcategory)}</b>, tagged <span class="tf-tag ck-tag">Check</span> to fix later.</span>`;
+  }
   else if (rule && rule.ask) verdict = `<span class="ask">Known vendor set to "Always ask" — asks you for the category.</span>`;
   else if (rule) verdict = `<span class="ok">Added automatically → <b>${escapeHtml(rule.category)} / ${escapeHtml(rule.subcategory || rule.category)}</b></span>`;
   else verdict = `<span class="ask">Unknown vendor — asks you, then saves "${escapeHtml(vendorKey(m.vendor) || '—')}" here with Always ask on.</span>`;
