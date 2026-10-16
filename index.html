@@ -1543,7 +1543,7 @@
       <div class="kpis kpis-mirror"></div>
       <div id="expTotalLine" style="font-size:13px; color:var(--txt-dim); margin-bottom:10px;"></div>
       <div class="budget-filter" style="flex-wrap:wrap;">
-        <input type="text" id="expSearch" placeholder="Search description…" oninput="renderExpensesPage()"
+        <input type="text" id="expSearch" placeholder="Search description or amount…" oninput="renderExpensesPage()"
           style="background:var(--card);border:1px solid var(--card-b);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12.5px; min-width:160px;">
         <button type="button" class="ms-btn" id="msBtn_expCat" onclick="openMs('expCat', this)">All categories</button>
         <button type="button" class="ms-btn" id="msBtn_expSub" onclick="openMs('expSub', this)">All sub categories</button>
@@ -2373,7 +2373,7 @@ function saveState() {
    ============================================================ */
 // The app's version — shown at the top of every page and at the bottom of
 // Settings. Bump it with every release (matches the V## folder).
-const APP_VERSION = 'V32';
+const APP_VERSION = 'V33';
 document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
@@ -4841,11 +4841,7 @@ function renderExpensesPage() {
   f.dates = f.dates.filter(d => monthDates.has(d));
   updateMsButtons();
   let rows = monthRows.filter(r => passesCatSub(r.category, r.subcategory));
-  if (search) rows = rows.filter(r =>
-    (r.description||'').toLowerCase().includes(search) ||
-    (r.category||'').toLowerCase().includes(search) ||
-    (r.subcategory||'').toLowerCase().includes(search)
-  );
+  if (search) rows = rows.filter(r => expMatchesSearch(r, search));
   if (f.dates.length) rows = rows.filter(r => f.dates.includes(r.date));
   const chargeSum = rows.filter(r=>r.kind==='expense').reduce((s,r)=>s+r.value,0);
   const paymentSum = rows.filter(r=>r.kind==='payment').reduce((s,r)=>s+r.value,0);
@@ -5134,6 +5130,31 @@ function budgetMonthOrderCmp(a, b) {
   return 0; // stable sort keeps the original order
 }
 function creationStamp(id) { const m = String(id || '').match(/\d{13}/); return m ? Number(m[0]) : 0; }
+// Expenses search: text matches description / category / sub category; a number
+// also matches the amount. "250" finds 250, 1,250, 250.50 … ; ">500", "<100",
+// ">=500", "<=100", "=250" compare; "100-500" is a range (inclusive).
+function parseSearchNum(t) {
+  const c = String(t).replace(/[,\s]/g, '').replace(/^(egp|usd|eur|sar|aed|\$|€|£|ج\.?م\.?)/i, '').replace(/(egp|usd|eur|sar|aed|ج\.?م\.?)$/i, '');
+  return /^\d*\.?\d+$/.test(c) ? Number(c) : null;
+}
+function expAmountMatch(value, search) {
+  const v = Math.abs(Number(value) || 0), q = String(search).replace(/[,\s]/g, '');
+  let m = q.match(/^(>=|<=|>|<|=)(.+)$/);
+  if (m) { const n = parseSearchNum(m[2]); if (n == null) return null;
+    const r = Math.round(v * 100) / 100;
+    return m[1] === '>' ? r > n : m[1] === '<' ? r < n : m[1] === '>=' ? r >= n : m[1] === '<=' ? r <= n : Math.abs(r - n) < 0.005; }
+  m = q.match(/^(\d*\.?\d+)-(\d*\.?\d+)$/);
+  if (m) { const a = Number(m[1]), b = Number(m[2]); return v >= Math.min(a, b) - 0.005 && v <= Math.max(a, b) + 0.005; }
+  const n = parseSearchNum(q); if (n == null) return null;
+  const digits = q.replace(/^[^\d.]+|[^\d.]+$/g, '');
+  const plain = (Math.round(v * 100) / 100).toString(), fixed = v.toFixed(2);
+  return plain.includes(digits) || fixed.includes(digits);
+}
+function expMatchesSearch(r, search) {
+  if (!search) return true;
+  if ((r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search)) return true;
+  return expAmountMatch(r.value, search) === true;
+}
 function buildExpenseRows(p) {
   const secondaryLabel = isSavings(p) ? 'Deposit' : 'Payment';
   return [
@@ -5168,7 +5189,7 @@ function msPairs(key) {
   return buildExpenseRows(p)
     .filter(r => selectedMonths.includes(r.month))
     .filter(r => !days.length || days.includes(r.date))
-    .filter(r => !search || (r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search))
+    .filter(r => !search || expMatchesSearch(r, search))
     .map(r => [r.category, r.subcategory]);
 }
 let msOpenKey = null, msOptionsCache = [];
@@ -5199,7 +5220,7 @@ function msOptions(key) {
   const counts = {};
   buildExpenseRows(p)
     .filter(r => selectedMonths.includes(r.month) && passesCatSub(r.category, r.subcategory))
-    .filter(r => !search || (r.description||'').toLowerCase().includes(search) || (r.category||'').toLowerCase().includes(search) || (r.subcategory||'').toLowerCase().includes(search))
+    .filter(r => !search || expMatchesSearch(r, search))
     .forEach(r => { counts[r.date] = (counts[r.date] || 0) + 1; });
   f.dates.forEach(d => { if (!(d in counts)) counts[d] = 0; });
   return Object.keys(counts).sort().reverse().map(d => ({ value: d, label: dayLabel(d), count: counts[d] }));
