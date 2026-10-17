@@ -1270,14 +1270,23 @@
 
   /* ===== Rearrangeable page layouts (Edit layout) =====
      Each page's sections live in one .lay-grid: 12 columns on the computer,
-     2 on the phone. Order, width and hidden sections are saved per page and
+     2 on the phone, and rows of 10px tracks. Each section spans columns
+     (width) and rows (height): "auto" height fits its content and grows to
+     meet the section below it; a set height is kept and the content scrolls
+     inside. Order, width, height and hidden sections are saved per page and
      per device kind in state.layouts. */
   .lay-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .lay-edit-btn { width: 32px; height: 32px; flex: none; border-radius: 16px; border: none; background: var(--bg); box-shadow: var(--shadow-out-sm); color: var(--txt-dim); display: inline-flex; align-items: center; justify-content: center; align-self: center; transition: transform .12s, color .12s; }
   .lay-edit-btn:hover { color: var(--blue); }
   .lay-edit-btn:active { transform: scale(.92); }
-  .lay-grid { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-bottom: 14px; }
-  .lay-item { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .lay-grid { position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 14px; row-gap: 0; grid-auto-rows: 10px; align-items: stretch; margin-bottom: 14px; }
+  .lay-item { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  /* measuring a section's natural height: no stretching for one reflow */
+  .lay-grid.lay-measuring > .lay-item, .lay-grid.lay-measuring > .lay-tray { align-self: start; }
+  .lay-grid.lay-measuring > .lay-item > :not(.lay-ctl) { flex: none !important; }
+  /* a section with a set height keeps it; its content scrolls inside */
+  .lay-grid > .lay-item.lay-fixed > :not(.lay-ctl) { min-height: 0; overflow: auto; flex: 0 1 auto; }
+  .lay-grid > .lay-item.lay-fixed.lay-single > :not(.lay-ctl), .lay-grid > .lay-item.lay-fixed > :not(.lay-ctl):last-of-type { flex: 1 1 auto; }
   .lay-grid > .lay-item > *:not(.lay-ctl) { margin: 0 !important; min-width: 0; }
   .lay-grid > .lay-item > .card:only-of-type, .lay-grid > .lay-item.lay-single > :not(.lay-ctl) { flex: 1 1 auto; }
   #page-dashboard .lay-item > #balanceCheckCard, #page-dashboard-credit .lay-item > #ccDueCard { margin: 0 !important; }
@@ -1287,7 +1296,7 @@
   .lay-grid.editing > .lay-item.lay-off { display: none; }
   .lay-guides, .lay-nums, .lay-tray, .lay-ctl { display: none; }
   .freeze-head > .lay-grid { margin-bottom: 10px; }
-  .pl-wrap > .lay-grid { margin-bottom: 0; gap: 16px; }
+  .pl-wrap > .lay-grid { margin-bottom: 0; column-gap: 16px; }
 
   /* edit mode */
   .lay-bar { display: none; }
@@ -1300,17 +1309,18 @@
   body.lay-editing .freeze-head { position: static !important; }
   body.lay-editing .fab, body.lay-editing .fab-desktop { display: none !important; }
   .page.lay-editing .lay-edit-btn { display: none; }
-  .lay-grid.editing { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; row-gap: 34px; padding-top: 18px; padding-bottom: 4px; }
+  .lay-grid.editing { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; padding-top: 18px; padding-bottom: 4px; }
+  .lay-grid.editing > .lay-item { margin-bottom: 34px; }
   .lay-grid.editing .lay-guides { display: grid; position: absolute; inset: 0; grid-template-columns: inherit; column-gap: inherit; pointer-events: none; z-index: 0; }
   .lay-guides > i { background: rgba(95,125,104,.07); border-radius: 6px; }
-  .lay-grid.editing > .lay-nums { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(12, minmax(0,1fr)); column-gap: 14px; margin: -12px 0 -22px; font-size: 10px; font-weight: 800; color: #9aae9f; text-align: center; pointer-events: none; }
+  .lay-grid.editing > .lay-nums { display: grid; grid-column: 1 / -1; grid-row: span 2; align-self: start; grid-template-columns: repeat(12, minmax(0,1fr)); column-gap: 14px; margin: -14px 0 0; font-size: 10px; font-weight: 800; color: #9aae9f; text-align: center; pointer-events: none; }
   .lay-grid.editing > .lay-item { padding-top: 16px; z-index: 1; outline: 2px dashed #8aa593; outline-offset: 4px; border-radius: 16px; cursor: grab; touch-action: pan-y; animation: layWig .5s ease-in-out infinite alternate; }
   .lay-grid.editing > .lay-item:nth-child(even) { animation-delay: -.25s; animation-duration: .56s; }
   @keyframes layWig { from { rotate: -.3deg; } to { rotate: .3deg; } }
   @media (prefers-reduced-motion: reduce) { .lay-grid.editing > .lay-item { animation: none; } }
   .lay-grid.editing > .lay-item > :not(.lay-ctl) { pointer-events: none; user-select: none; -webkit-user-select: none; }
   /* tall sections are shortened while editing so they're easy to move around */
-  .lay-grid.editing > .lay-item > :not(.lay-ctl) { max-height: 440px; overflow: hidden; }
+  .lay-grid.editing > .lay-item:not(.lay-fixed) > :not(.lay-ctl) { max-height: 440px; overflow: hidden; }
   .lay-grid.editing > .lay-item > .lay-clip { -webkit-mask-image: linear-gradient(#000 calc(100% - 60px), transparent); mask-image: linear-gradient(#000 calc(100% - 60px), transparent); }
   .lay-grid.editing .lay-ctl { display: flex; }
   .lay-grip { position: absolute; z-index: 3; top: -16px; left: 12px; height: 30px; max-width: calc(100% - 110px); padding: 0 12px; border-radius: 15px; border: none; background: var(--blue); color: #fff; align-items: center; gap: 7px; font: inherit; font-size: 11.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; touch-action: none; box-shadow: 0 3px 8px rgba(60,52,38,.18); }
@@ -1321,6 +1331,11 @@
   .lay-eye { width: 34px; height: 34px; border-radius: 17px; border: none; background: #f6f2ea; box-shadow: 3px 3px 7px #d3cbbc, -3px -3px 7px #fffaf1; color: #4c5a50; display: flex; align-items: center; justify-content: center; }
   .lay-rz { position: absolute; z-index: 3; right: -9px; top: 50%; margin-top: -24px; width: 18px; height: 48px; border-radius: 9px; background: var(--blue); box-shadow: 0 2px 6px rgba(0,0,0,.22); cursor: ew-resize; touch-action: none; border: none; padding: 0; }
   .lay-rz::after { content: ""; position: absolute; left: 6px; top: 14px; width: 6px; height: 20px; border-left: 1.5px solid #fff; border-right: 1.5px solid #fff; box-sizing: border-box; }
+  .lay-rzh { position: absolute; z-index: 3; left: 50%; bottom: -9px; margin-left: -24px; width: 48px; height: 18px; border-radius: 9px; background: var(--blue); box-shadow: 0 2px 6px rgba(0,0,0,.22); cursor: ns-resize; touch-action: none; border: none; padding: 0; }
+  .lay-rzh::after { content: ""; position: absolute; top: 6px; left: 14px; width: 20px; height: 6px; border-top: 1.5px solid #fff; border-bottom: 1.5px solid #fff; box-sizing: border-box; }
+  .lay-rzc { position: absolute; z-index: 4; right: -11px; bottom: -11px; width: 24px; height: 24px; border-radius: 12px; background: #3f5a47; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: nwse-resize; touch-action: none; border: 2px solid #fff; padding: 0; }
+  .lay-rzc::after { content: ""; position: absolute; right: 5px; bottom: 5px; width: 7px; height: 7px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; }
+  .lay-auto { height: 24px; padding: 0 9px; border-radius: 12px; border: none; background: #f6f2ea; box-shadow: 2px 2px 5px #d3cbbc, -2px -2px 5px #fffaf1; color: #3f5a47; font: inherit; font-size: 11px; font-weight: 800; white-space: nowrap; }
   .lay-grid.editing > .lay-item.lay-resizing { outline-style: solid; outline-color: var(--blue); animation: none; }
   .lay-grid.editing > .lay-tray { display: flex; grid-column: 1 / -1; z-index: 1; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; border-radius: 14px; background: #e9e3d7; box-shadow: inset 2px 2px 6px #d6cebf, inset -2px -2px 6px #faf6ee; }
   .lay-tray .lay-tl { font-size: 12px; font-weight: 600; color: var(--txt-dim); }
@@ -1343,7 +1358,7 @@
     .lay-grid.editing > .lay-nums { display: none; }
   }
   @media (max-width: 860px) {
-    .lay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 18px; gap: 14px; }
+    .lay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 18px; column-gap: 14px; }
     .pl-wrap > .lay-grid { padding: 0; }
     .lay-grid .lay-item > .kpis, .lay-grid .lay-item > .budget-filter, .lay-grid .lay-item > #expTotalLine, .lay-grid .lay-item > #budgetTotalLine, .lay-grid .lay-item > #installmentPlansList, .lay-grid .lay-item > .grid2, .lay-grid .lay-item > .grid3 { padding-left: 0; padding-right: 0; }
     .lay-grid.editing .lay-guides { left: 18px; right: 18px; }
@@ -1353,7 +1368,10 @@
     .lay-bar b { flex: 1; }
     .lay-bar button { padding: 0 14px; }
     .lay-grid.editing > .lay-item { touch-action: auto; }
-    .lay-grid.editing > .lay-item > :not(.lay-ctl) { max-height: 230px; }
+    .lay-grid.editing > .lay-item:not(.lay-fixed) > :not(.lay-ctl) { max-height: 230px; }
+    .lay-rzh { width: 56px; height: 22px; bottom: -11px; margin-left: -28px; }
+    .lay-rzh::after { top: 7px; left: 18px; }
+    .lay-rzc { width: 28px; height: 28px; right: -12px; bottom: -12px; }
     .lay-grip { font-size: 11px; padding: 0 10px; }
     .lay-tools { right: 10px; }
     .lay-grid.editing > .lay-nums { display: none; }
@@ -2467,7 +2485,7 @@ function saveState() {
    ============================================================ */
 // The app's version — shown at the top of every page and at the bottom of
 // Settings. Bump it with every release (matches the V## folder).
-const APP_VERSION = 'V36';
+const APP_VERSION = 'V37';
 document.querySelectorAll('.app-version-num').forEach(el => { el.textContent = APP_VERSION; });
 const SYNC_CONFIG_KEY = 'ledger_sync_config';
 const SKIP_LOGIN_KEY = 'ledger_skip_login';
@@ -9255,7 +9273,7 @@ function hideWelcomeScreen() {
 const LAYOUT_PAGES = {
   dashboard: { page: 'page-dashboard', secs: [
     { id: 'kpis', label: 'Summary tiles', sel: '.kpis', d: 12 },
-    { id: 'bva', label: 'Budget vs actual', sel: '.dash-bva', d: 8, rows: 2 },
+    { id: 'bva', label: 'Budget vs actual', sel: '.dash-bva', d: 8 },
     { id: 'balance', label: 'Balance check', sel: '#balanceCheckCard', d: 4 },
     { id: 'trend', label: 'Spending trend', card: '#trendChart', d: 4 },
     { id: 'ongoing', label: 'Ongoing', card: '#notPaidList', d: 4 },
@@ -9307,6 +9325,9 @@ const Layout = (() => {
   const EYE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const LAYOUT_IC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="13" width="7" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>';
 
+  const TRACK = 10;          // px per grid row track
+  const ROW = 20;            // one "row" of height in the editor, in px
+  const MIN_ROWS = 4;
   const isPhone = () => window.innerWidth <= 860;
   const mode = () => isPhone() ? 'phone' : 'desktop';
   const colsNow = () => isPhone() ? 2 : 12;
@@ -9369,6 +9390,12 @@ const Layout = (() => {
     grid.addEventListener('pointerdown', onDown);
     grid.addEventListener('click', onGridClick);
     grid.addEventListener('keydown', onKeyCtl);
+    grid.addEventListener('dblclick', onDbl);
+    // Heights follow the content: re-measure when it changes, an image
+    // loads, or the width changes (or the page is shown).
+    if (window.MutationObserver) new MutationObserver(() => scheduleRelayout(key)).observe(grid, { childList: true, subtree: true, characterData: true });
+    grid.addEventListener('load', () => scheduleRelayout(key), true);
+    if (window.ResizeObserver) { let w = -1; new ResizeObserver(en => { const nw = Math.round(en[0].contentRect.width); if (nw !== w) { w = nw; scheduleRelayout(key); } }).observe(grid); }
     built[key] = { pg, grid, guides, nums, tray, bar, items, defs, order: found.map(x => x.def.id), title: h1 ? h1.textContent.trim() : key };
   }
 
@@ -9399,6 +9426,7 @@ const Layout = (() => {
     return out;
   }
   function spanOf(key, id) {
+    if (rz && rz.key === key && rz.id === id && rz.cur != null) return rz.cur;
     const c = cfgOf(key), v = c.span && Number(c.span[id]);
     const cols = colsNow();
     if (v && v >= minSpan() && v <= cols) return Math.round(v);
@@ -9412,13 +9440,15 @@ const Layout = (() => {
     if (window.innerWidth <= 1180) return s <= 6 ? 6 : 12;
     return s;
   }
-  function rowsFor(key, id, eff) {
-    const def = built[key].defs[id];
-    return def.rows && !isPhone() && eff <= 8 ? 'span ' + def.rows : '';
+  // Height in editor rows (ROW px each), or null = auto (fits the content).
+  function rowsOf(key, id) {
+    if (rz && rz.key === key && rz.id === id && rz.rows != null) return rz.rows;
+    const c = cfgOf(key), v = c.rows && Number(c.rows[id]);
+    return v && v >= MIN_ROWS ? Math.round(v) : null;
   }
-  function tagText(eff, from) {
-    if (isPhone()) return eff >= 2 ? 'Full width' : 'Half width';
-    return (from && from !== eff ? from + ' → ' : '') + eff + ' / 12';
+  function tagText(eff, rows) {
+    const w = isPhone() ? (eff >= 2 ? 'Full' : 'Half') : eff + ' / 12';
+    return w + ' · ' + (rows ? rows + ' rows' : 'auto height');
   }
 
   /* ----- applying ----- */
@@ -9430,14 +9460,70 @@ const Layout = (() => {
     const current = [...B.grid.children].filter(n => n.dataset && n.dataset.sec).map(n => n.dataset.sec);
     if (current.join('|') !== order.join('|')) order.forEach(id => B.grid.insertBefore(B.items[id], B.tray));
     order.forEach(id => {
-      const it = B.items[id], eff = effSpan(spanOf(key, id));
+      const it = B.items[id], eff = effSpan(spanOf(key, id)), rows = rowsOf(key, id);
       it.style.gridColumn = 'span ' + eff;
-      it.style.gridRow = rowsFor(key, id, eff);
       it.classList.toggle('lay-off', hidden.includes(id));
+      it.classList.toggle('lay-fixed', !!rows);
       const tag = it.querySelector(':scope > .lay-tools .lay-tag');
-      if (tag && !(rz && rz.item === it)) { tag.textContent = tagText(eff); tag.classList.remove('on'); }
+      if (tag) { tag.textContent = tagText(eff, rows); tag.classList.toggle('on', !!(rz && rz.item === it)); }
+      const auto = it.querySelector(':scope > .lay-tools .lay-auto');
+      if (auto) auto.hidden = !rows;
     });
     if (editing === key) renderTray(key);
+    relayout(key);
+  }
+  /* ----- rows: heights ----- */
+  // Every section spans a number of 10px row tracks. A set height uses
+  // exactly that; "auto" measures the content, then grows to meet whatever
+  // sits below it (or the bottom of the page's sections), so cards side by
+  // side end level, as before.
+  function relayout(key) {
+    const B = built[key]; if (!B) return;
+    const grid = B.grid;
+    if (!grid.offsetParent && getComputedStyle(grid).position !== 'fixed') return; // page not showing
+    const vis = visibleItems(grid).filter(it => it.offsetParent !== null);
+    if (!vis.length) return;
+    const ed = editing === key;
+    const cap = ed ? (isPhone() ? 230 : 440) : Infinity;
+    // 1. natural heights, measured with stretching switched off for one reflow
+    grid.classList.add('lay-measuring');
+    const nat = new Map();
+    vis.forEach(it => nat.set(it, it.offsetHeight));
+    const trayH = ed ? B.tray.offsetHeight : 0;
+    grid.classList.remove('lay-measuring');
+    const mbOf = it => parseFloat(getComputedStyle(it).marginBottom) || 0;
+    const fixed = new Set();
+    vis.forEach(it => {
+      const id = it.dataset.sec, rows = rowsOf(key, id), cs = getComputedStyle(it);
+      const pad = parseFloat(cs.paddingTop) || 0, mb = parseFloat(cs.marginBottom) || 0;
+      let h;
+      if (rows) { h = pad + rows * ROW; fixed.add(it); }
+      else h = Math.min(nat.get(it), pad + cap);
+      it.style.gridRow = 'span ' + Math.max(1, Math.ceil((h + mb) / TRACK));
+    });
+    if (ed) B.tray.style.gridRow = 'span ' + Math.max(1, Math.ceil(trayH / TRACK));
+    // 2. auto sections grow down to the next section in their columns
+    const box = vis.map(it => ({ it, t: it.offsetTop, l: it.offsetLeft, r: it.offsetLeft + it.offsetWidth, b: it.offsetTop + it.offsetHeight + mbOf(it) }));
+    const bottom = Math.max(...box.map(x => x.b));
+    box.forEach(p => {
+      if (fixed.has(p.it)) return;
+      let limit = bottom;
+      box.forEach(q => { if (q !== p && q.t >= p.b - 2 && q.l < p.r - 2 && q.r > p.l + 2) limit = Math.min(limit, q.t); });
+      const add = Math.floor((limit - p.b + 1) / TRACK);
+      if (add > 0) { const cur = parseInt(String(p.it.style.gridRow).replace('span', ''), 10) || 1; p.it.style.gridRow = 'span ' + (cur + add); }
+    });
+  }
+  const pendingRelayout = new Set();
+  let relayoutRaf = 0;
+  function scheduleRelayout(key) {
+    pendingRelayout.add(key);
+    if (relayoutRaf) return;
+    relayoutRaf = requestAnimationFrame(() => {
+      relayoutRaf = 0;
+      const keys = [...pendingRelayout]; pendingRelayout.clear();
+      keys.forEach(k => { try { relayout(k); } catch (e) { console.error('layout rows', k, e); } });
+      if (typeof updateFreezeHeights === 'function') updateFreezeHeights();
+    });
   }
   let lastBand = null;
   function applyAll() {
@@ -9459,8 +9545,8 @@ const Layout = (() => {
     B.grid.classList.add('editing');
     B.bar.querySelector('b').textContent = `${B.title} layout`;
     B.bar.querySelector('.lay-hint').textContent = isPhone()
-      ? 'Hold a section and drag it · drag the right edge for half or full width · tap the eye to hide'
-      : 'Drag ⠿ to move · drag the right edge to change width · tap the eye to hide';
+      ? 'Hold a section and drag it · right edge: half or full width · bottom edge: height · corner: both · eye: hide'
+      : 'Drag ⠿ to move · right edge: width · bottom edge: height · corner: both · eye: hide';
     Object.keys(B.items).forEach(id => addCtl(key, id));
     apply(key);
     B.grid.querySelectorAll(':scope > .lay-item > :not(.lay-ctl)').forEach(n => n.classList.toggle('lay-clip', n.scrollHeight > n.clientHeight + 4));
@@ -9475,8 +9561,10 @@ const Layout = (() => {
     if (it.querySelector(':scope > .lay-grip')) return;
     it.insertAdjacentHTML('beforeend',
       `<button type="button" class="lay-ctl lay-grip" aria-label="Move ${label} (arrow keys)">${GRIP}<span>${label}</span></button>` +
-      `<div class="lay-ctl lay-tools"><span class="lay-tag"></span><button type="button" class="lay-eye" aria-label="Hide ${label}" title="Hide">${EYE}</button></div>` +
-      `<button type="button" class="lay-ctl lay-rz" aria-label="Width of ${label} (left and right arrow keys)" title="Drag to change width"></button>`);
+      `<div class="lay-ctl lay-tools"><span class="lay-tag"></span><button type="button" class="lay-auto" hidden title="Let the height fit the content again">Auto</button><button type="button" class="lay-eye" aria-label="Hide ${label}" title="Hide">${EYE}</button></div>` +
+      `<button type="button" class="lay-ctl lay-rz" data-rz="w" aria-label="Width of ${label} (left and right arrow keys)" title="Drag to change width"></button>` +
+      `<button type="button" class="lay-ctl lay-rzh" data-rz="h" aria-label="Height of ${label} (up and down arrow keys, Delete for auto)" title="Drag to change height · double-click for auto"></button>` +
+      `<button type="button" class="lay-ctl lay-rzc" data-rz="wh" aria-label="Width and height of ${label} (arrow keys)" title="Drag to change width and height"></button>`);
   }
   function exitEdit() {
     if (!editing) return;
@@ -9488,6 +9576,7 @@ const Layout = (() => {
     B.grid.classList.remove('editing');
     B.grid.querySelectorAll('.lay-ctl').forEach(n => n.remove());
     B.grid.querySelectorAll('.lay-clip').forEach(n => n.classList.remove('lay-clip'));
+    B.tray.style.gridRow = '';
     apply(B.grid.dataset.lay);
     if (typeof updateFreezeHeights === 'function') updateFreezeHeights();
   }
@@ -9518,22 +9607,47 @@ const Layout = (() => {
   function saveSpan(key, id, n) {
     saveCfg(key, c => { if (!c.span || typeof c.span !== 'object') c.span = {}; c.span[id] = n; });
   }
+  function saveRows(key, id, n) {
+    saveCfg(key, c => {
+      if (!c.rows || typeof c.rows !== 'object') c.rows = {};
+      if (n) c.rows[id] = n; else delete c.rows[id];
+    });
+  }
+  // Current height in editor rows (for a section on auto: what it shows now).
+  function rowsNow(key, it) {
+    const r = rowsOf(key, it.dataset.sec);
+    if (r) return r;
+    const pad = parseFloat(getComputedStyle(it).paddingTop) || 0;
+    return Math.max(MIN_ROWS, Math.round((it.offsetHeight - pad) / ROW));
+  }
 
   function onGridClick(e) {
     const grid = e.currentTarget, key = grid.dataset.lay;
     if (editing !== key) return;
     const eye = e.target.closest('.lay-eye');
     if (eye) { const it = eye.closest('.lay-item'); setHidden(key, it.dataset.sec, true); return; }
+    const au = e.target.closest('.lay-auto');
+    if (au) { const it = au.closest('.lay-item'); saveRows(key, it.dataset.sec, null); apply(key); return; }
     const chip = e.target.closest('[data-show]');
     if (chip) { setHidden(key, chip.dataset.show, false); return; }
   }
-  // Keyboard: arrows on the grip move the section, on the edge change its width.
+  // Keyboard: arrows on the grip move the section; on the right edge change its
+  // width, on the bottom edge its height (Delete = auto), on the corner both.
   function onKeyCtl(e) {
     const grid = e.currentTarget, key = grid.dataset.lay;
     if (editing !== key) return;
     const it = e.target.closest('.lay-item'); if (!it) return;
+    const kind = e.target.dataset && e.target.dataset.rz;
+    if ((kind === 'h' || kind === 'wh') && (e.key === 'Delete' || e.key === 'Backspace')) { e.preventDefault(); saveRows(key, it.dataset.sec, null); apply(key); return; }
+    if ((kind === 'h' || kind === 'wh') && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      const cur = rowsNow(key, it), n = Math.max(MIN_ROWS, cur + (e.key === 'ArrowDown' ? 1 : -1));
+      saveRows(key, it.dataset.sec, n); apply(key); return;
+    }
+    if (kind === 'h') return;
     const back = e.key === 'ArrowLeft' || e.key === 'ArrowUp', fwd = e.key === 'ArrowRight' || e.key === 'ArrowDown';
     if (!back && !fwd) return;
+    if (kind === 'wh' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) return;
     e.preventDefault();
     if (e.target.classList.contains('lay-grip')) {
       const vis = visibleItems(grid);
@@ -9541,7 +9655,7 @@ const Layout = (() => {
       if (j < 0 || j >= vis.length) return;
       if (back) grid.insertBefore(it, vis[j]); else grid.insertBefore(it, vis[j].nextSibling);
       saveOrder(key); e.target.focus();
-    } else if (e.target.classList.contains('lay-rz')) {
+    } else if (e.target.classList.contains('lay-rz') || kind === 'wh') {
       const id = it.dataset.sec, cur = effSpan(spanOf(key, id));
       const n = Math.min(colsNow(), Math.max(minSpan(), cur + (fwd ? 1 : -1)));
       if (n !== cur) { saveSpan(key, id, n); apply(key); }
@@ -9555,7 +9669,7 @@ const Layout = (() => {
     if (editing !== key || d || rz) return;
     if (e.button !== undefined && e.button !== 0) return;
     if (e.target.closest('.lay-eye, .lay-tools, .lay-tray')) return;
-    if (e.target.closest('.lay-rz')) { startResize(e, key); return; }
+    if (e.target.closest('.lay-rz, .lay-rzh, .lay-rzc')) { startResize(e, key); return; }
     const it = e.target.closest('.lay-item');
     if (!it || it.parentElement !== grid) return;
     const grip = !!e.target.closest('.lay-grip');
@@ -9699,6 +9813,7 @@ const Layout = (() => {
     document.removeEventListener('touchmove', onTouchMove, { passive: false });
     document.removeEventListener('contextmenu', onCtx, true);
     if (cancelled && s.origNext && s.origNext.parentNode === s.grid) s.grid.insertBefore(s.item, s.origNext);
+    relayout(s.key);
     const r = s.item.getBoundingClientRect();
     s.wrap.classList.remove('lifted');
     s.wrap.classList.add('settling');
@@ -9715,30 +9830,36 @@ const Layout = (() => {
     }, 210);
   }
 
-  /* ----- width ----- */
+  /* ----- width and height ----- */
   function startResize(e, key) {
     e.preventDefault(); e.stopPropagation();
-    const btn = e.target.closest('.lay-rz'), it = btn.closest('.lay-item'), grid = it.parentElement;
+    const btn = e.target.closest('.lay-rz, .lay-rzh, .lay-rzc'), it = btn.closest('.lay-item'), grid = it.parentElement;
+    const kind = btn.dataset.rz || 'w';
     const cs = getComputedStyle(grid), cols = colsNow();
     const gap = parseFloat(cs.columnGap) || 14;
     const inner = grid.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const s0 = effSpan(spanOf(key, it.dataset.sec));
-    rz = { key, item: it, id: it.dataset.sec, x0: e.clientX, s0, cur: s0, step: (inner + gap) / cols, pid: e.pointerId, btn };
+    const s0 = effSpan(spanOf(key, it.dataset.sec)), r0 = rowsNow(key, it);
+    rz = { key, item: it, id: it.dataset.sec, kind, x0: e.clientX, y0: e.clientY, s0, r0,
+      cur: kind === 'h' ? null : s0, rows: kind === 'w' ? null : r0, step: (inner + gap) / cols, pid: e.pointerId, btn };
     try { btn.setPointerCapture(e.pointerId); } catch (err) {}
     it.classList.add('lay-resizing');
-    const tag = it.querySelector('.lay-tag'); if (tag) { tag.classList.add('on'); tag.textContent = tagText(s0, s0); }
     btn.addEventListener('pointermove', onRzMove);
     btn.addEventListener('pointerup', onRzUp);
     btn.addEventListener('pointercancel', onRzUp);
+    apply(key);
   }
   function onRzMove(e) {
     if (!rz || e.pointerId !== rz.pid) return;
-    const n = Math.min(colsNow(), Math.max(minSpan(), Math.round(rz.s0 + (e.clientX - rz.x0) / rz.step)));
-    if (n === rz.cur) return;
-    rz.cur = n;
-    rz.item.style.gridColumn = 'span ' + n;
-    rz.item.style.gridRow = rowsFor(rz.key, rz.id, n);
-    const tag = rz.item.querySelector('.lay-tag'); if (tag) tag.textContent = tagText(n, rz.s0);
+    let changed = false;
+    if (rz.kind !== 'h') {
+      const n = Math.min(colsNow(), Math.max(minSpan(), Math.round(rz.s0 + (e.clientX - rz.x0) / rz.step)));
+      if (n !== rz.cur) { rz.cur = n; changed = true; }
+    }
+    if (rz.kind !== 'w') {
+      const r = Math.max(MIN_ROWS, Math.round(rz.r0 + (e.clientY - rz.y0) / ROW));
+      if (r !== rz.rows) { rz.rows = r; changed = true; }
+    }
+    if (changed) apply(rz.key);
   }
   function onRzUp(e) {
     if (!rz || e.pointerId !== rz.pid) return;
@@ -9747,8 +9868,15 @@ const Layout = (() => {
     s.btn.removeEventListener('pointerup', onRzUp);
     s.btn.removeEventListener('pointercancel', onRzUp);
     s.item.classList.remove('lay-resizing');
-    if (s.cur !== s.s0) saveSpan(s.key, s.id, s.cur);
+    if (s.cur != null && s.cur !== s.s0) saveSpan(s.key, s.id, s.cur);
+    // a plain tap on the height handle doesn't fix the height
+    if (s.rows != null && (s.rows !== s.r0 || rowsOf(s.key, s.id))) saveRows(s.key, s.id, s.rows);
     apply(s.key);
+  }
+  function onDbl(e) {
+    const h = e.target.closest('.lay-rzh, .lay-rzc'); if (!h) return;
+    const key = e.currentTarget.dataset.lay; if (editing !== key) return;
+    saveRows(key, h.closest('.lay-item').dataset.sec, null); apply(key);
   }
 
   function init() {
